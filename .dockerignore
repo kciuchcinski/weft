@@ -1,0 +1,19 @@
+.git
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+**/*.log
+.DS_Store
+.idea
+.vscode
+
+# Rebuilt inside the image
+frontend/dist
+frontend/public/sample_data.json
+
+# Backend local env / uploads / conda
+backend/scratch
+backend/.pixi
+backend/example_src
+.venv
+venv

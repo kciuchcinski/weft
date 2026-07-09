@@ -1,0 +1,12 @@
+# Backend runtime deps for the hosted (parasail-only) image — mirrors pixi.toml
+# minus DIAMOND (a bioconda binary, not needed here). parasail ships its native
+# code in the wheel, so this installs with plain pip on a stock python image.
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2
+biopython
+gffutils
+numpy
+scipy
+parasail

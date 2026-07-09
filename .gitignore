@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.pixi/
+
+# Generated example artifact (frontend/public/example_session.json is kept — it
+# is needed at build/runtime for the bundled example).
+sample_data.json
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Scratch / uploads
+scratch/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

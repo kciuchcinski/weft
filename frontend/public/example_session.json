@@ -1,0 +1,2231 @@
+{
+  "schemaVersion": 1,
+  "data": {
+    "schemaVersion": 1,
+    "clusters": [
+      {
+        "uid": "204ea735-87be-4732-a32e-78068d6b8da8",
+        "name": "phage 1 \u00b7 tile 3",
+        "loci": [
+          {
+            "uid": "64132302-7b82-42a0-becb-a9f1fd86221a",
+            "name": "phage1_part3",
+            "start": 0,
+            "end": 8550,
+            "genes": [
+              {
+                "uid": "6a8ba0bf-21bf-44ca-90e3-26183d769fa0",
+                "label": "KELFIEHY_CDS_0089",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0089",
+                  "transl_table": "11",
+                  "phrog": "16178",
+                  "locus_tag": "KELFIEHY_CDS_0089",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-355.2996",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 39,
+                "end": 375,
+                "strand": 1,
+                "translation": "MEALLTFTFKDFIAFMIPLFIGGLIFNRRRKRKEVRVKFSFLWLVLIVGGILEICDDIYTTYSYRHNHLYNNDTLTTVFNYDFAKIVFCGVLIFVSIALLLQELLLNKQSH"
+              },
+              {
+                "uid": "8fab30d4-d7f2-4909-b953-652f10f087d0",
+                "label": "KELFIEHY_CDS_0090",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0090",
+                  "transl_table": "11",
+                  "phrog": "No_PHROG",
+                  "locus_tag": "KELFIEHY_CDS_0090",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-1.916974",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 531,
+                "end": 696,
+                "strand": 1,
+                "translation": "LCVFFRFNKIFIFVNLNQKIRDFFDSIVLYSEMNTLLRLMVKFYSRYFTGRLHD"
+              },
+              {
+                "uid": "03add1b8-f7b1-4af0-b0fe-7573b16063a4",
+                "label": "KELFIEHY_CDS_0091",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0091",
+                  "transl_table": "11",
+                  "phrog": "384",
+                  "locus_tag": "KELFIEHY_CDS_0091",
+                  "function": "head and packaging",
+                  "product": "virion structural protein",
+                  "score": "-152.6778",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 688,
+                "end": 1162,
+                "strand": 1,
+                "translation": "MTDIYYPHDSLPMPLQEGYGFQPVSPLKRTQLTTGRARQRRAFTSTPTQASITWFMETDAQGLAFESWFRDALSDGAAWFMMKLQTPAGIKFYKCRFTDIYQGPVLVAPIYWKYTATLELWERPLAPAPWGNYPEWIVGGSLLDIALNKEWPKHDAD"
+              },
+              {
+                "uid": "706f4b30-bd7c-4b60-8ad8-eda5e39ef519",
+                "label": "KELFIEHY_CDS_0092",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0092",
+                  "transl_table": "11",
+                  "phrog": "396",
+                  "locus_tag": "KELFIEHY_CDS_0092",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-130.7131",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1148,
+                "end": 1631,
+                "strand": 1,
+                "translation": "MTQIKRLYASSGPEVIIETLQITVGSDIHYLCQGYEDITATTENGDTVTFSACAIDIALPARNADGTQDLKFALCNIDGVVSTAIRYALANRLPAWLTYRSYISTDLAAPAEVPYTLKIKSGSWTATEVQITAGYMNVLDMAWPRYRYTLPAFPGLRYIS"
+              },
+              {
+                "uid": "5ac5c6dd-9801-4f7b-9a1f-14ceae87c601",
+                "label": "KELFIEHY_CDS_0093",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0093",
+                  "transl_table": "11",
+                  "phrog": "329",
+                  "locus_tag": "KELFIEHY_CDS_0093",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-118.6954",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1640,
+                "end": 2021,
+                "strand": 1,
+                "translation": "MFNPDKYRSVTWLKGGRVYPQLDCFGIVNEIRRDLNLPVWPDFAGVTKDDGGLDREARRMMLTLERCEPCEGAGVACYSGSTVTHVGIVVSIDGLLHVAECNPGTNVTFLPLPRFKRRFVKVEFWQ"
+              },
+              {
+                "uid": "b073f518-df20-4555-b713-48668af04e0b",
+                "label": "KELFIEHY_CDS_0094",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0094",
+                  "transl_table": "11",
+                  "phrog": "23466",
+                  "locus_tag": "KELFIEHY_CDS_0094",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-10285920000000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 2017,
+                "end": 5086,
+                "strand": 1,
+                "translation": "MTIRFYPSRLPGEPLETHEHGVTSIRSWLVANVEGFEDRDVPPLTVEVEGLLIPPGEWATCVIRPDSDVRLYPVPFGLEAATIAWIGIGISVAAAAYSLVLMSTIDTGGYTSSTGRSLDLNPARANTAKLGDAIREVFGRVRIYPDYVVQPVTRFDAADPTKMRVQMLLCLGVGELIYTNGDIRVGSTPASTLPGFNITYFPPGADVSGDERSENWVNSTEVGGTSSGTGLDMAQTSPDADDIIADSMTVSGSSVTFTGLDTDDDDDNDENDNALPPSWVAGAVVELKAPANYQITTAAGYSVIASPLLTEIAPVVGMPVTLGFNSVDYDLFIASYTPGQAAVPGTGGSAAKVQASAAPTTYDFSTSSSTFTITWQGVTYPVSLVANYVSMSGLLAAITEGLTGSGLVAQDNGGTVLITESASPFAGGAITSSSLPVAVFGDAPVYTSGTASTGGSPAVTANVTLAYNSATGTAFSGMPEGVQRLSLAHRGNEYRIVSADGTTATVARLVNGAVDESWPGFTARTMIDYEASGLNDTLSWLGPFLVCPENEVVDAFEVNFSFPNGICGFDSKGKKRIRHVEWEIQYRVYGSGSGWVSHQGEYALKNVNGLGFTERITLSSPGLVEVRCRRRNEQGSNNARDSMYWQALCGRLLTRPSSYPGVSLMAVTVETGGKLAAQSDHRVNVVATRAYDSGTARTISGALLHVGNSLGLEMDIDTINALESAYWTPRGEYFDFATGDSISALEMLQKIANAGKSRFLLSDGLATVNREGIKPWTGVITPHEMVEELQSGFTVPSDDDFDGVDVTYINGVTWAEETVKCRTPDNPTPVKIENYKLDGVLSQDHAYQIGMRRLMKALQQRVTFQTTTELDALCYNTGDRIVLTDDIPGNNTISCLVEAMTTAGGVTTFTVTEPLDWSFENPRALIRYQDGSASGLMVASRVGDFQLSVPHLSEFDDPMKVDLSSATIEPIRLVFCGSTRHVYDAIVEEIAPQSDGTCQVTAKEYLESFYQYDDATYPGDAA"
+              },
+              {
+                "uid": "4de79097-3927-49c0-bb1e-d9749b7ad607",
+                "label": "KELFIEHY_CDS_0095",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0095",
+                  "transl_table": "11",
+                  "phrog": "38670",
+                  "locus_tag": "KELFIEHY_CDS_0095",
+                  "function": "tail",
+                  "product": "tail fiber protein",
+                  "score": "-1201338000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 5162,
+                "end": 7502,
+                "strand": 1,
+                "translation": "MAELNPPLGTTTPEIFMDNVKRADELVNGPAGTVDDRGGEPLDTWRQMMAKNDEVRQNLIPLSKQYQTLAAAQADIANIPVNSTTYVRSPDGSALADEYMNVAGTLTATGRRMPAYSSLRGANILFDALNEYSANDPKFGAWDWYRGAVVTFSTTDANIPLPTPVAQYSGVWSADKYYDLARLPVRVGDKLTFSVLAWFQDAGAKFHIFWMSTAGAVISSKSQLALAAGINTPVITDVIPSGASYVRIRVENTTAGIFKVGAYAAALGAIQPDFVRATPDKTYLSAVISSGISGLTSRIDALQGAISVGYAYAAAWQVGKFINPTTGAITDNSALNCAIIPHSDGDGWLVTALVTGSATALAVYMNSAGMVLGVEGRGTTTPQQYTNYRLNVPSGTTQIGITGRNSAEMSVKKLAVVETATVLAKIDYLDVRLQKIEDSLVYDFVKQDVTITSGAYINRANGAVVENNAFDCAVFGYTTGDRWKVTARVNGSGVSLAVYMNSAGTVIGTEGNGTTESVDYTDYELTPPSGTAKIGITTRIALPIIAKKYVVVPGGSSVSPWSGKIIDVMGDSNVAYNKWQPLVAEALGCSFQNHGVGGSKIAKPDSSSAQISMCDDVRINALDTSAAAWICGPWGTNDWAQNIPIGTITDLVNTTVYGALNIIAQKLRARAPTKPILWATPFNGDYDSGRTEAWVDGETNQYGRVSDYAAAIRAVALRYGFPLIDLNADCGWTKFNSSNFLMTEGDTNPSRIHLNADAGPARISSLITDRLTALQKLVG"
+              },
+              {
+                "uid": "f9e1c31d-534b-4f37-9ecc-b65d5b11c937",
+                "label": "KELFIEHY_CDS_0096",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0096",
+                  "transl_table": "11",
+                  "phrog": "34046",
+                  "locus_tag": "KELFIEHY_CDS_0096",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-1160.808",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7567,
+                "end": 8326,
+                "strand": -1,
+                "translation": "MPITAILLDMNGPVIPGMKTLDDFTISNWFVGLPDVSATPFAGYYFGEPAPDITYNSYNKNTPAVINGSLNNADGYISVNNTDYLDTSQKAPLTLTICGVAKRNAGGASLNAHMIADFSGGGSAASGFSIGFTNGTGNLFCVGQNNGQSSAGYAYAAFPASIAVGDLFAFAASITQGTVTVDIYNPQTGALISSSAAFPGTRVAGTNNVLLGRKTDNNNETTTKYIKSVLLMEGVLTSAEKVSVAQFLLSMD"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "description": "contig_1 42451-51000 (8550 bp)"
+        }
+      },
+      {
+        "uid": "770c00ea-f3bd-422e-b782-121fcf8b6698",
+        "name": "phage 2",
+        "loci": [
+          {
+            "uid": "c90872b6-29b1-4f09-bf30-690c830de8fe",
+            "name": "phage2",
+            "start": 0,
+            "end": 20600,
+            "genes": [
+              {
+                "uid": "95159273-c344-466d-94d9-de11417d6292",
+                "label": "DGUWOHTH_CDS_0005",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0005",
+                  "transl_table": "11",
+                  "phrog": "11541",
+                  "locus_tag": "DGUWOHTH_CDS_0005",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-51076.57",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 54,
+                "end": 1149,
+                "strand": -1,
+                "translation": "MSLEERVSKLESLMPLDFADYPVDVLTGYYISRNTGLLVEQSVSEVVFLQHEAGERWRVTARVNGSGVSLAIYYDENDEVIGKEYDGNSSVVNLERYELTVPVGTRKIGITSRTAVPISVEKFQMIGTSSIKDRLEMVEANIKSKWSGKVIDVMGDSNVAYNRWQPLVAAELGCSFLNHGVGGSKIAKPDSASTQISMCDDVRINALNTSSDAWICGPWGTNDWAQNIPIGSITDTVNTTVYGALNIIAQKLRARAPTKPIFWCTPFNGDYDSPRYSAWVDGETNGYGRVSDYAAAIRAVALRYGFPLIDLNADCGWTKFNSNNFLMTEGDTNPSRIHLNADTGPARISSLIIDRLTALQKLVD"
+              },
+              {
+                "uid": "1564f814-9475-4c03-971e-d7ecb38628df",
+                "label": "DGUWOHTH_CDS_0006",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0006",
+                  "transl_table": "11",
+                  "phrog": "38670",
+                  "locus_tag": "DGUWOHTH_CDS_0006",
+                  "function": "tail",
+                  "product": "tail fiber protein",
+                  "score": "-9775673000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1233,
+                "end": 4215,
+                "strand": -1,
+                "translation": "MAFNPELGSTSPAVLLDNAERLDKLVNGPAADVPDRGGDPLYSWRQMMAKNDEVRQNLIPLSKQYATLAAAQADIANIPVGSTTYYRSPDDSALAIEVINTAGTLTATGRKIPAYSSLRRGNILFDAFNEYSSSLLTFANWDWYKGATPAFSTTDVNLPLPTPVIQASGVTSFDKYYDVSKLQVKPGDTLAFSVLVWFENAGGKLQIYWLDSAGATITTGEASRLVAGISSPVVVIAVPSGASSMRIRVQNTVSGAFKIGAYAAAIGDVTPEFTRSFPSKAYQEALGTPDNLVYDPFGEMLSVRPKQGLPAGVVDAMSYAGTLIQNSANSPWGKTGIQNASGVGADRIISLSSMGVKPGDTITVRLAAWFSSTGGTFQVFCRNASGALSSATIAASASGFNDGSTTLTIPASTTYLTLRASGAMVKELVAIGVAFGRSRPEFIYGSLPAEYSGYQRQQINLWPDPWYRRYECGETCIDGWGPAQVAGVSLPAYVADYSGSPFLRKKSLIIPAGGGQTDINISAKRLGLRAGDSLTVALGVISSQAINLAAYFRTAGGTVISNSSSQPFQFPSQQYQTLVRTIAITQEIVDTAGYLQIRLMNGQTVGAAGVYVVSRGLFVGNGSPVLSDDTYRQDADFSTSRTFTLNQDSLRETHKRLMNRKLSQSATLVTAHIGDSWTHLWNRWSGIFAGKMQADYGSAGIGYIGFGYPSEAGFGQYNGNILGQITLTKTGTWTPTYAAAQSADICSVSSSDTTATFRANGIPANASSVRLFAKPQGSVKYSTDGGVNWTTIDLSTFTDLAVVSLTVPATAFNIWFSPVSGTVELYGLDVQTATDGVRSHKLGATGSSAQQWAAQVTSATWKAAFTALAPNLVTILHGTNDQTSSRDPSAFAADIQTIITAVRTACPLADVLVLMPCENQRNNNVAMAAYASVVRDICALNRVAYHDLQIDYGDKPSDYASTSPRNWFNADGIHPDPATGGGLPIVSSVLKLL"
+              },
+              {
+                "uid": "1b84ad5c-5abd-412d-901c-eaafd5661490",
+                "label": "DGUWOHTH_CDS_0007",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0007",
+                  "transl_table": "11",
+                  "phrog": "23466",
+                  "locus_tag": "DGUWOHTH_CDS_0007",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-9896403000000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 4292,
+                "end": 7361,
+                "strand": -1,
+                "translation": "MTIRFYPSRLPGEPLETHEHGVTSIRKWLVANVENYTDRDVPPLTVEVGGQSIPPGDWATCVIRPDSDVRLYPVPFGLEAATIAWIGVGISVAAAAYSLFMMSTIDTGGYTSSTGRSLDLNPARANTAKLGDAIREVFGRVRIYPDYVVQPVTRFDAADPTKMRVQMLLCLGVGDLIYTTGDIRVGSTPASTLPGFNITYFPPGADVSGDERSENWVNSTEVGGTSSGTGLDMAQTSPDADDIIADSMTVSGSSVTFTGLDTDDDDDNDENDNALPPSWVAGAVVELKAPANYQITSAAGYSVIASPLLTEIAPVVGMPVTLGFNSVDYDLFIASYTPGQAAVPGTGGSAAKLQASAAPTTYDFSTSSSTFTITWQGVTYPVSLVANYVSMSGLLAAITEGLTGSGLVAQDNGGTVLITESASPFAGGAITSSSLPAVVFGDAPVYTSGTASTGGSPAVTANVTLAYNSATGTAFSGMPEGVQRLSLAHRGNEYRIVSADGTTATVARLVNGAVDESWPGFTARTMIDYEASGLNDTLSWLGPFLVCPENEVVDAFEVNFSFPNGICGFDSKGKKRLRHVEWEIQYRVYGSGSGWVSHQGEYALKNVNGLGFTERITLSSPGLVEVRCRRRNEQGSNNARDSMYWQALRGRLLTRPSSYPGVSLMAVTVETGGKLAAQSDRRVNVVATRAYDSGTARTISGALLHVGNSLGLEMDVDTINALESAYWTPRGEYFDFATGDSISALEMLQKIANAGKSRFLLSDGLATVNREGIKPWTGVITPHEMVEELQSGFTVPSDDDFDGVDVTYINGVTWAEETVKCRTPDNPTPVKIENYKLDGVLSQDHAYQIGMRRLMKYLQQRVTFQTTTELDALCYNTGDRIVLTDDIPGNNTISCLVEAMTTAGSVTTFTVTEPLDWSFENPRALIRYQDGSASGLMVASRVGDFQLSVPHLSEFDDPMKVDLSSATIEPIRLVFCGSTRHVYDAIVEEIAPQSDGTCQVTAKEYLESFYQYDDATYPGDVA"
+              },
+              {
+                "uid": "a9aab5f8-65a8-4fb3-85a5-607c9635ddce",
+                "label": "DGUWOHTH_CDS_0008",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0008",
+                  "transl_table": "11",
+                  "phrog": "329",
+                  "locus_tag": "DGUWOHTH_CDS_0008",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-163.7316",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7357,
+                "end": 7738,
+                "strand": -1,
+                "translation": "MFNPDKYRSVKWQKGGRAYPLLDCFGIVNEIRRDLNLPVWPDFAGVTKDDGGLDREARRMMLTLERCEPCEGAGVACYSGSTVTHVGIVVSIGCLLHVAECNPGTNVTFLPLPRFKRRFVKVEFWQ"
+              },
+              {
+                "uid": "d4f54168-0d84-43bd-b5ad-a295847d1c8b",
+                "label": "DGUWOHTH_CDS_0009",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0009",
+                  "transl_table": "11",
+                  "phrog": "396",
+                  "locus_tag": "DGUWOHTH_CDS_0009",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-232.7391",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7747,
+                "end": 8230,
+                "strand": -1,
+                "translation": "MTQIKRLYASSGPEVIIETLQITIGSDVHYLCQGYDNITATTENGDTVTFSACTIDIALPARNADGTQDLKFALCNIDGVVSTAIRNALANRLSAFLTYRRYISTDLAAPAEVPYTLKIKSGSWTATEVQITAGYMNILDTAWPRYRYTLPVFPGLRYIS"
+              },
+              {
+                "uid": "3758701c-26d5-4eed-ae25-7baf4e5bb64e",
+                "label": "DGUWOHTH_CDS_0010",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0010",
+                  "transl_table": "11",
+                  "phrog": "384",
+                  "locus_tag": "DGUWOHTH_CDS_0010",
+                  "function": "head and packaging",
+                  "product": "virion structural protein",
+                  "score": "-87.64482",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8216,
+                "end": 8696,
+                "strand": -1,
+                "translation": "MAITTTLYYPSAYLPGPLKESFGLTPVSPLKRTQMVTGRARQRRAYTSTPTQTDLAWIFSDAQAQAFEAWFRDELSDGAAWFNIPLLTPVGLKNYVCRFTDIYKGPTPEGGFYWRYTAPVELWERPLPPSGWGHYPDWIVGSSLLDIALNKEWPKHDAD"
+              },
+              {
+                "uid": "5eb089a0-f53a-4f99-8fa8-6bcdfcfffea9",
+                "label": "DGUWOHTH_CDS_0011",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0011",
+                  "transl_table": "11",
+                  "phrog": "2854",
+                  "locus_tag": "DGUWOHTH_CDS_0011",
+                  "function": "tail",
+                  "product": "tail length tape measure protein",
+                  "score": "-140418000000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8695,
+                "end": 11230,
+                "strand": -1,
+                "translation": "MAGKSLGTLTIDLIAKVGGFVQGMDKAERASQKWSAQVKKDAKEVGASIVAIGAAAATAAVGIGAAGLAVVKNTAQQVTEADRWAKSLKMSTQDLLAWQYAAEQAGLTGDNIADIFKDINDKVGDAVLNKSGEAAQALDTLGLSAEKLSQQSPDKQLLAISSALQKIPSQAGKTNILESLGNDLSKMLPLFDNNNEKLKQFIQLSKDFGIAPPQEDIDNLVKVNQFFQDIETSARGLKMEIASGLATVDLSPLQDGLNDIRDVFTDPAILQGLSDLVGEAISLAGVVGRIAGGLGAIATYTRSRIGAVSGNYNAADESDIAQRIEFLNKRGDQSKEQKDELEFLSKRLQFLRAIKSSMTPEEVERGAKGLSSLLSDMGLSPTDNNYKLGKGESNQKITTKSNPTDNAFKSRLLDLQKQAALIETTGKKTAEVTELEKVNFDITSGNLKALSEAQKEQLRYAAKIIDSKKEELRLNQENAKLAEFVSGLDRQNKIIRQGYDNDLAGRSLGLKDRSRMRELNNIQQDFEYKQADLLKQYQSGDITKSLYESETDALKSALEERLQIQENYYHESDGLRNDWESGISSALSDFADSSTDYYQQAADAMTSILGSATDSISEHLYDVISGTESMGEAIKGIFSDLGKSVIKALVDMAAQWIVYQGVQMLVNKSAQASAIPSMIANAQATALQAQLAAFASTAAIPIVGPGLAPAAMAAAAAITEPMVAAISAASLSGMAHDGIDAVPETGTWLLQKGERVTTAATSAKLDATLDRVANQSTGGGTIYSPTITIPINGNPSDATLALVRKAADEGAERGYRKAVNSVASGQGDLHKALMGKTTSGRKIS"
+              },
+              {
+                "uid": "94b30730-16fe-4b08-bd49-72fb9a55ae80",
+                "label": "DGUWOHTH_CDS_0012",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0012",
+                  "transl_table": "11",
+                  "phrog": "No_PHROG",
+                  "locus_tag": "DGUWOHTH_CDS_0012",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-8.705686",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 11278,
+                "end": 11656,
+                "strand": -1,
+                "translation": "MKNLLLGLCISLIGFSSLATAKITYLSCPYLDERAPDLIVVLDQNNGSASLQSPSMGSGLNFTSPAAFGPSEVTWRKDSTKYKQTYSVDRATLVLKRTTYSEMSNNTHSEVSDCKISKPPKQNKF"
+              },
+              {
+                "uid": "42916e7d-fede-4dc0-a8d7-11f62b93b677",
+                "label": "DGUWOHTH_CDS_0013",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0013",
+                  "transl_table": "11",
+                  "phrog": "337",
+                  "locus_tag": "DGUWOHTH_CDS_0013",
+                  "function": "tail",
+                  "product": "tail protein",
+                  "score": "-158.6525",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 11714,
+                "end": 11933,
+                "strand": -1,
+                "translation": "MSLREFQVWVKYRNKYGQLNVMMRTEWGASLVASVLANINKAKNTPPFKVSDFAPHINEAPLSLEEAMKSWV"
+              },
+              {
+                "uid": "d6d7e956-1dca-4f3c-8f00-7db368350357",
+                "label": "DGUWOHTH_CDS_0014",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0014",
+                  "transl_table": "11",
+                  "phrog": "1749",
+                  "locus_tag": "DGUWOHTH_CDS_0014",
+                  "function": "tail",
+                  "product": "tail assembly chaperone",
+                  "score": "-233.3996",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 11980,
+                "end": 12364,
+                "strand": -1,
+                "translation": "MQLTLDTLKETGAFTGRPVEKEIKWKGRDGKEHIATVYVRPMGYHTTKAELLAYNGKSDPVAGRIAAHICDEEGKQIFTEADILGTASEDRGALDGPIVIALLAVIQEVNDLGKTTNSQEKTSSGVS"
+              },
+              {
+                "uid": "68b35bb7-8f30-473a-b768-9caa7ed9f3e4",
+                "label": "DGUWOHTH_CDS_0015",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0015",
+                  "transl_table": "11",
+                  "phrog": "158",
+                  "locus_tag": "DGUWOHTH_CDS_0015",
+                  "function": "tail",
+                  "product": "major tail protein",
+                  "score": "-140.2473",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 12407,
+                "end": 12899,
+                "strand": -1,
+                "translation": "MSVLTQGTQFFVLKSGVVSEVECITSFNPGGNPADQIEDTCLSERDSRTYKKGLKTPAAATVGLNADPTNASHIMLHGLAEANDQTPLTFAVGWSDGTSVPTAAASGAEDAVDGLVLPSDRTWFIFQGYVSDFPFDFQGNAVVTTSATIQRSGSSVWVPKVAA"
+              },
+              {
+                "uid": "8e9a628a-ef48-485d-9777-d7ade3bce983",
+                "label": "DGUWOHTH_CDS_0016",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0016",
+                  "transl_table": "11",
+                  "phrog": "78",
+                  "locus_tag": "DGUWOHTH_CDS_0016",
+                  "function": "connector",
+                  "product": "tail terminator",
+                  "score": "-72.45673",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 12955,
+                "end": 13321,
+                "strand": -1,
+                "translation": "MIAPIFAVCAASQAVRDLLGSNPVRLYPFGMQDDNIVYPYAVWQNIGGSPENYLNQRPDADHYSLQVDVYGDTDTDVIAVARALRDAIEGKAYITRWGEQSRDPETMRYRYSFDVDWITPR"
+              },
+              {
+                "uid": "0042dc9c-2b2f-434c-8a70-1fc5c5bdcaf5",
+                "label": "DGUWOHTH_CDS_0017",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0017",
+                  "transl_table": "11",
+                  "phrog": "17053",
+                  "locus_tag": "DGUWOHTH_CDS_0017",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-267.8253",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 13317,
+                "end": 13857,
+                "strand": -1,
+                "translation": "MADGVEVNLTGLDSVLGKLDAVSQVTRDKSGRAALRKAANIIRDRARNNAARVDDPLTKEAIYKNIVVSFSSKAFRRTGDPTFRVGVMGGARQYANTKANVRKGRAGKSYNTAGDKGNPGGDTWYWRFLEFGTEHAAARPIIRPALNGVDADVINVFALELEKSIDRAVRRAAKKGTPV"
+              },
+              {
+                "uid": "0e673bf8-c7e8-41ea-8013-a22114fe479b",
+                "label": "DGUWOHTH_CDS_0018",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0018",
+                  "transl_table": "11",
+                  "phrog": "25",
+                  "locus_tag": "DGUWOHTH_CDS_0018",
+                  "function": "connector",
+                  "product": "head closure Hc1",
+                  "score": "-57.46728",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 13849,
+                "end": 14182,
+                "strand": -1,
+                "translation": "MQAGKLRHRITLQEPVKEQNPTTGAVINTWRDVATLWAEVAALSAREFIAAQASQGEVTTRITIRYREGFTRKHRILFRGRIYNIEGVLPDPRSGREYLTLPCSEGANDG"
+              },
+              {
+                "uid": "fe87222e-c9ef-481f-b664-9a0ef6adcbb2",
+                "label": "DGUWOHTH_CDS_0019",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0019",
+                  "transl_table": "11",
+                  "phrog": "2612",
+                  "locus_tag": "DGUWOHTH_CDS_0019",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-9.833791",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 14183,
+                "end": 14381,
+                "strand": -1,
+                "translation": "MNEQLVNALIAALREQTTAQREQTEAINRLAESNVALSDVIIQSLAGDLDEAPEQQTYLSGKPRG"
+              },
+              {
+                "uid": "2fcb687b-6011-4a5a-b96d-944cf0383ab1",
+                "label": "DGUWOHTH_CDS_0020",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0020",
+                  "transl_table": "11",
+                  "phrog": "40",
+                  "locus_tag": "DGUWOHTH_CDS_0020",
+                  "function": "connector",
+                  "product": "head-tail adaptor Ad1",
+                  "score": "-143.8827",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 14450,
+                "end": 14771,
+                "strand": -1,
+                "translation": "MKPSVNELRYQCRIDSDDDTEDVMLTLYLNASLKHAEKITNCRLYDNAVPDDDPDGLVIEDDIKLALMLLVSHWYENREPVSSDSVNSIPFGVDAILKQHRKIPGT"
+              },
+              {
+                "uid": "892bfe10-9a4d-410e-bef2-242ea01a530b",
+                "label": "DGUWOHTH_CDS_0021",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0021",
+                  "transl_table": "11",
+                  "phrog": "21989",
+                  "locus_tag": "DGUWOHTH_CDS_0021",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-16.41499",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 14767,
+                "end": 14971,
+                "strand": -1,
+                "translation": "MLLKKNLKWSPDGIQIINIPAGEYEAGSLPERALEVAAQMGILDGTEQPETETTVKPKVGNKRGEGK"
+              },
+              {
+                "uid": "77f0875d-c0b7-4ae8-a327-7c68223ac230",
+                "label": "DGUWOHTH_CDS_0022",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0022",
+                  "transl_table": "11",
+                  "phrog": "617",
+                  "locus_tag": "DGUWOHTH_CDS_0022",
+                  "function": "head and packaging",
+                  "product": "major head protein",
+                  "score": "-13331590.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 15009,
+                "end": 16218,
+                "strand": -1,
+                "translation": "MAVEIKDVEQVAQDLQQKFDDFKAKNDKRIDAIEAEKGKLAGEVETLNGKLTELDQLKTALEDELKQVKRPAGGTQSKAATEHKTAFIDFMRKGKDDGLRDLERKALQVGVDEDGGYAVPEELDRTILNLLKDEVVMRQEATTITVGGANYKKLVNLGGTASGWVGETDPRPATDASKLGQIEPFMGEIYGNPQATQTMLDDAFFNVEDWINSELAVEFSEQEEIAFTSGNGTKKPKGFLAYASTLEDDKTRAFGTLQHILSGAAAGVTADAIIKLVYTLRKVHRNGAKFMMNNNSLFAVRILKDSEGNYLWRPGLELGQPSSLAGYGVAENEQMPDIAADAKAIAFGNFKRGYTIVDRIGTRILRDPYTNKPFVGFYTTKRTGGMLADSQAIKLLQIGAGA"
+              },
+              {
+                "uid": "bd7b68db-82f8-497b-956f-00b8929d7aae",
+                "label": "DGUWOHTH_CDS_0023",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0023",
+                  "transl_table": "11",
+                  "phrog": "617",
+                  "locus_tag": "DGUWOHTH_CDS_0023",
+                  "function": "head and packaging",
+                  "product": "major head protein",
+                  "score": "-15021.52",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 16232,
+                "end": 16889,
+                "strand": -1,
+                "translation": "MMPMTKQRLDIPLKLKSVSDSGEFEGYGSVFGVKDSYDDVVVPGAFSKSLQSWREKNALPAMLWQHQMDEPIGVYTEMKEDDVGLYVKGRLLIDDDPLSKRAHAHMKAGSLTGLSIGYMLKDWEYDREKGVFLLKEIDLWEVSPVTFPSNDEARVSDVKSAFARGETPSQKSIERVLRDVGLSRTQAKAFMAGGYGNLSQRDADGVDAALDALKNIKF"
+              },
+              {
+                "uid": "8ee28f0d-4571-49f3-a49c-201fcbcc7f44",
+                "label": "DGUWOHTH_CDS_0024",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0024",
+                  "transl_table": "11",
+                  "phrog": "12",
+                  "locus_tag": "DGUWOHTH_CDS_0024",
+                  "function": "head and packaging",
+                  "product": "portal protein",
+                  "score": "-13234050.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 16872,
+                "end": 18102,
+                "strand": -1,
+                "translation": "MFFPGMFTKSTASVTTPAELAEAVGMTYDTYTGKRVSSQKAMRLTAVFGCIRVLAESMGMLPCNLYKITGNSKQKATSERLHKLLTMKPNDYMTPQEFWELVIVCLCLRGNFYAYKVKALGEVVELLPIDPGCVDPKLNSQWQPVYQVTFPDGSTDVLGQDDIWHVRTLTFDGLVGLNPIAYAREAISLGMATEEHGARLFANGAVTSGVLRTEQTLTDAAYERLRKDFEDRHLGLSNAHRPMILEMGLDWKSMGLNAEDSQFLETRKFQLEEVCRLYRVPMHMVQNTDRATFNNIENLGIGFINYSLVPYMTRIEQRINVGLVKESKQGTYYAKFNAGALLRGDMKSRFESYSTGINWGIYSPNDCRELEDMNPRSGGDVYLTPMNMTTKPSDSNKSKTTEEQHDADD"
+              },
+              {
+                "uid": "0dd6c66d-fe00-4623-93dc-081d5858ce4e",
+                "label": "DGUWOHTH_CDS_0025",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0025",
+                  "transl_table": "11",
+                  "phrog": "502",
+                  "locus_tag": "DGUWOHTH_CDS_0025",
+                  "function": "moron",
+                  "product": "membrane protein",
+                  "score": "-4.269927",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 18101,
+                "end": 18287,
+                "strand": -1,
+                "translation": "MILMILAPLVGVLGAILLSFGAWVIYPPAGYITGGILCLLWSWLVSRYLSGNWKIESGEGG"
+              },
+              {
+                "uid": "5cff8e64-0ff4-42b3-8e0d-8ffaa75a684e",
+                "label": "DGUWOHTH_CDS_0026",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0026",
+                  "transl_table": "11",
+                  "phrog": "2699",
+                  "locus_tag": "DGUWOHTH_CDS_0026",
+                  "function": "head and packaging",
+                  "product": "terminase large subunit",
+                  "score": "-7149389000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 18296,
+                "end": 20027,
+                "strand": -1,
+                "translation": "MSRKAYPNVNAANQYARHVVAGKIPACQYVIDACQRHIDDLSKSQGKKFRYRFDKDLAERAARFIQLLPHTKGEWAFKRMPITLEPWQLFIICCAFGWVHKGSRLRRFREVYTEIPRKNGKSAISAGVALFCFTCDGEFGAEVYSGATTEKQAWEVFRPARLMCKRTPLLVEAFGIEVNAKNLSRPEDGARFEPLIGNPGDGQSPHCAIVDEYHEHESDALYTTMITGMGARRQPIMWAITTAGYNIEGPCYDKRREVIEMLNGTVPNDELFGVIYTVDEGDDWTDPAVLHKANPNMGVSVYSDFLLSQQSRAKNNPRMAGIFKTKHLNIWVAARAAYFNLLSWRKCEDETLTIEQFEGQSCILSFDLARKLDMNSKVRLFTREIDGKRHYYCISPRFYVPYDTVYSNDVDDHRTAERYRKWVEAGYITVTDGAEIDYRVILEDAKRDNQQTPVEQSPIDPHGATNLSHQLADEQLNPITIIQNYTNMSDPMKELEAAVESGRFHHDGNPIMTWCISNVVGKHLPGNDDVVRPIKEQNENKIDGAVALIMAIGRAMLFEKEETLSNHLESYGVRSL"
+              },
+              {
+                "uid": "2432462b-20b3-4173-92e4-d8b72a329ece",
+                "label": "DGUWOHTH_CDS_0027",
+                "names": {
+                  "ID": "DGUWOHTH_CDS_0027",
+                  "transl_table": "11",
+                  "phrog": "83",
+                  "locus_tag": "DGUWOHTH_CDS_0027",
+                  "function": "head and packaging",
+                  "product": "terminase small subunit",
+                  "score": "-600.3407",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 20023,
+                "end": 20518,
+                "strand": -1,
+                "translation": "MAGTAGRSGRRPKPTARKELAGNPGKRALNKEEPVFTPINGVAPPDWFAEEELPLASIMWELTTKELCGQGLLCVTDLAVLERWCVAYEFWRRAVKNIAVDGLSITGAMGGKIKNPELTAKKEQESEMSSTGSMLGLDPSSRQRLVGLAGKKKNENPFLKMITP"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "description": "contig_1 1901-22500 (20600 bp)"
+        },
+        "reversed": true
+      },
+      {
+        "uid": "50e4dceb-a0dd-47e8-8b87-82c507057652",
+        "name": "phage 1 \u00b7 tile 2",
+        "loci": [
+          {
+            "uid": "460d81c5-b1da-4dfc-85df-3a7685397e54",
+            "name": "phage1_part2",
+            "start": 0,
+            "end": 5900,
+            "genes": [
+              {
+                "uid": "f0c99abd-a5ce-4f15-a927-be783b257546",
+                "label": "KELFIEHY_CDS_0084",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0084",
+                  "transl_table": "11",
+                  "phrog": "290",
+                  "locus_tag": "KELFIEHY_CDS_0084",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-3446.208",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 95,
+                "end": 1112,
+                "strand": 1,
+                "translation": "MAQGVSRGTVDVGGDVGTRFRWNQHDDFLASCFGAEWLNNVLTMGNGRITFSVATFASDVGIAQIARGCQVGTFQMEIPADGDITATITFAGLDWETKGDDTSYFTSPVDLAGALRYSFKEVTNIQLNGVDGGTGFCVDTFNIQFNNNMQTQRCIGTGSAFAGANIPTTFTPSGQITLSWSKAAWEVYKKTFTGETVPFSFTLENAEGAYTFDFPEVQISGDWPDAGSTDIVQVQLDITAANTPPTITRVPKVPATAISVAPATSTGAEGSTVTLTATLTPVDSTDAVQWTSSDPTIASAVSTGQKTAKVTRNAAGTATITGKARTFTATSEIIVTAP"
+              },
+              {
+                "uid": "7d346a44-a338-46af-897d-c2c82ebed9c2",
+                "label": "KELFIEHY_CDS_0085",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0085",
+                  "transl_table": "11",
+                  "phrog": "313",
+                  "locus_tag": "KELFIEHY_CDS_0085",
+                  "function": "tail",
+                  "product": "Tail assembly chaperone",
+                  "score": "-965.8998",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1166,
+                "end": 1649,
+                "strand": 1,
+                "translation": "MLIISSQIDLNGERWFFPYKKPAGSKKKFTPEDEALFKLRLLVASSENPQYRSRNALVRRHIDKMDASYQVGTDAFDLASVGEIDSVDDLLIDNCARFLLKDWEGVGELVDGTETAVAYTPERGVALLKQNPSLYWLILAEAASIAQGKEQQTQETVKKP"
+              },
+              {
+                "uid": "b5c58f3a-8627-42e0-a2cc-71913822d5e4",
+                "label": "KELFIEHY_CDS_0086",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0086",
+                  "transl_table": "11",
+                  "phrog": "1189",
+                  "locus_tag": "KELFIEHY_CDS_0086",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-11.84981",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1786,
+                "end": 1984,
+                "strand": 1,
+                "translation": "MISRGRKYAGMAGVPLPLSLNDIELYLASRTILIDRIEFDAAILALDDAWRDEWAAEQKRQAKEK"
+              },
+              {
+                "uid": "be0389c5-2980-4ea7-8ff7-cd752d5e3e11",
+                "label": "KELFIEHY_CDS_0087",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0087",
+                  "transl_table": "11",
+                  "phrog": "13472",
+                  "locus_tag": "KELFIEHY_CDS_0087",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-22.6768",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 2050,
+                "end": 2383,
+                "strand": 1,
+                "translation": "MKKLMMVIAGMFVISGCATKQYPQAPSVTSEESAALDCAAIKQEIAKTHSIQNEIETTGQFDGRTVLGALGDFGIGNGMAKSEARKKAQARLQQLESLKTVKCSDSKVSG"
+              },
+              {
+                "uid": "acc9e416-c155-4e50-8ea5-5c7aa0b2f9f9",
+                "label": "KELFIEHY_CDS_0088",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0088",
+                  "transl_table": "11",
+                  "phrog": "24",
+                  "locus_tag": "KELFIEHY_CDS_0088",
+                  "function": "tail",
+                  "product": "tail length tape measure protein",
+                  "score": "-3.369221e+16",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 2502,
+                "end": 5856,
+                "strand": 1,
+                "translation": "MTEQTSRLAIVIDSSGAEKQADSLAIALDKMTQSGDKAVTSMFKVTKATDEEKDALNKLRAVIDPVGAAIDTVGRRFSELKKYFDKGLIDEEEFRTLSKMLNDTTDELSGVAQAQREAEKASKLAAVQQEAQTQAFQRMLDKIDPVSSGLRGLKEQQKEIYLAAQRGDLSLEQYDAYSQKIADARKELTGEAQAQRDAEKAAADAIKQQEAQAQAFQRMIDRIDPLSAALKNLDQQQAELSSALSSGKINTAQFDTYSKKLQETRREITGAAQAEREAAKAHDEQVAALRRLEAQIDPVGEAFRRLNEKQRQLDTAKTSGMLSPLAYDRLNSKLAESRDALEKTQAQLGKTSQSAAQTANAMRMIPAQMTDIVVGLSTGQSPFMVLMQQGGQLKDMFGGIGPAIKGVGTYVMGLVNPYSVAAASVGLLTYAVYQNRQEIDAATKIATSSLGANGDAAERLALNMVAISDKTGQTIDEVGSMFITTNDGASEAINKLIDVGFSYDEARTKVAQYKDSANFTALNADIDQHRREILKIGDSWTAAAIEVKNYYTAADKGRQNVALGGAIDPTMRFIGQALDLQTTMNTLTIEGNKAVKNSVDWINKEYLAADRVAGAEARLKEARAQSRKIAFSGNNEAIDQANALIAVREKELEQAKKSQEPKKKKEKAYTEDAATRLLDQINQQTAAMQSQLDASDKLNSATQTRFKFEQQIADLKSKTQLTADQKSILSRSDEILQAYKQQEALQNSVKTLDDYRKMQEQVKTKDERTNDLLKTRLELLEKAKAIGQLKPGEYEKTRADIYQNTDMQLPSTVRNVVGNLTPTGGRLSGTFEGMQGQINEYDQAQQELQRWLAAQEEAYAKAGEITAEGEARMTSIRQRAADANQVIEAQKNTIISAATQSLFDSTAEIMRTGFGEQSAIYKVAFAASKAFAIADSMVKIQQAIASGAVSAPYPANIIAMASIAAQTASIVSNIQAVSGVGFASGGYTGPGGKYQPAGIVHKGEYVFDQESTNRIGVSQLEALRNGQPLDATLGRTGFGTGVQNVNSDNRRQTTVHAPINQEFHLQGITPEQLSATLNQNNRQLSRQLKGELTKEVTMPQGAFGNALKGNYTRHGPR"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "description": "contig_1 36551-42450 (5900 bp)"
+        }
+      },
+      {
+        "uid": "7c984e77-5336-4af0-9add-b964cc6f8fef",
+        "name": "phage 1 (intact)",
+        "loci": [
+          {
+            "uid": "77b204a7-2d7b-4741-8602-f913ee5636b2",
+            "name": "phage1",
+            "start": 0,
+            "end": 24000,
+            "genes": [
+              {
+                "uid": "03199b08-988e-489c-8561-45b7e2f90471",
+                "label": "KELFIEHY_CDS_0071",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0071",
+                  "transl_table": "11",
+                  "phrog": "9557",
+                  "locus_tag": "KELFIEHY_CDS_0071",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-28.73629",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 25,
+                "end": 214,
+                "strand": 1,
+                "translation": "MPVCTISIEVKSRWWLPFYLKTLALFCLMFQLEPDYEKTAALITKHGISHKVKARPVRKITE"
+              },
+              {
+                "uid": "b60f5b3e-8c88-4e67-bd76-7e829d825a28",
+                "label": "KELFIEHY_CDS_0072",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0072",
+                  "transl_table": "11",
+                  "phrog": "32222",
+                  "locus_tag": "KELFIEHY_CDS_0072",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-94394.59",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 217,
+                "end": 1222,
+                "strand": 1,
+                "translation": "MAKPDWGELQQRFLSDHAATGVSPKDWCKAQGLNYATARRYIKKPSAQIAQKPAQKKLRTAQKEKCAEELVDDDGLTDQQRLFVAEYLKDSNATQAAIRAGYSKKTANEQGARLLAKVSIAQAIAQQQKASIVRMLGSADEVLEQMWRLATFDANQLSQYRRGSCRYCWGFGHQYQWRDAVEYEEKRLEALERKRREPVDVGGYGYDHTSAPNQECPRCNGDGVGQPFFADTRKLAPDAALAYSGVKLGKNGVEITAISRERMYEAVMKRLGLADSEFAQRLQQIEIERRQLEVEKLRKELAAEPEDDEPTPVAININVVDARVREEDGDSTDA"
+              },
+              {
+                "uid": "286793aa-3369-412f-94a7-adea5d024354",
+                "label": "KELFIEHY_CDS_0073",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0073",
+                  "transl_table": "11",
+                  "phrog": "38319",
+                  "locus_tag": "KELFIEHY_CDS_0073",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-156191900.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1199,
+                "end": 2504,
+                "strand": 1,
+                "translation": "MAIAPTLNIPQAKFLAMQYKFKAYVAGFGSGKTWVGCGGICKGMWEHPKINQGYFAPTYPQIRDIFYPTVEEVAHDWGLNVKINEGNKEVHFYAGRQYRGTTICRSMEKPQTIVGFKIGNALIDELDVMPAKKAQLAWRKIIARMRYNVAGLRNGIDVTTTPEGFKFVYQQFAKAVRDKPSLSTLYGLVQASTFDNEKNLPPDYIPSLMESYPPELIKAYLRGQFTNLTSGTIYHQFDRKLNNCREEEQPGEPLYIGMDFNVGKMAGIVHVLRLGLPFAVNEIVKAYDTPDMIRIIKERFWLYDGNDYRKVREIYIYPDASGDSRKSSNASATDIAQLKQAGFNVVVNASNPPVKDRINAMNAMFCNGNGERRYKVNVKRCPVYTESLEQQVWGENGEPDKTADNDHPNDAGGYFIVKQFPIIKPTGKVTQLRM"
+              },
+              {
+                "uid": "de5ca1d7-c525-4705-9b13-58c839ebf068",
+                "label": "KELFIEHY_CDS_0074",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0074",
+                  "transl_table": "11",
+                  "phrog": "145",
+                  "locus_tag": "KELFIEHY_CDS_0074",
+                  "function": "head and packaging",
+                  "product": "portal protein",
+                  "score": "-135837600.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 2508,
+                "end": 3933,
+                "strand": 1,
+                "translation": "MPDISTPNLDYNDMVEAWDINDALMGGTLEMRRQGKKYLPKWPNEDPESYKERLASATLLPAYEEAIKQNIGRVFAEPTVLSEDSPEQIRELSPDIDMEGNRLDVWAQQFFSIGFQYGLVHALVDFPKIDPEAVKTKADEKAAGSRPYATMLNPRQVIGWKSKVVKGKVVLTDLRIREVIIIDGDDYGQTKVEQIRHIMPGKVEIYRRNKGDNGESQWQIHDEWETSRDDIPLVTLYTKRTGFMRGSPPLLNLALLNIKHWQSQSEQDNILHVARVPLLVAYGLADGEMLTIGSSFATRFDDRQRQGLEYVEHTGAAIEAGKISLEDLENQMRQAGAKLLRAENTSTKSLDQTHEERMQENSPLYTMASSLEDALDNILQIMAEWLGEKEGGNVDVRTELDVSAQTFDAAAATAVQSLRQGGDIRQVDAVRVLQALKFIDPDAKPEEVIDELRNQQVTLAGGLSNPGGANGNGE"
+              },
+              {
+                "uid": "a13c5014-fde3-4fb2-a79b-777362cd8f8a",
+                "label": "KELFIEHY_CDS_0075",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0075",
+                  "transl_table": "11",
+                  "phrog": "241",
+                  "locus_tag": "KELFIEHY_CDS_0075",
+                  "function": "head and packaging",
+                  "product": "head morphogenesis",
+                  "score": "-595535.7",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 3916,
+                "end": 5029,
+                "strand": 1,
+                "translation": "MATANDKLQDESIAHAIWIARYSTSVANRMIKILNDSDAELTARLLVAMDSLDADSFTVSRLEALLVSVRALNREAVQSMYAGLSDELLQLAQHEAGFQLSLFQFAIPDDVLSLHPLVGISPDAVYATAMAQPFQGRLLSEWADNLEADRMARISNTVRQGFLLGDTHEQIARKVRGHANRGYQDGALQMSRTNAGSIAKTAVGHLASTARKSFADANDDILKGKQWLSTLDNRTSKDCRIRDRLKYTLDNKPIGHKVPYLQGPGKIHFCCRSVETYILKSSDELGIAVGQISDSSRASMDGQVPSDTDYHGWFSRQSFTRQSQIVGVTRARLIRDGGMSPDDFYNDKGEWLTLEQLRNLDAQAFSNARL"
+              },
+              {
+                "uid": "2d2f9378-2316-466a-a172-7226d6e4496b",
+                "label": "KELFIEHY_CDS_0076",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0076",
+                  "transl_table": "11",
+                  "phrog": "784",
+                  "locus_tag": "KELFIEHY_CDS_0076",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-15505.11",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 5135,
+                "end": 5900,
+                "strand": 1,
+                "translation": "MKLKTVEVNGKSYAEVDSSGLPVYVHDDGQEVGFDAVQAVGKISSLNGEAKSHREAKEAAEAGLAKYAKIGDPAKALEALEMMTKIDQKKLIDAGAVDQVKADITKSFQAQLDEATQRATTLEGQLYQEMIGGRFSGSKFIADKVAIPADMLQARFGQSFKVEDGKVVAYDGSGNKIYSRSKPGELAAFDEALEFLVEQYPQKDHILKASGNQGGGSRQSQHSLGQKTMKRDAFTSLSPTDQQSTLKDGITIVD"
+              },
+              {
+                "uid": "c6370766-b7bd-4882-9894-021998c50abf",
+                "label": "KELFIEHY_CDS_0077",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0077",
+                  "transl_table": "11",
+                  "phrog": "283",
+                  "locus_tag": "KELFIEHY_CDS_0077",
+                  "function": "head and packaging",
+                  "product": "major head protein",
+                  "score": "-5191.645",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 5987,
+                "end": 7124,
+                "strand": 1,
+                "translation": "MANTLTGLIPTIFTALDTVSREQVGFIPAVSRNAKADAAAKDQTVTAPVAPPATTVDITPGATAPNDGDQTIGTVDVKITKSKMAPVKWNGEEQLALGPAGTYNTILADQFKQAFRALANEMDADLAALYFASSRAVGTAGTAPFGIAGDLSDAANARQVLSDNGSPTTDLQMVLGSSAIANLRGKQSVLFKVNESGTDALLREGIVGRLEGFNIHESAHVKKRSASPAAGYLVNGAKAEGDILIAIDTGTGAFAAGDIVTFDGDSNKYLVAAATATAITLAAPGLRQALADNTAITAGGAYTANMAFDRNAFLLASRTPAMPQGGDTADDVMNVTDPVSGITYQVALYRQYRQVRYEVGLSWGVAAVKSAHSALLLG"
+              },
+              {
+                "uid": "a16609e6-ceba-401d-8f1d-19afc0101362",
+                "label": "KELFIEHY_CDS_0078",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0078",
+                  "transl_table": "11",
+                  "phrog": "1514",
+                  "locus_tag": "KELFIEHY_CDS_0078",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-29.75821",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7163,
+                "end": 7457,
+                "strand": 1,
+                "translation": "MAGLTKEQRAERAAAKLAATQVDANAPEQKEQKEQKEQKEQKEQKEQKEQKEQKEQQEQQLVAMITDFPPFPGGPNTANVHPDEVENWKAHGWKEME"
+              },
+              {
+                "uid": "6a876a13-114b-4fa0-9d72-57c7bffba7b0",
+                "label": "KELFIEHY_CDS_0079",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0079",
+                  "transl_table": "11",
+                  "phrog": "493",
+                  "locus_tag": "KELFIEHY_CDS_0079",
+                  "function": "connector",
+                  "product": "head-tail adaptor Ad1",
+                  "score": "-345.1114",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7460,
+                "end": 7871,
+                "strand": 1,
+                "translation": "MITYITVEDVNSILGATWTDESKKAKSVLMANTWMNGLNLKLPCDKATYETIIPDDVKQAVAYAALSAANGGLYQQKTDSGVLLSKTVDADDVSVSKTFAELATNSSALLDSDLQLALAMLKPYGVSQSQVRMVRG"
+              },
+              {
+                "uid": "2ae72482-056b-473b-b8f0-cb5cb002cd5e",
+                "label": "KELFIEHY_CDS_0080",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0080",
+                  "transl_table": "11",
+                  "phrog": "3540",
+                  "locus_tag": "KELFIEHY_CDS_0080",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-27.59101",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7872,
+                "end": 8169,
+                "strand": 1,
+                "translation": "MQNPDVHYAGDGLGPRDVFVNGNSIRHVVYANPTKGVVEFAPLPLRVKRSGEIYTRKLRGNVLVLFTGGYVSNNIPLQRFGEKGIEEVDRGYPRRTPN"
+              },
+              {
+                "uid": "8fff8e08-6604-4605-b710-71e1760458f9",
+                "label": "KELFIEHY_CDS_0081",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0081",
+                  "transl_table": "11",
+                  "phrog": "161",
+                  "locus_tag": "KELFIEHY_CDS_0081",
+                  "function": "connector",
+                  "product": "head closure Hc1",
+                  "score": "-16.21302",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8140,
+                "end": 8524,
+                "strand": 1,
+                "translation": "VGIRDELQTEVAAAFDTDLQDAVNEFAGSYTVRGAWDPVTETGIETQVTYSGRGVLARYKLRRIDGVNILHGDVKLTALVNEVTDTPAVGHIITAPDPITGELQRYEVITASADSAGAAYSIQLRRA"
+              },
+              {
+                "uid": "a7134ad2-21a5-4597-a9b8-63163b15369f",
+                "label": "KELFIEHY_CDS_0082",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0082",
+                  "transl_table": "11",
+                  "phrog": "169",
+                  "locus_tag": "KELFIEHY_CDS_0082",
+                  "function": "connector",
+                  "product": "tail completion or Neck1 protein",
+                  "score": "-1228.307",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8525,
+                "end": 9077,
+                "strand": 1,
+                "translation": "MAKGWNIDPAAFTGLVAEDVKLRQRTIAIQLLNEIVQRSPVGNPELWAINATAVQYNKAVGEWNESLYADPANLTKTGRLRKKVRVNDSMDIRRPAEYRAGTFRASHFVSIGEPDHSVPTEPDPRGAMTFLNGKNIIDQAPAYSVIYIQSNLPYSVPLENGHSTQAPTGVYAVSFNGVIQAYK"
+              },
+              {
+                "uid": "b670a111-9b8f-4281-92a0-7cea8a3e5a73",
+                "label": "KELFIEHY_CDS_0083",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0083",
+                  "transl_table": "11",
+                  "phrog": "179",
+                  "locus_tag": "KELFIEHY_CDS_0083",
+                  "function": "connector",
+                  "product": "tail terminator",
+                  "score": "-62.0535",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 9073,
+                "end": 9466,
+                "strand": 1,
+                "translation": "MTLTEIRNAVISRMAAQTAIASDAVDYPNGPVFDPSNRDIWARLTNIAVQAGATEIGDGPVIHRTGLLIIQLFVPVGSGTLLISRTADQLTELFEFKDDGKLSYFAVSAVPAGETDGWLQLNLQIPYRAL"
+              },
+              {
+                "uid": "81cb00ad-6864-4a37-8ba1-915bb66aff59",
+                "label": "KELFIEHY_CDS_0084",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0084",
+                  "transl_table": "11",
+                  "phrog": "290",
+                  "locus_tag": "KELFIEHY_CDS_0084",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-3446.208",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 9645,
+                "end": 10662,
+                "strand": 1,
+                "translation": "MAQGVSRGTVDVGGDVGTRFRWNQHDDFLASCFGAEWLNNVLTMGNGRITFSVATFASDVGIAQIARGCQVGTFQMEIPADGDITATITFAGLDWETKGDDTSYFTSPVDLAGALRYSFKEVTNIQLNGVDGGTGFCVDTFNIQFNNNMQTQRCIGTGSAFAGANIPTTFTPSGQITLSWSKAAWEVYKKTFTGETVPFSFTLENAEGAYTFDFPEVQISGDWPDAGSTDIVQVQLDITAANTPPTITRVPKVPATAISVAPATSTGAEGSTVTLTATLTPVDSTDAVQWTSSDPTIASAVSTGQKTAKVTRNAAGTATITGKARTFTATSEIIVTAP"
+              },
+              {
+                "uid": "2c2af607-9f6b-4547-97f2-6572af1445dc",
+                "label": "KELFIEHY_CDS_0085",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0085",
+                  "transl_table": "11",
+                  "phrog": "313",
+                  "locus_tag": "KELFIEHY_CDS_0085",
+                  "function": "tail",
+                  "product": "Tail assembly chaperone",
+                  "score": "-965.8998",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 10716,
+                "end": 11199,
+                "strand": 1,
+                "translation": "MLIISSQIDLNGERWFFPYKKPAGSKKKFTPEDEALFKLRLLVASSENPQYRSRNALVRRHIDKMDASYQVGTDAFDLASVGEIDSVDDLLIDNCARFLLKDWEGVGELVDGTETAVAYTPERGVALLKQNPSLYWLILAEAASIAQGKEQQTQETVKKP"
+              },
+              {
+                "uid": "2241b8a2-2541-4bd3-9d7e-d9bf247ba693",
+                "label": "KELFIEHY_CDS_0086",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0086",
+                  "transl_table": "11",
+                  "phrog": "1189",
+                  "locus_tag": "KELFIEHY_CDS_0086",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-11.84981",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 11336,
+                "end": 11534,
+                "strand": 1,
+                "translation": "MISRGRKYAGMAGVPLPLSLNDIELYLASRTILIDRIEFDAAILALDDAWRDEWAAEQKRQAKEK"
+              },
+              {
+                "uid": "891f2223-262a-43ef-8584-4e55b576e38d",
+                "label": "KELFIEHY_CDS_0087",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0087",
+                  "transl_table": "11",
+                  "phrog": "13472",
+                  "locus_tag": "KELFIEHY_CDS_0087",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-22.6768",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 11600,
+                "end": 11933,
+                "strand": 1,
+                "translation": "MKKLMMVIAGMFVISGCATKQYPQAPSVTSEESAALDCAAIKQEIAKTHSIQNEIETTGQFDGRTVLGALGDFGIGNGMAKSEARKKAQARLQQLESLKTVKCSDSKVSG"
+              },
+              {
+                "uid": "b2cdc005-58bc-459d-a6e7-a3d25966bdc9",
+                "label": "KELFIEHY_CDS_0088",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0088",
+                  "transl_table": "11",
+                  "phrog": "24",
+                  "locus_tag": "KELFIEHY_CDS_0088",
+                  "function": "tail",
+                  "product": "tail length tape measure protein",
+                  "score": "-3.369221e+16",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 12052,
+                "end": 15406,
+                "strand": 1,
+                "translation": "MTEQTSRLAIVIDSSGAEKQADSLAIALDKMTQSGDKAVTSMFKVTKATDEEKDALNKLRAVIDPVGAAIDTVGRRFSELKKYFDKGLIDEEEFRTLSKMLNDTTDELSGVAQAQREAEKASKLAAVQQEAQTQAFQRMLDKIDPVSSGLRGLKEQQKEIYLAAQRGDLSLEQYDAYSQKIADARKELTGEAQAQRDAEKAAADAIKQQEAQAQAFQRMIDRIDPLSAALKNLDQQQAELSSALSSGKINTAQFDTYSKKLQETRREITGAAQAEREAAKAHDEQVAALRRLEAQIDPVGEAFRRLNEKQRQLDTAKTSGMLSPLAYDRLNSKLAESRDALEKTQAQLGKTSQSAAQTANAMRMIPAQMTDIVVGLSTGQSPFMVLMQQGGQLKDMFGGIGPAIKGVGTYVMGLVNPYSVAAASVGLLTYAVYQNRQEIDAATKIATSSLGANGDAAERLALNMVAISDKTGQTIDEVGSMFITTNDGASEAINKLIDVGFSYDEARTKVAQYKDSANFTALNADIDQHRREILKIGDSWTAAAIEVKNYYTAADKGRQNVALGGAIDPTMRFIGQALDLQTTMNTLTIEGNKAVKNSVDWINKEYLAADRVAGAEARLKEARAQSRKIAFSGNNEAIDQANALIAVREKELEQAKKSQEPKKKKEKAYTEDAATRLLDQINQQTAAMQSQLDASDKLNSATQTRFKFEQQIADLKSKTQLTADQKSILSRSDEILQAYKQQEALQNSVKTLDDYRKMQEQVKTKDERTNDLLKTRLELLEKAKAIGQLKPGEYEKTRADIYQNTDMQLPSTVRNVVGNLTPTGGRLSGTFEGMQGQINEYDQAQQELQRWLAAQEEAYAKAGEITAEGEARMTSIRQRAADANQVIEAQKNTIISAATQSLFDSTAEIMRTGFGEQSAIYKVAFAASKAFAIADSMVKIQQAIASGAVSAPYPANIIAMASIAAQTASIVSNIQAVSGVGFASGGYTGPGGKYQPAGIVHKGEYVFDQESTNRIGVSQLEALRNGQPLDATLGRTGFGTGVQNVNSDNRRQTTVHAPINQEFHLQGITPEQLSATLNQNNRQLSRQLKGELTKEVTMPQGAFGNALKGNYTRHGPR"
+              },
+              {
+                "uid": "cc6f4878-6b70-439c-8a81-f2543a63ce28",
+                "label": "KELFIEHY_CDS_0089",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0089",
+                  "transl_table": "11",
+                  "phrog": "16178",
+                  "locus_tag": "KELFIEHY_CDS_0089",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-355.2996",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 15489,
+                "end": 15825,
+                "strand": 1,
+                "translation": "MEALLTFTFKDFIAFMIPLFIGGLIFNRRRKRKEVRVKFSFLWLVLIVGGILEICDDIYTTYSYRHNHLYNNDTLTTVFNYDFAKIVFCGVLIFVSIALLLQELLLNKQSH"
+              },
+              {
+                "uid": "d13f7488-ab0f-4c29-9e0d-9bcb37bf9549",
+                "label": "KELFIEHY_CDS_0090",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0090",
+                  "transl_table": "11",
+                  "phrog": "No_PHROG",
+                  "locus_tag": "KELFIEHY_CDS_0090",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-1.916974",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 15981,
+                "end": 16146,
+                "strand": 1,
+                "translation": "LCVFFRFNKIFIFVNLNQKIRDFFDSIVLYSEMNTLLRLMVKFYSRYFTGRLHD"
+              },
+              {
+                "uid": "b53565c6-bf1e-4957-ba17-aff25a5d8cc1",
+                "label": "KELFIEHY_CDS_0091",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0091",
+                  "transl_table": "11",
+                  "phrog": "384",
+                  "locus_tag": "KELFIEHY_CDS_0091",
+                  "function": "head and packaging",
+                  "product": "virion structural protein",
+                  "score": "-152.6778",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 16138,
+                "end": 16612,
+                "strand": 1,
+                "translation": "MTDIYYPHDSLPMPLQEGYGFQPVSPLKRTQLTTGRARQRRAFTSTPTQASITWFMETDAQGLAFESWFRDALSDGAAWFMMKLQTPAGIKFYKCRFTDIYQGPVLVAPIYWKYTATLELWERPLAPAPWGNYPEWIVGGSLLDIALNKEWPKHDAD"
+              },
+              {
+                "uid": "752bdf79-73d2-4f56-a82e-4e101dfec634",
+                "label": "KELFIEHY_CDS_0092",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0092",
+                  "transl_table": "11",
+                  "phrog": "396",
+                  "locus_tag": "KELFIEHY_CDS_0092",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-130.7131",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 16598,
+                "end": 17081,
+                "strand": 1,
+                "translation": "MTQIKRLYASSGPEVIIETLQITVGSDIHYLCQGYEDITATTENGDTVTFSACAIDIALPARNADGTQDLKFALCNIDGVVSTAIRYALANRLPAWLTYRSYISTDLAAPAEVPYTLKIKSGSWTATEVQITAGYMNVLDMAWPRYRYTLPAFPGLRYIS"
+              },
+              {
+                "uid": "390bfdf2-bb9e-42ef-9d05-56308d7366d2",
+                "label": "KELFIEHY_CDS_0093",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0093",
+                  "transl_table": "11",
+                  "phrog": "329",
+                  "locus_tag": "KELFIEHY_CDS_0093",
+                  "function": "tail",
+                  "product": "minor tail protein",
+                  "score": "-118.6954",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 17090,
+                "end": 17471,
+                "strand": 1,
+                "translation": "MFNPDKYRSVTWLKGGRVYPQLDCFGIVNEIRRDLNLPVWPDFAGVTKDDGGLDREARRMMLTLERCEPCEGAGVACYSGSTVTHVGIVVSIDGLLHVAECNPGTNVTFLPLPRFKRRFVKVEFWQ"
+              },
+              {
+                "uid": "02c5f7b7-bf47-4111-9709-5d208411e347",
+                "label": "KELFIEHY_CDS_0094",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0094",
+                  "transl_table": "11",
+                  "phrog": "23466",
+                  "locus_tag": "KELFIEHY_CDS_0094",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-10285920000000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 17467,
+                "end": 20536,
+                "strand": 1,
+                "translation": "MTIRFYPSRLPGEPLETHEHGVTSIRSWLVANVEGFEDRDVPPLTVEVEGLLIPPGEWATCVIRPDSDVRLYPVPFGLEAATIAWIGIGISVAAAAYSLVLMSTIDTGGYTSSTGRSLDLNPARANTAKLGDAIREVFGRVRIYPDYVVQPVTRFDAADPTKMRVQMLLCLGVGELIYTNGDIRVGSTPASTLPGFNITYFPPGADVSGDERSENWVNSTEVGGTSSGTGLDMAQTSPDADDIIADSMTVSGSSVTFTGLDTDDDDDNDENDNALPPSWVAGAVVELKAPANYQITTAAGYSVIASPLLTEIAPVVGMPVTLGFNSVDYDLFIASYTPGQAAVPGTGGSAAKVQASAAPTTYDFSTSSSTFTITWQGVTYPVSLVANYVSMSGLLAAITEGLTGSGLVAQDNGGTVLITESASPFAGGAITSSSLPVAVFGDAPVYTSGTASTGGSPAVTANVTLAYNSATGTAFSGMPEGVQRLSLAHRGNEYRIVSADGTTATVARLVNGAVDESWPGFTARTMIDYEASGLNDTLSWLGPFLVCPENEVVDAFEVNFSFPNGICGFDSKGKKRIRHVEWEIQYRVYGSGSGWVSHQGEYALKNVNGLGFTERITLSSPGLVEVRCRRRNEQGSNNARDSMYWQALCGRLLTRPSSYPGVSLMAVTVETGGKLAAQSDHRVNVVATRAYDSGTARTISGALLHVGNSLGLEMDIDTINALESAYWTPRGEYFDFATGDSISALEMLQKIANAGKSRFLLSDGLATVNREGIKPWTGVITPHEMVEELQSGFTVPSDDDFDGVDVTYINGVTWAEETVKCRTPDNPTPVKIENYKLDGVLSQDHAYQIGMRRLMKALQQRVTFQTTTELDALCYNTGDRIVLTDDIPGNNTISCLVEAMTTAGGVTTFTVTEPLDWSFENPRALIRYQDGSASGLMVASRVGDFQLSVPHLSEFDDPMKVDLSSATIEPIRLVFCGSTRHVYDAIVEEIAPQSDGTCQVTAKEYLESFYQYDDATYPGDAA"
+              },
+              {
+                "uid": "dde18321-76a5-4d4d-82ac-eee372203da2",
+                "label": "KELFIEHY_CDS_0095",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0095",
+                  "transl_table": "11",
+                  "phrog": "38670",
+                  "locus_tag": "KELFIEHY_CDS_0095",
+                  "function": "tail",
+                  "product": "tail fiber protein",
+                  "score": "-1201338000.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 20612,
+                "end": 22952,
+                "strand": 1,
+                "translation": "MAELNPPLGTTTPEIFMDNVKRADELVNGPAGTVDDRGGEPLDTWRQMMAKNDEVRQNLIPLSKQYQTLAAAQADIANIPVNSTTYVRSPDGSALADEYMNVAGTLTATGRRMPAYSSLRGANILFDALNEYSANDPKFGAWDWYRGAVVTFSTTDANIPLPTPVAQYSGVWSADKYYDLARLPVRVGDKLTFSVLAWFQDAGAKFHIFWMSTAGAVISSKSQLALAAGINTPVITDVIPSGASYVRIRVENTTAGIFKVGAYAAALGAIQPDFVRATPDKTYLSAVISSGISGLTSRIDALQGAISVGYAYAAAWQVGKFINPTTGAITDNSALNCAIIPHSDGDGWLVTALVTGSATALAVYMNSAGMVLGVEGRGTTTPQQYTNYRLNVPSGTTQIGITGRNSAEMSVKKLAVVETATVLAKIDYLDVRLQKIEDSLVYDFVKQDVTITSGAYINRANGAVVENNAFDCAVFGYTTGDRWKVTARVNGSGVSLAVYMNSAGTVIGTEGNGTTESVDYTDYELTPPSGTAKIGITTRIALPIIAKKYVVVPGGSSVSPWSGKIIDVMGDSNVAYNKWQPLVAEALGCSFQNHGVGGSKIAKPDSSSAQISMCDDVRINALDTSAAAWICGPWGTNDWAQNIPIGTITDLVNTTVYGALNIIAQKLRARAPTKPILWATPFNGDYDSGRTEAWVDGETNQYGRVSDYAAAIRAVALRYGFPLIDLNADCGWTKFNSSNFLMTEGDTNPSRIHLNADAGPARISSLITDRLTALQKLVG"
+              },
+              {
+                "uid": "93d504d4-c2f2-4394-9008-bc8bc05c3d2f",
+                "label": "KELFIEHY_CDS_0096",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0096",
+                  "transl_table": "11",
+                  "phrog": "34046",
+                  "locus_tag": "KELFIEHY_CDS_0096",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-1160.808",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 23017,
+                "end": 23776,
+                "strand": -1,
+                "translation": "MPITAILLDMNGPVIPGMKTLDDFTISNWFVGLPDVSATPFAGYYFGEPAPDITYNSYNKNTPAVINGSLNNADGYISVNNTDYLDTSQKAPLTLTICGVAKRNAGGASLNAHMIADFSGGGSAASGFSIGFTNGTGNLFCVGQNNGQSSAGYAYAAFPASIAVGDLFAFAASITQGTVTVDIYNPQTGALISSSAAFPGTRVAGTNNVLLGRKTDNNNETTTKYIKSVLLMEGVLTSAEKVSVAQFLLSMD"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "description": "contig_1 27001-51000 (24000 bp)"
+        }
+      },
+      {
+        "uid": "7e8c9d9c-2beb-4c89-bb4a-cf7a29e509aa",
+        "name": "phage 1 \u00b7 tile 1",
+        "loci": [
+          {
+            "uid": "b39c175e-5e3a-4294-ae4a-938f7507c86b",
+            "name": "phage1_part1",
+            "start": 0,
+            "end": 9550,
+            "genes": [
+              {
+                "uid": "48cc7262-e152-4ffb-a53b-5a1437b71805",
+                "label": "KELFIEHY_CDS_0071",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0071",
+                  "transl_table": "11",
+                  "phrog": "9557",
+                  "locus_tag": "KELFIEHY_CDS_0071",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-28.73629",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 25,
+                "end": 214,
+                "strand": 1,
+                "translation": "MPVCTISIEVKSRWWLPFYLKTLALFCLMFQLEPDYEKTAALITKHGISHKVKARPVRKITE"
+              },
+              {
+                "uid": "ce7b0f23-c420-446d-9035-ce2bde2a7dbd",
+                "label": "KELFIEHY_CDS_0072",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0072",
+                  "transl_table": "11",
+                  "phrog": "32222",
+                  "locus_tag": "KELFIEHY_CDS_0072",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-94394.59",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 217,
+                "end": 1222,
+                "strand": 1,
+                "translation": "MAKPDWGELQQRFLSDHAATGVSPKDWCKAQGLNYATARRYIKKPSAQIAQKPAQKKLRTAQKEKCAEELVDDDGLTDQQRLFVAEYLKDSNATQAAIRAGYSKKTANEQGARLLAKVSIAQAIAQQQKASIVRMLGSADEVLEQMWRLATFDANQLSQYRRGSCRYCWGFGHQYQWRDAVEYEEKRLEALERKRREPVDVGGYGYDHTSAPNQECPRCNGDGVGQPFFADTRKLAPDAALAYSGVKLGKNGVEITAISRERMYEAVMKRLGLADSEFAQRLQQIEIERRQLEVEKLRKELAAEPEDDEPTPVAININVVDARVREEDGDSTDA"
+              },
+              {
+                "uid": "b8908010-a710-4d10-b433-d93b514ff9d9",
+                "label": "KELFIEHY_CDS_0073",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0073",
+                  "transl_table": "11",
+                  "phrog": "38319",
+                  "locus_tag": "KELFIEHY_CDS_0073",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-156191900.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 1199,
+                "end": 2504,
+                "strand": 1,
+                "translation": "MAIAPTLNIPQAKFLAMQYKFKAYVAGFGSGKTWVGCGGICKGMWEHPKINQGYFAPTYPQIRDIFYPTVEEVAHDWGLNVKINEGNKEVHFYAGRQYRGTTICRSMEKPQTIVGFKIGNALIDELDVMPAKKAQLAWRKIIARMRYNVAGLRNGIDVTTTPEGFKFVYQQFAKAVRDKPSLSTLYGLVQASTFDNEKNLPPDYIPSLMESYPPELIKAYLRGQFTNLTSGTIYHQFDRKLNNCREEEQPGEPLYIGMDFNVGKMAGIVHVLRLGLPFAVNEIVKAYDTPDMIRIIKERFWLYDGNDYRKVREIYIYPDASGDSRKSSNASATDIAQLKQAGFNVVVNASNPPVKDRINAMNAMFCNGNGERRYKVNVKRCPVYTESLEQQVWGENGEPDKTADNDHPNDAGGYFIVKQFPIIKPTGKVTQLRM"
+              },
+              {
+                "uid": "f8451eff-e760-4cb1-86b1-783d5a2ae38a",
+                "label": "KELFIEHY_CDS_0074",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0074",
+                  "transl_table": "11",
+                  "phrog": "145",
+                  "locus_tag": "KELFIEHY_CDS_0074",
+                  "function": "head and packaging",
+                  "product": "portal protein",
+                  "score": "-135837600.0",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 2508,
+                "end": 3933,
+                "strand": 1,
+                "translation": "MPDISTPNLDYNDMVEAWDINDALMGGTLEMRRQGKKYLPKWPNEDPESYKERLASATLLPAYEEAIKQNIGRVFAEPTVLSEDSPEQIRELSPDIDMEGNRLDVWAQQFFSIGFQYGLVHALVDFPKIDPEAVKTKADEKAAGSRPYATMLNPRQVIGWKSKVVKGKVVLTDLRIREVIIIDGDDYGQTKVEQIRHIMPGKVEIYRRNKGDNGESQWQIHDEWETSRDDIPLVTLYTKRTGFMRGSPPLLNLALLNIKHWQSQSEQDNILHVARVPLLVAYGLADGEMLTIGSSFATRFDDRQRQGLEYVEHTGAAIEAGKISLEDLENQMRQAGAKLLRAENTSTKSLDQTHEERMQENSPLYTMASSLEDALDNILQIMAEWLGEKEGGNVDVRTELDVSAQTFDAAAATAVQSLRQGGDIRQVDAVRVLQALKFIDPDAKPEEVIDELRNQQVTLAGGLSNPGGANGNGE"
+              },
+              {
+                "uid": "4531ee08-4f75-42f1-a1f6-c84eb0abc983",
+                "label": "KELFIEHY_CDS_0075",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0075",
+                  "transl_table": "11",
+                  "phrog": "241",
+                  "locus_tag": "KELFIEHY_CDS_0075",
+                  "function": "head and packaging",
+                  "product": "head morphogenesis",
+                  "score": "-595535.7",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 3916,
+                "end": 5029,
+                "strand": 1,
+                "translation": "MATANDKLQDESIAHAIWIARYSTSVANRMIKILNDSDAELTARLLVAMDSLDADSFTVSRLEALLVSVRALNREAVQSMYAGLSDELLQLAQHEAGFQLSLFQFAIPDDVLSLHPLVGISPDAVYATAMAQPFQGRLLSEWADNLEADRMARISNTVRQGFLLGDTHEQIARKVRGHANRGYQDGALQMSRTNAGSIAKTAVGHLASTARKSFADANDDILKGKQWLSTLDNRTSKDCRIRDRLKYTLDNKPIGHKVPYLQGPGKIHFCCRSVETYILKSSDELGIAVGQISDSSRASMDGQVPSDTDYHGWFSRQSFTRQSQIVGVTRARLIRDGGMSPDDFYNDKGEWLTLEQLRNLDAQAFSNARL"
+              },
+              {
+                "uid": "6f70c572-1efd-40c0-bf6c-d36f04bbdbed",
+                "label": "KELFIEHY_CDS_0076",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0076",
+                  "transl_table": "11",
+                  "phrog": "784",
+                  "locus_tag": "KELFIEHY_CDS_0076",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-15505.11",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 5135,
+                "end": 5900,
+                "strand": 1,
+                "translation": "MKLKTVEVNGKSYAEVDSSGLPVYVHDDGQEVGFDAVQAVGKISSLNGEAKSHREAKEAAEAGLAKYAKIGDPAKALEALEMMTKIDQKKLIDAGAVDQVKADITKSFQAQLDEATQRATTLEGQLYQEMIGGRFSGSKFIADKVAIPADMLQARFGQSFKVEDGKVVAYDGSGNKIYSRSKPGELAAFDEALEFLVEQYPQKDHILKASGNQGGGSRQSQHSLGQKTMKRDAFTSLSPTDQQSTLKDGITIVD"
+              },
+              {
+                "uid": "f2329354-1b0c-4bb0-991b-5fdcac738a69",
+                "label": "KELFIEHY_CDS_0077",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0077",
+                  "transl_table": "11",
+                  "phrog": "283",
+                  "locus_tag": "KELFIEHY_CDS_0077",
+                  "function": "head and packaging",
+                  "product": "major head protein",
+                  "score": "-5191.645",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 5987,
+                "end": 7124,
+                "strand": 1,
+                "translation": "MANTLTGLIPTIFTALDTVSREQVGFIPAVSRNAKADAAAKDQTVTAPVAPPATTVDITPGATAPNDGDQTIGTVDVKITKSKMAPVKWNGEEQLALGPAGTYNTILADQFKQAFRALANEMDADLAALYFASSRAVGTAGTAPFGIAGDLSDAANARQVLSDNGSPTTDLQMVLGSSAIANLRGKQSVLFKVNESGTDALLREGIVGRLEGFNIHESAHVKKRSASPAAGYLVNGAKAEGDILIAIDTGTGAFAAGDIVTFDGDSNKYLVAAATATAITLAAPGLRQALADNTAITAGGAYTANMAFDRNAFLLASRTPAMPQGGDTADDVMNVTDPVSGITYQVALYRQYRQVRYEVGLSWGVAAVKSAHSALLLG"
+              },
+              {
+                "uid": "87f7158b-392d-48f5-96ca-134a7f77a6e8",
+                "label": "KELFIEHY_CDS_0078",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0078",
+                  "transl_table": "11",
+                  "phrog": "1514",
+                  "locus_tag": "KELFIEHY_CDS_0078",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-29.75821",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7163,
+                "end": 7457,
+                "strand": 1,
+                "translation": "MAGLTKEQRAERAAAKLAATQVDANAPEQKEQKEQKEQKEQKEQKEQKEQKEQKEQQEQQLVAMITDFPPFPGGPNTANVHPDEVENWKAHGWKEME"
+              },
+              {
+                "uid": "42e22b15-dbba-4573-a53d-d21492df529b",
+                "label": "KELFIEHY_CDS_0079",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0079",
+                  "transl_table": "11",
+                  "phrog": "493",
+                  "locus_tag": "KELFIEHY_CDS_0079",
+                  "function": "connector",
+                  "product": "head-tail adaptor Ad1",
+                  "score": "-345.1114",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7460,
+                "end": 7871,
+                "strand": 1,
+                "translation": "MITYITVEDVNSILGATWTDESKKAKSVLMANTWMNGLNLKLPCDKATYETIIPDDVKQAVAYAALSAANGGLYQQKTDSGVLLSKTVDADDVSVSKTFAELATNSSALLDSDLQLALAMLKPYGVSQSQVRMVRG"
+              },
+              {
+                "uid": "b01832a7-18d4-4053-ae6e-1bda87c55bc7",
+                "label": "KELFIEHY_CDS_0080",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0080",
+                  "transl_table": "11",
+                  "phrog": "3540",
+                  "locus_tag": "KELFIEHY_CDS_0080",
+                  "function": "unknown function",
+                  "product": "hypothetical protein",
+                  "score": "-27.59101",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 7872,
+                "end": 8169,
+                "strand": 1,
+                "translation": "MQNPDVHYAGDGLGPRDVFVNGNSIRHVVYANPTKGVVEFAPLPLRVKRSGEIYTRKLRGNVLVLFTGGYVSNNIPLQRFGEKGIEEVDRGYPRRTPN"
+              },
+              {
+                "uid": "208d8a0d-2153-4400-bed9-f95c9e08a650",
+                "label": "KELFIEHY_CDS_0081",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0081",
+                  "transl_table": "11",
+                  "phrog": "161",
+                  "locus_tag": "KELFIEHY_CDS_0081",
+                  "function": "connector",
+                  "product": "head closure Hc1",
+                  "score": "-16.21302",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8140,
+                "end": 8524,
+                "strand": 1,
+                "translation": "VGIRDELQTEVAAAFDTDLQDAVNEFAGSYTVRGAWDPVTETGIETQVTYSGRGVLARYKLRRIDGVNILHGDVKLTALVNEVTDTPAVGHIITAPDPITGELQRYEVITASADSAGAAYSIQLRRA"
+              },
+              {
+                "uid": "1d27539a-77ef-43f5-a8cf-80fc456f52dd",
+                "label": "KELFIEHY_CDS_0082",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0082",
+                  "transl_table": "11",
+                  "phrog": "169",
+                  "locus_tag": "KELFIEHY_CDS_0082",
+                  "function": "connector",
+                  "product": "tail completion or Neck1 protein",
+                  "score": "-1228.307",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 8525,
+                "end": 9077,
+                "strand": 1,
+                "translation": "MAKGWNIDPAAFTGLVAEDVKLRQRTIAIQLLNEIVQRSPVGNPELWAINATAVQYNKAVGEWNESLYADPANLTKTGRLRKKVRVNDSMDIRRPAEYRAGTFRASHFVSIGEPDHSVPTEPDPRGAMTFLNGKNIIDQAPAYSVIYIQSNLPYSVPLENGHSTQAPTGVYAVSFNGVIQAYK"
+              },
+              {
+                "uid": "c6d194af-687f-4d86-b6bc-df33ab8a60d4",
+                "label": "KELFIEHY_CDS_0083",
+                "names": {
+                  "ID": "KELFIEHY_CDS_0083",
+                  "transl_table": "11",
+                  "phrog": "179",
+                  "locus_tag": "KELFIEHY_CDS_0083",
+                  "function": "connector",
+                  "product": "tail terminator",
+                  "score": "-62.0535",
+                  "inference": "ab initio prediction:PHANOTATE:1.6.7"
+                },
+                "start": 9073,
+                "end": 9466,
+                "strand": 1,
+                "translation": "MTLTEIRNAVISRMAAQTAIASDAVDYPNGPVFDPSNRDIWARLTNIAVQAGATEIGDGPVIHRTGLLIIQLFVPVGSGTLLISRTADQLTELFEFKDDGKLSYFAVSAVPAGETDGWLQLNLQIPYRAL"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "description": "contig_1 27001-36550 (9550 bp)"
+        }
+      }
+    ],
+    "links": [
+      {
+        "uid": "c9eb1698-1731-4a64-a171-e094145e40b6",
+        "query": "03199b08-988e-489c-8561-45b7e2f90471",
+        "target": "48cc7262-e152-4ffb-a53b-5a1437b71805",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 130.0,
+          "evalue": 3.94e-45,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "94bbc2a5-b54c-41d1-9f22-cb25690de885",
+        "query": "b60f5b3e-8c88-4e67-bd76-7e829d825a28",
+        "target": "ce7b0f23-c420-446d-9035-ce2bde2a7dbd",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 647.0,
+          "evalue": 1.07e-240,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "38131644-20cc-4e9e-bb9d-5ac83fdeb8e7",
+        "query": "286793aa-3369-412f-94a7-adea5d024354",
+        "target": "b8908010-a710-4d10-b433-d93b514ff9d9",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 899.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "9edc730f-1138-4a5c-ac90-0c6d7c8046e3",
+        "query": "de5ca1d7-c525-4705-9b13-58c839ebf068",
+        "target": "f8451eff-e760-4cb1-86b1-783d5a2ae38a",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 930.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "2bf8b8a0-805d-4240-94ff-afa8beb396e1",
+        "query": "a13c5014-fde3-4fb2-a79b-777362cd8f8a",
+        "target": "4531ee08-4f75-42f1-a1f6-c84eb0abc983",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 729.0,
+          "evalue": 6.05e-272,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "13352c1d-2a23-4907-ace7-ba0c383b1d8e",
+        "query": "2d2f9378-2316-466a-a172-7226d6e4496b",
+        "target": "6f70c572-1efd-40c0-bf6c-d36f04bbdbed",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 460.0,
+          "evalue": 1.87e-169,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "a7bdad60-17b9-46d5-b1ce-8798daee0892",
+        "query": "c6370766-b7bd-4882-9894-021998c50abf",
+        "target": "f2329354-1b0c-4bb0-991b-5fdcac738a69",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 704.0,
+          "evalue": 9.11e-262,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "4a9e966f-d6f5-4592-9565-1d40d9c128be",
+        "query": "a16609e6-ceba-401d-8f1d-19afc0101362",
+        "target": "87f7158b-392d-48f5-96ca-134a7f77a6e8",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 94.0,
+          "evalue": 1.88e-29,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "6928f6bb-40e8-4f47-ae6e-8ebd2ddc9cf1",
+        "query": "6a876a13-114b-4fa0-9d72-57c7bffba7b0",
+        "target": "42e22b15-dbba-4573-a53d-d21492df529b",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 260.0,
+          "evalue": 4.58e-94,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "1528d459-cbc0-4168-94d7-7a72a5b3aad7",
+        "query": "2ae72482-056b-473b-b8f0-cb5cb002cd5e",
+        "target": "b01832a7-18d4-4053-ae6e-1bda87c55bc7",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 207.0,
+          "evalue": 2.18e-74,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "12aa2688-998c-4e0c-ba73-f45fafa1e6dc",
+        "query": "8fff8e08-6604-4605-b710-71e1760458f9",
+        "target": "208d8a0d-2153-4400-bed9-f95c9e08a650",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 246.0,
+          "evalue": 1.03e-88,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "4839319d-1348-4954-99c1-000cdda6e8cb",
+        "query": "a7134ad2-21a5-4597-a9b8-63163b15369f",
+        "target": "1d27539a-77ef-43f5-a8cf-80fc456f52dd",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 371.0,
+          "evalue": 1.91e-136,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "9fba85ae-b978-4e51-b9b0-1e8554a28f29",
+        "query": "b670a111-9b8f-4281-92a0-7cea8a3e5a73",
+        "target": "c6d194af-687f-4d86-b6bc-df33ab8a60d4",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 260.0,
+          "evalue": 2.93e-94,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "721f2c0f-8d47-41dc-944c-acf3be4220aa",
+        "query": "81cb00ad-6864-4a37-8ba1-915bb66aff59",
+        "target": "f0c99abd-a5ce-4f15-a927-be783b257546",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 625.0,
+          "evalue": 7.13e-232,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "b6e0fe65-e746-4b13-9147-54ca34985040",
+        "query": "2c2af607-9f6b-4547-97f2-6572af1445dc",
+        "target": "7d346a44-a338-46af-897d-c2c82ebed9c2",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 312.0,
+          "evalue": 7.17e-114,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "3fbdd64f-421b-4f81-b5ce-543723d93586",
+        "query": "2241b8a2-2541-4bd3-9d7e-d9bf247ba693",
+        "target": "b5c58f3a-8627-42e0-a2cc-71913822d5e4",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 128.0,
+          "evalue": 5.68e-44,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "ebf1b400-c930-4a33-aa2a-ac2287f5fa17",
+        "query": "891f2223-262a-43ef-8584-4e55b576e38d",
+        "target": "be0389c5-2980-4ea7-8ff7-cd752d5e3e11",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 207.0,
+          "evalue": 3.71e-74,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "21074d69-23e6-43fb-8603-16671e7788b8",
+        "query": "b2cdc005-58bc-459d-a6e7-a3d25966bdc9",
+        "target": "acc9e416-c155-4e50-8ea5-5c7aa0b2f9f9",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 2024.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "3b060cad-d355-49ec-afe9-aae955b5ab2a",
+        "query": "cc6f4878-6b70-439c-8a81-f2543a63ce28",
+        "target": "6a8ba0bf-21bf-44ca-90e3-26183d769fa0",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 221.0,
+          "evalue": 1.83e-79,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "10cd839f-4049-4dca-9ada-6165137eeef0",
+        "query": "d13f7488-ab0f-4c29-9e0d-9bcb37bf9549",
+        "target": "8fab30d4-d7f2-4909-b953-652f10f087d0",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 108.0,
+          "evalue": 2.33e-36,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "69ccda4e-3c3c-4c46-b75c-a183426c55bc",
+        "query": "b53565c6-bf1e-4957-ba17-aff25a5d8cc1",
+        "target": "03add1b8-f7b1-4af0-b0fe-7573b16063a4",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 338.0,
+          "evalue": 3.44e-124,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "0ca3e519-723f-40a2-9b56-e01008adebca",
+        "query": "b53565c6-bf1e-4957-ba17-aff25a5d8cc1",
+        "target": "3758701c-26d5-4eed-ae25-7baf4e5bb64e",
+        "metrics": {
+          "identity": 0.679,
+          "similarity": 0.782,
+          "coverage": 0.975,
+          "bitscore": 232.0,
+          "evalue": 3.1e-82,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "7f446872-c533-4d78-8a08-a2af4e605e50",
+        "query": "752bdf79-73d2-4f56-a82e-4e101dfec634",
+        "target": "706f4b30-bd7c-4b60-8ad8-eda5e39ef519",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 326.0,
+          "evalue": 2.32e-119,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "790e2eb6-476e-4292-ad69-82e71acb0f03",
+        "query": "752bdf79-73d2-4f56-a82e-4e101dfec634",
+        "target": "d4f54168-0d84-43bd-b5ad-a295847d1c8b",
+        "metrics": {
+          "identity": 0.925,
+          "similarity": 0.963,
+          "coverage": 1.0,
+          "bitscore": 304.0,
+          "evalue": 1.14e-110,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "e286e600-d49f-4c18-aacf-de8ef26c3294",
+        "query": "390bfdf2-bb9e-42ef-9d05-56308d7366d2",
+        "target": "5ac5c6dd-9801-4f7b-9a1f-14ceae87c601",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 275.0,
+          "evalue": 3.46e-100,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "d2be34f3-e1b0-4752-8b90-8a068a18a8f2",
+        "query": "a9aab5f8-65a8-4fb3-85a5-607c9635ddce",
+        "target": "390bfdf2-bb9e-42ef-9d05-56308d7366d2",
+        "metrics": {
+          "identity": 0.9520000000000001,
+          "similarity": 0.9520000000000001,
+          "coverage": 1.0,
+          "bitscore": 260.0,
+          "evalue": 1.53e-94,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "88e05748-782f-4415-a457-5b14839d3d40",
+        "query": "02c5f7b7-bf47-4111-9709-5d208411e347",
+        "target": "b073f518-df20-4555-b713-48668af04e0b",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 1988.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "31c76211-5f12-4705-8aea-09e8641794e1",
+        "query": "1b84ad5c-5abd-412d-901c-eaafd5661490",
+        "target": "02c5f7b7-bf47-4111-9709-5d208411e347",
+        "metrics": {
+          "identity": 0.977,
+          "similarity": 0.985,
+          "coverage": 1.0,
+          "bitscore": 1946.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "1766d1b2-25bb-4dc9-b487-851124b22294",
+        "query": "dde18321-76a5-4d4d-82ac-eee372203da2",
+        "target": "4de79097-3927-49c0-bb1e-d9749b7ad607",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 1547.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "b4891aa9-95bb-4bf9-a3ab-b8d54750b3a6",
+        "query": "95159273-c344-466d-94d9-de11417d6292",
+        "target": "dde18321-76a5-4d4d-82ac-eee372203da2",
+        "metrics": {
+          "identity": 0.7040000000000001,
+          "similarity": 0.7929999999999999,
+          "coverage": 0.449,
+          "bitscore": 511.0,
+          "evalue": 5.81e-180,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "0597f28c-6137-418b-8955-2120e6233fe0",
+        "query": "dde18321-76a5-4d4d-82ac-eee372203da2",
+        "target": "1564f814-9475-4c03-971e-d7ecb38628df",
+        "metrics": {
+          "identity": 0.643,
+          "similarity": 0.7809999999999999,
+          "coverage": 0.285,
+          "bitscore": 375.0,
+          "evalue": 4.8e-119,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "c25262e0-248b-44b8-8851-3e7e8a742daf",
+        "query": "93d504d4-c2f2-4394-9008-bc8bc05c3d2f",
+        "target": "f9e1c31d-534b-4f37-9ecc-b65d5b11c937",
+        "metrics": {
+          "identity": 1.0,
+          "similarity": 1.0,
+          "coverage": 1.0,
+          "bitscore": 481.0,
+          "evalue": 6.62e-178,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "a42b1430-130b-4ab4-affa-c6d4a7a77ad3",
+        "query": "03add1b8-f7b1-4af0-b0fe-7573b16063a4",
+        "target": "3758701c-26d5-4eed-ae25-7baf4e5bb64e",
+        "metrics": {
+          "identity": 0.679,
+          "similarity": 0.782,
+          "coverage": 0.975,
+          "bitscore": 232.0,
+          "evalue": 3.1e-82,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "5136542c-14f9-48a4-a4da-719ead89f4e3",
+        "query": "706f4b30-bd7c-4b60-8ad8-eda5e39ef519",
+        "target": "d4f54168-0d84-43bd-b5ad-a295847d1c8b",
+        "metrics": {
+          "identity": 0.925,
+          "similarity": 0.963,
+          "coverage": 1.0,
+          "bitscore": 304.0,
+          "evalue": 1.14e-110,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "e87a5450-88fb-4500-885e-2da97c0a5173",
+        "query": "a9aab5f8-65a8-4fb3-85a5-607c9635ddce",
+        "target": "5ac5c6dd-9801-4f7b-9a1f-14ceae87c601",
+        "metrics": {
+          "identity": 0.9520000000000001,
+          "similarity": 0.9520000000000001,
+          "coverage": 1.0,
+          "bitscore": 260.0,
+          "evalue": 1.53e-94,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "2233d6cf-cfcb-4d45-b1db-9b00ac79ce34",
+        "query": "1b84ad5c-5abd-412d-901c-eaafd5661490",
+        "target": "b073f518-df20-4555-b713-48668af04e0b",
+        "metrics": {
+          "identity": 0.977,
+          "similarity": 0.985,
+          "coverage": 1.0,
+          "bitscore": 1946.0,
+          "evalue": 0.0,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "3a5fd4a1-83d7-4318-98c2-5bae03e78b5a",
+        "query": "95159273-c344-466d-94d9-de11417d6292",
+        "target": "4de79097-3927-49c0-bb1e-d9749b7ad607",
+        "metrics": {
+          "identity": 0.7040000000000001,
+          "similarity": 0.7929999999999999,
+          "coverage": 0.449,
+          "bitscore": 511.0,
+          "evalue": 5.81e-180,
+          "jaccard": null
+        }
+      },
+      {
+        "uid": "1d368d41-374e-4abc-8c46-14590606ab89",
+        "query": "4de79097-3927-49c0-bb1e-d9749b7ad607",
+        "target": "1564f814-9475-4c03-971e-d7ecb38628df",
+        "metrics": {
+          "identity": 0.643,
+          "similarity": 0.7809999999999999,
+          "coverage": 0.285,
+          "bitscore": 375.0,
+          "evalue": 4.8e-119,
+          "jaccard": null
+        }
+      }
+    ],
+    "groups": [
+      {
+        "uid": "bf55bdae-c66b-4675-b41c-a1f64d430312",
+        "label": "Group 1",
+        "genes": [
+          "1564f814-9475-4c03-971e-d7ecb38628df",
+          "4de79097-3927-49c0-bb1e-d9749b7ad607",
+          "95159273-c344-466d-94d9-de11417d6292",
+          "dde18321-76a5-4d4d-82ac-eee372203da2"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "84279bf8-2faf-43dd-82fc-82466dd33fc1",
+        "label": "Group 2",
+        "genes": [
+          "03add1b8-f7b1-4af0-b0fe-7573b16063a4",
+          "3758701c-26d5-4eed-ae25-7baf4e5bb64e",
+          "b53565c6-bf1e-4957-ba17-aff25a5d8cc1"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "ab2b34d5-74c5-447e-8c8b-6917604da041",
+        "label": "Group 3",
+        "genes": [
+          "706f4b30-bd7c-4b60-8ad8-eda5e39ef519",
+          "752bdf79-73d2-4f56-a82e-4e101dfec634",
+          "d4f54168-0d84-43bd-b5ad-a295847d1c8b"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "5a523265-9f36-4e9a-8bc3-9f91ffcc8092",
+        "label": "Group 4",
+        "genes": [
+          "390bfdf2-bb9e-42ef-9d05-56308d7366d2",
+          "5ac5c6dd-9801-4f7b-9a1f-14ceae87c601",
+          "a9aab5f8-65a8-4fb3-85a5-607c9635ddce"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "171b7a1d-3854-46cd-be8d-e0e0fd0a9cb6",
+        "label": "Group 5",
+        "genes": [
+          "02c5f7b7-bf47-4111-9709-5d208411e347",
+          "1b84ad5c-5abd-412d-901c-eaafd5661490",
+          "b073f518-df20-4555-b713-48668af04e0b"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "9726584b-2b2a-4f05-ac15-659a44af1737",
+        "label": "Group 6",
+        "genes": [
+          "03199b08-988e-489c-8561-45b7e2f90471",
+          "48cc7262-e152-4ffb-a53b-5a1437b71805"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "35b119d6-d527-484b-ab94-4343425f54d8",
+        "label": "Group 7",
+        "genes": [
+          "b60f5b3e-8c88-4e67-bd76-7e829d825a28",
+          "ce7b0f23-c420-446d-9035-ce2bde2a7dbd"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "33bccdd6-f6a2-4c78-b562-b6a08c9334ea",
+        "label": "Group 8",
+        "genes": [
+          "286793aa-3369-412f-94a7-adea5d024354",
+          "b8908010-a710-4d10-b433-d93b514ff9d9"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "01a22cee-4254-494b-8746-390f0fb0b46f",
+        "label": "Group 9",
+        "genes": [
+          "de5ca1d7-c525-4705-9b13-58c839ebf068",
+          "f8451eff-e760-4cb1-86b1-783d5a2ae38a"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "a65a209b-6a5f-4535-b2e9-b58cbe231f46",
+        "label": "Group 10",
+        "genes": [
+          "4531ee08-4f75-42f1-a1f6-c84eb0abc983",
+          "a13c5014-fde3-4fb2-a79b-777362cd8f8a"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "bdebf965-b607-41fb-980f-65b513f41111",
+        "label": "Group 11",
+        "genes": [
+          "2d2f9378-2316-466a-a172-7226d6e4496b",
+          "6f70c572-1efd-40c0-bf6c-d36f04bbdbed"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "74c8a098-dead-48cf-b27a-d271747971d5",
+        "label": "Group 12",
+        "genes": [
+          "c6370766-b7bd-4882-9894-021998c50abf",
+          "f2329354-1b0c-4bb0-991b-5fdcac738a69"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "a867f773-9f79-436b-9531-c8cc709c260d",
+        "label": "Group 13",
+        "genes": [
+          "87f7158b-392d-48f5-96ca-134a7f77a6e8",
+          "a16609e6-ceba-401d-8f1d-19afc0101362"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "39f88490-852a-4562-8fff-35f9051f7b03",
+        "label": "Group 14",
+        "genes": [
+          "42e22b15-dbba-4573-a53d-d21492df529b",
+          "6a876a13-114b-4fa0-9d72-57c7bffba7b0"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "25b1f6d8-3e0c-482e-810f-3880ad2ce84a",
+        "label": "Group 15",
+        "genes": [
+          "2ae72482-056b-473b-b8f0-cb5cb002cd5e",
+          "b01832a7-18d4-4053-ae6e-1bda87c55bc7"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "029c0db2-ff6c-49d0-9417-b783efba201a",
+        "label": "Group 16",
+        "genes": [
+          "208d8a0d-2153-4400-bed9-f95c9e08a650",
+          "8fff8e08-6604-4605-b710-71e1760458f9"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "60de2831-46ae-4cc8-9634-6e5337fb3dd5",
+        "label": "Group 17",
+        "genes": [
+          "1d27539a-77ef-43f5-a8cf-80fc456f52dd",
+          "a7134ad2-21a5-4597-a9b8-63163b15369f"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "e2a72bcd-c910-4c53-bbf2-8afdb3d50cab",
+        "label": "Group 18",
+        "genes": [
+          "b670a111-9b8f-4281-92a0-7cea8a3e5a73",
+          "c6d194af-687f-4d86-b6bc-df33ab8a60d4"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "200e416a-9ac9-4b5d-b6c4-2d35ce63f8a2",
+        "label": "Group 19",
+        "genes": [
+          "81cb00ad-6864-4a37-8ba1-915bb66aff59",
+          "f0c99abd-a5ce-4f15-a927-be783b257546"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "0a39235f-7ce5-4710-96d1-742ad37f244b",
+        "label": "Group 20",
+        "genes": [
+          "2c2af607-9f6b-4547-97f2-6572af1445dc",
+          "7d346a44-a338-46af-897d-c2c82ebed9c2"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "32b77956-c21e-4647-881f-a29226475aa7",
+        "label": "Group 21",
+        "genes": [
+          "2241b8a2-2541-4bd3-9d7e-d9bf247ba693",
+          "b5c58f3a-8627-42e0-a2cc-71913822d5e4"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "90bb8507-ef85-4b75-ba51-f5af088bbd6f",
+        "label": "Group 22",
+        "genes": [
+          "891f2223-262a-43ef-8584-4e55b576e38d",
+          "be0389c5-2980-4ea7-8ff7-cd752d5e3e11"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "b0affaba-eb65-4f3d-bc23-e937f5429c7d",
+        "label": "Group 23",
+        "genes": [
+          "acc9e416-c155-4e50-8ea5-5c7aa0b2f9f9",
+          "b2cdc005-58bc-459d-a6e7-a3d25966bdc9"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "adb9750f-e4c7-4aff-adb0-1e3c005d51ca",
+        "label": "Group 24",
+        "genes": [
+          "6a8ba0bf-21bf-44ca-90e3-26183d769fa0",
+          "cc6f4878-6b70-439c-8a81-f2543a63ce28"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "bdd5c259-32e5-486b-822b-9f7492453be5",
+        "label": "Group 25",
+        "genes": [
+          "8fab30d4-d7f2-4909-b953-652f10f087d0",
+          "d13f7488-ab0f-4c29-9e0d-9bcb37bf9549"
+        ],
+        "colour": null,
+        "hidden": false
+      },
+      {
+        "uid": "6efb7a81-5a08-4f59-b220-a925c719f095",
+        "label": "Group 26",
+        "genes": [
+          "93d504d4-c2f2-4394-9008-bc8bc05c3d2f",
+          "f9e1c31d-534b-4f37-9ecc-b65d5b11c937"
+        ],
+        "colour": null,
+        "hidden": false
+      }
+    ]
+  },
+  "view": {
+    "lanes": [
+      [
+        "7c984e77-5336-4af0-9add-b964cc6f8fef"
+      ],
+      [
+        "7e8c9d9c-2beb-4c89-bb4a-cf7a29e509aa",
+        "50e4dceb-a0dd-47e8-8b87-82c507057652",
+        "204ea735-87be-4732-a32e-78068d6b8da8"
+      ],
+      [
+        "770c00ea-f3bd-422e-b782-121fcf8b6698"
+      ]
+    ],
+    "clusterOffsets": {},
+    "activeMetric": "identity",
+    "colourBy": "field",
+    "colourField": "function",
+    "paletteName": "Tableau 10",
+    "overrides": {},
+    "customGroups": [],
+    "activeCustomGroup": null
+  }
+}

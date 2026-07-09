@@ -1,0 +1,23 @@
+[workspace]
+name = "syntenic-backend"
+version = "0.0.1"
+description = "Syntenic backend — parse, align (DIAMOND), group, order → figure JSON"
+channels = ["conda-forge", "bioconda"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = "3.11.*"
+fastapi = "*"
+uvicorn = "*"
+python-multipart = "*"
+pydantic = ">=2"
+biopython = "*"
+gffutils = "*"
+numpy = "*"
+scipy = "*"
+diamond = "*"
+parasail-python = "*"
+
+[tasks]
+dev = "uvicorn app.main:app --reload --port 8000"
+example = "python -m app.build_example"
