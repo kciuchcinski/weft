@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours } from "../render/palette";
 import { buildScene, type Scene } from "../render/layout";
+import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
 import { draw } from "../render/draw";
 import CanvasWelcome from "./CanvasWelcome";
@@ -18,16 +19,8 @@ interface ClusterCtl {
   centerX: number; // screen x of the cluster's horizontal centre
 }
 
-// Measure label text at its on-screen size so a control can sit right after it.
-// Cluster names render at exactly `clusterFontSize` CSS px regardless of zoom
-// (world font is scaled by zoom in draw()), so measuring at that size is exact.
-let measureCtx: CanvasRenderingContext2D | null | undefined;
-function labelTextWidth(name: string, fontSize: number): number {
-  if (measureCtx === undefined) measureCtx = document.createElement("canvas").getContext("2d");
-  if (!measureCtx) return name.length * fontSize * 0.55; // fallback estimate
-  measureCtx.font = `600 ${fontSize}px system-ui, sans-serif`;
-  return measureCtx.measureText(name).width;
-}
+// Label geometry lives in render/labels.ts so the renderer, hit-testing, the drag
+// handle and the rename editor all place names identically.
 
 interface DropTarget {
   kind: "join" | "new";
@@ -137,6 +130,10 @@ export default function CanvasView() {
       style.colourLinks, style.showLinkLabels, style.showScaleBar, style.showLegend,
       style.scaleFontSize, style.legendFontSize,
       style.scaleBarKb, style.scaleBarThickness, style.legendSpacing,
+      // Cluster names participate in layout: their placement sets each label's world
+      // anchor, and their drawn extent grows the bounds the SVG viewBox is cut from.
+      style.showClusterNames, style.clusterFontSize,
+      style.clusterLabelPlacement, style.clusterLabelSide, style.clusterLabelPinned,
     ]
   );
 
@@ -187,27 +184,28 @@ export default function CanvasView() {
     const z = zoom.current;
     const px = pan.current.x;
     const py = pan.current.y;
-    const th = cfgRef.current.trackHeight;
-    const fs = cfgRef.current.clusterFontSize;
-    const showNames = cfgRef.current.showClusterNames;
+    const cfg = cfgRef.current;
+    const fs = cfg.clusterFontSize;
+    const showNames = cfg.showClusterNames;
+    const view = { zoom: z, panX: px, panY: py, cssW: wrapRef.current?.clientWidth ?? 0 };
     const reversedByUid = new Map<string, boolean>();
     useStore.getState().data?.clusters.forEach((c) => reversedByUid.set(c.uid, !!c.reversed));
     const next: ClusterCtl[] = s.labels.map((lab) => {
-      const labelStart = lab.x * z + px;
-      const textW = showNames ? labelTextWidth(lab.name, fs) + 8 : 0;
+      const r = labelScreenRect(lab, cfg, view);
       return {
         uid: lab.uid,
         name: lab.name,
         lane: lab.lane,
         reversed: !!reversedByUid.get(lab.uid),
-        // Sit just to the right of the label text.
-        left: labelStart + textW,
-        // Track baseline: the drag/drop truth (join zones align to the arrow row).
-        centerY: (lab.y + th) * z + py,
-        // Vertically centre on the label. lab.y is its text baseline (drawn
-        // textBaseline "alphabetic"), so nudge up to the optical middle.
-        renderY: lab.y * z + py - fs * 0.32,
-        centerX: (lab.x + lab.w / 2) * z + px,
+        // Sit just past the end of the name text, wherever that now is.
+        left: showNames ? r.right + 8 : r.x,
+        // The cluster's own track row: the drag/drop truth (join zones align to the
+        // arrow row), independent of where the name was placed.
+        centerY: lab.trackY * z + py,
+        // Vertically centre the control on the name. When the name sits on a baseline
+        // ("above"), nudge up to its optical middle.
+        renderY: r.middle ? r.y : r.y - fs * 0.32,
+        centerX: (lab.x0 + lab.w / 2) * z + px,
       };
     });
     decollideCtls(next);
@@ -340,12 +338,12 @@ export default function CanvasView() {
     const s = sceneRef.current;
     const lab = s?.labels.find((l) => l.uid === uid);
     if (!lab) return;
-    const z = zoom.current;
-    const fs = cfgRef.current.clusterFontSize;
-    const left = lab.x * z + pan.current.x;
-    const baseline = lab.y * z + pan.current.y;
-    const w = labelTextWidth(lab.name, fs);
-    setEditing({ uid, value: lab.name, left, top: baseline - fs, width: Math.max(w + 28, 130), fontSize: fs });
+    const cfg = cfgRef.current;
+    const fs = cfg.clusterFontSize;
+    const view = { zoom: zoom.current, panX: pan.current.x, panY: pan.current.y, cssW: wrapRef.current?.clientWidth ?? 0 };
+    const r = labelScreenRect(lab, cfg, view);
+    const w = measureLabel(lab.name, fs);
+    setEditing({ uid, value: lab.name, left: r.left, top: r.top, width: Math.max(w + 28, 130), fontSize: fs });
   };
 
   // Commit the rename. Reads the latest value from the ref and nulls it first, so
@@ -490,13 +488,11 @@ export default function CanvasView() {
 
       // Double-click a cluster label (track name) to rename it in place.
       if (cfgRef.current.showClusterNames) {
-        const z = zoom.current;
-        const fs = cfgRef.current.clusterFontSize;
+        const cfg = cfgRef.current;
+        const view = { zoom: zoom.current, panX: pan.current.x, panY: pan.current.y, cssW: wrapRef.current?.clientWidth ?? 0 };
         const labHit = s.labels.find((lab) => {
-          const x0 = lab.x * z + pan.current.x;
-          const baseline = lab.y * z + pan.current.y;
-          const w = labelTextWidth(lab.name, fs);
-          return mx >= x0 && mx <= x0 + w && my >= baseline - fs && my <= baseline + fs * 0.35;
+          const r = labelScreenRect(lab, cfg, view);
+          return mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
         });
         if (labHit) {
           openLabelEditor(labHit.uid);
@@ -572,14 +568,16 @@ export default function CanvasView() {
     const lab = s.labels.find((l) => l.uid === uid);
     if (!lab) return;
     const laneIdx = lab.lane;
-    const laneLabels = s.labels.filter((l) => l.lane === laneIdx).sort((a, b) => a.x - b.x);
+    // Order by where each *cluster* sits, not by its name — the name may be pinned to
+    // the canvas edge or placed on the right, so it no longer tracks the left edge.
+    const laneLabels = s.labels.filter((l) => l.lane === laneIdx).sort((a, b) => a.x0 - b.x0);
     const colGap = cfgRef.current.colGap;
     const order: string[] = [];
     const offsets: Record<string, number> = {};
     let base = 0;
     for (const l of laneLabels) {
       order.push(l.uid);
-      offsets[l.uid] = l.x - base; // reproduce current left edge from the new base
+      offsets[l.uid] = l.x0 - base; // reproduce current left edge from the new base
       base += l.w + colGap;
     }
     useStore.getState().setLaneArrangement(laneIdx, order, offsets);

@@ -44,7 +44,11 @@ export function sceneToSVG(scene: Scene, cfg: LayoutConfig): string {
   }
   if (cfg.showClusterNames) {
     for (const lab of scene.labels) {
-      parts.push(`<text x="${lab.x.toFixed(1)}" y="${lab.y.toFixed(1)}" font-family="system-ui, sans-serif" font-size="${cfg.clusterFontSize}" font-weight="600" fill="#202124">${esc(lab.name)}</text>`);
+      // Mirror the canvas placement: `align` picks the text anchor, `middle` centres
+      // the name on its track (the "beside" placement) instead of sitting on a baseline.
+      const anchor = lab.align === "left" ? "start" : "end";
+      const baseline = lab.middle ? ` dominant-baseline="central"` : "";
+      parts.push(`<text x="${lab.x.toFixed(1)}" y="${lab.y.toFixed(1)}" text-anchor="${anchor}"${baseline} font-family="system-ui, sans-serif" font-size="${cfg.clusterFontSize}" font-weight="600" fill="#202124">${esc(lab.name)}</text>`);
     }
   }
 

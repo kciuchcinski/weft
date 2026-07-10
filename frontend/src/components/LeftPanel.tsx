@@ -154,12 +154,13 @@ function SelectField<T extends string>(p: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
+  disabled?: boolean;
   onChange: (v: T) => void;
 }) {
   return (
-    <label className="field-inline">
+    <label className={`field-inline${p.disabled ? " is-disabled" : ""}`}>
       <span>{p.label}</span>
-      <select value={p.value} onChange={(e) => p.onChange(e.target.value as T)}>
+      <select value={p.value} disabled={p.disabled} onChange={(e) => p.onChange(e.target.value as T)}>
         {p.options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -177,11 +178,11 @@ function ColourField(p: { label: string; value: string; onChange: (v: string) =>
   );
 }
 
-function CheckField(p: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function CheckField(p: { label: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="field-inline">
+    <label className={`field-inline${p.disabled ? " is-disabled" : ""}`}>
       <span>{p.label}</span>
-      <input type="checkbox" checked={p.checked} onChange={(e) => p.onChange(e.target.checked)} />
+      <input type="checkbox" checked={p.checked} disabled={p.disabled} onChange={(e) => p.onChange(e.target.checked)} />
     </label>
   );
 }
@@ -543,7 +544,38 @@ export default function LeftPanel() {
         <SliderField label="Backbone opacity" value={style.backboneOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ backboneOpacity: v })} />
         <p className="style-group">Labels</p>
         <CheckField label="Show cluster names" checked={style.showClusterNames} onChange={(v) => setStyle({ showClusterNames: v })} />
-        <SliderField label="Name font size" value={style.clusterFontSize} min={6} max={28} onChange={(v) => setStyle({ clusterFontSize: v })} />
+        <SliderField label="Name font size" value={style.clusterFontSize} min={6} max={28} disabled={!style.showClusterNames} onChange={(v) => setStyle({ clusterFontSize: v })} />
+        <SelectField
+          label="Name position"
+          value={style.clusterLabelPlacement}
+          disabled={!style.showClusterNames}
+          options={[
+            { value: "above", label: "Above sequence" },
+            { value: "beside", label: "Beside sequence" },
+          ]}
+          onChange={(v) => setStyle({ clusterLabelPlacement: v })}
+        />
+        <SelectField
+          label="Name side"
+          value={style.clusterLabelSide}
+          disabled={!style.showClusterNames}
+          options={[
+            { value: "left", label: "Left" },
+            { value: "right", label: "Right" },
+          ]}
+          onChange={(v) => setStyle({ clusterLabelSide: v })}
+        />
+        <CheckField
+          label="Pin names to canvas edge"
+          checked={style.clusterLabelPinned}
+          disabled={!style.showClusterNames}
+          onChange={(v) => setStyle({ clusterLabelPinned: v })}
+        />
+        <p className="muted">
+          Pinned names stay stationary against the chosen edge while you pan and zoom, instead of moving
+          with their sequence. An exported SVG has no viewport, so there they line up in a column against
+          the figure's edge.
+        </p>
       </Section>
 
       <Section key={data ? "colour-data" : "colour-empty"} title="Colour" defaultOpen={!!data}>

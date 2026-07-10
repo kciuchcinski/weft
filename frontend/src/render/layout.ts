@@ -1,5 +1,6 @@
 import type { FigureData, Link, MetricKey } from "../types";
 import { UNGROUPED, type LegendItem } from "./palette";
+import { measureLabel } from "./labels";
 
 // Shared offscreen canvas for measuring rendered text width. Layout is renderer-
 // agnostic, so we measure with the same font the canvas/SVG renderers use rather
@@ -18,6 +19,15 @@ function textWidth(text: string, fontPx: number): number {
 /** Selectable CDS glyph shapes (see genePoints in geometry.ts). */
 export type GeneShapeKind = "triangle" | "arrow" | "rounded" | "box";
 
+/** Cluster-name placement relative to its sequence track. */
+export type ClusterLabelPlacement = "above" | "beside";
+export type ClusterLabelSide = "left" | "right";
+
+/** Gap between a "beside" name and its cluster's edge (world px). */
+const LABEL_SIDE_GAP = 10;
+/** Gap between a pinned name column and the figure's edge, in SVG export. */
+const LABEL_PIN_GAP = 12;
+
 export interface LayoutConfig {
   pxPerBp: number;
   trackHeight: number;
@@ -32,6 +42,14 @@ export interface LayoutConfig {
   geneStrokeWidth: number;
   showClusterNames: boolean;
   clusterFontSize: number;
+  /** Cluster name above the sequence, or beside it (vertically centred). */
+  clusterLabelPlacement: ClusterLabelPlacement;
+  /** Which end of the cluster the name hugs. */
+  clusterLabelSide: ClusterLabelSide;
+  /** Stick the names to the canvas edge (stationary under pan/zoom) instead of
+   * letting them move with their sequence. In SVG export — which has no viewport —
+   * pinned names form a column against the figure's corresponding edge. */
+  clusterLabelPinned: boolean;
   showLinks: boolean;
   straight: boolean;
   /** When true, ribbons inherit the shared colour of matching endpoints; when
@@ -82,6 +100,9 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
   geneStrokeWidth: 0.7,
   showClusterNames: true,
   clusterFontSize: 13,
+  clusterLabelPlacement: "above",
+  clusterLabelSide: "left",
+  clusterLabelPinned: false,
   showLinks: true,
   straight: false,
   colourLinks: true,
@@ -116,7 +137,32 @@ export interface GeneShape {
 }
 
 export interface LocusLine { x0: number; x1: number; y: number; }
-export interface ClusterLabel { name: string; x: number; y: number; w: number; uid: string; lane: number; }
+/**
+ * A cluster's name plus the geometry needed to place and interact with it.
+ *
+ * `x`/`y` are the *text anchor* in world coordinates and move with the chosen
+ * placement. The cluster's own extents (`x0`, `x1`, `w`) and its track row
+ * (`trackY`) are kept separately: drag-reorder and the drop zones depend on where
+ * the *sequence* is, not on where its name happens to sit.
+ */
+export interface ClusterLabel {
+  name: string;
+  /** World x of the text anchor (interpretation depends on `align`). */
+  x: number;
+  /** World y of the text anchor: baseline when `middle` is false, else the middle. */
+  y: number;
+  align: ClusterLabelSide;
+  /** Vertically centre the text on the track (the "beside" placement). */
+  middle: boolean;
+  /** Cluster left/right edge and width, in world coordinates. */
+  x0: number;
+  x1: number;
+  w: number;
+  /** World y of the cluster's sequence track (the gene row). */
+  trackY: number;
+  uid: string;
+  lane: number;
+}
 export interface LinkRibbon {
   ax0: number; ax1: number; ay: number;
   bx0: number; bx1: number; by: number;
@@ -369,7 +415,29 @@ export function buildScene(
     const reversed = !!c.reversed;
     const width = clusterWidth(ci);
     const mirror = (x: number) => 2 * originX + width - x;
-    labels.push({ name: c.name, x: originX, y: originY - cfg.trackHeight, w: width, uid: c.uid, lane: laneIdx });
+
+    // Name placement. "above" sits on the track's top edge and reads outward from
+    // the chosen end; "beside" sits vertically centred, clear of the sequence.
+    const above = cfg.clusterLabelPlacement === "above";
+    const atLeft = cfg.clusterLabelSide === "left";
+    const x0 = originX;
+    const x1 = originX + width;
+    const labelX = above ? (atLeft ? x0 : x1) : atLeft ? x0 - LABEL_SIDE_GAP : x1 + LABEL_SIDE_GAP;
+    // Anchor the text so it always reads away from the sequence.
+    const align: ClusterLabelSide = above ? (atLeft ? "left" : "right") : atLeft ? "right" : "left";
+    labels.push({
+      name: c.name,
+      x: labelX,
+      y: above ? originY - cfg.trackHeight : originY,
+      align,
+      middle: !above,
+      x0,
+      x1,
+      w: width,
+      trackY: originY,
+      uid: c.uid,
+      lane: laneIdx,
+    });
     let cursor = originX;
     for (const locus of c.loci) {
       const w = (locus.end - locus.start) * cfg.pxPerBp;
@@ -507,7 +575,34 @@ export function buildScene(
     if (y > maxY) maxY = y;
   };
   for (const g of genes) { acc(g.x0, g.y - cfg.trackHeight); acc(g.x1, g.y + cfg.trackHeight); }
-  for (const l of labels) acc(l.x, l.y);
+
+  // Horizontal extent of the sequence rows alone. The scale bar and legend align to
+  // the tracks, so they must not drift when a name column widens the overall bounds.
+  const figMinX = isFinite(minX) ? minX : 0;
+  const figMaxX = isFinite(maxX) ? maxX : 1;
+
+  // Pinned names stick to the canvas edge on screen, but an exported figure has no
+  // viewport — so pin them to the figure's own edge instead, forming a clean column
+  // beside the tracks. Done after the gene pass so the figure extent is known.
+  if (cfg.clusterLabelPinned && isFinite(minX)) {
+    const atLeft = cfg.clusterLabelSide === "left";
+    const pinX = atLeft ? figMinX - LABEL_PIN_GAP : figMaxX + LABEL_PIN_GAP;
+    for (const l of labels) {
+      l.x = pinX;
+      l.align = atLeft ? "right" : "left";
+    }
+  }
+
+  // Grow the bounds around each name's drawn extent, or the SVG viewBox clips
+  // labels that reach outside the gene rows (beside/right-aligned/pinned).
+  if (cfg.showClusterNames) {
+    for (const l of labels) {
+      const w = measureLabel(l.name, cfg.clusterFontSize);
+      const lx0 = l.align === "left" ? l.x : l.x - w;
+      acc(lx0, l.y - cfg.clusterFontSize);
+      acc(lx0 + w, l.y + cfg.clusterFontSize * 0.4);
+    }
+  }
 
   const figureBottom = isFinite(maxY) ? maxY : 0;
   const footerGap = 36;
@@ -517,7 +612,7 @@ export function buildScene(
   if (cfg.showScaleBar) {
     const bp = cfg.scaleBarBp > 0 ? cfg.scaleBarBp : niceScaleBp(cfg.pxPerBp);
     const barW = bp * cfg.pxPerBp;
-    const x0 = minX;
+    const x0 = figMinX;
     const tick = Math.max(4, cfg.scaleFontSize * 0.45);
     // Label sits a clear gap above the bar so it never touches the line, whatever
     // the font size. All vertical offsets scale with the font to avoid overlap.
@@ -550,8 +645,8 @@ export function buildScene(
     const rowStride = swatch + Math.max(8, cfg.legendSpacing * 0.5);
     // Wrap to the figure's right edge as it stands before the legend (the legend
     // itself extends maxX below, so capture it first).
-    const rightEdge = maxX;
-    let x = minX;
+    const rightEdge = figMaxX;
+    let x = figMinX;
     let y = footerY + swatch / 2;
     const entries: LegendSwatch[] = [];
     for (const item of legendItems) {
@@ -559,8 +654,8 @@ export function buildScene(
       const entryW = swatch + pad + textW;
       // Move to a new row once an entry would spill past the figure width, but
       // always keep at least one entry per row so a lone wide label still fits.
-      if (x > minX && x + entryW > rightEdge) {
-        x = minX;
+      if (x > figMinX && x + entryW > rightEdge) {
+        x = figMinX;
         y += rowStride;
       }
       entries.push({

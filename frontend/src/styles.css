@@ -1031,7 +1031,8 @@ label.btn {
   gap: 8px;
 }
 /* Inactive controls stay in place but read as unavailable and ignore input. */
-.slider-field.is-disabled {
+.slider-field.is-disabled,
+.field-inline.is-disabled {
   opacity: 0.42;
   pointer-events: none;
 }

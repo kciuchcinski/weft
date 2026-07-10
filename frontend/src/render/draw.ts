@@ -1,5 +1,6 @@
 import type { LayoutConfig, Scene } from "./layout";
 import { genePoints, ribbonPath } from "./geometry";
+import { labelScreenRect } from "./labels";
 
 export interface View {
   dpr: number;
@@ -70,15 +71,6 @@ export function draw(ctx: CanvasRenderingContext2D, scene: Scene, view: View, cf
     }
   }
 
-  if (cfg.showClusterNames) {
-    const fontSize = cfg.clusterFontSize / view.zoom;
-    ctx.fillStyle = "#202124";
-    ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    for (const lab of scene.labels) ctx.fillText(lab.name, lab.x, lab.y);
-  }
-
   if (scene.scaleBar) {
     const sb = scene.scaleBar;
     // World-space stroke + font (not divided by zoom) so the bar, ticks and label
@@ -122,4 +114,26 @@ export function draw(ctx: CanvasRenderingContext2D, scene: Scene, view: View, cf
   }
 
   ctx.restore();
+
+  // Cluster names draw last, in screen space. They render at a constant size at any
+  // zoom, and when pinned they must stay put while the figure pans beneath them —
+  // both of which fall out naturally once we're outside the world transform.
+  // labelScreenRect is the same placement CanvasView uses for hit-testing, the drag
+  // handle and the rename editor, so they can never disagree.
+  if (cfg.showClusterNames) {
+    ctx.font = `600 ${cfg.clusterFontSize}px system-ui, sans-serif`;
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = cfg.background;
+    for (const lab of scene.labels) {
+      const r = labelScreenRect(lab, cfg, view);
+      ctx.textAlign = r.align;
+      ctx.textBaseline = r.middle ? "middle" : "alphabetic";
+      // A pinned name overlays the figure when panned under it; a background-coloured
+      // halo keeps it legible without a heavy backdrop.
+      if (cfg.clusterLabelPinned) ctx.strokeText(lab.name, r.x, r.y);
+      ctx.fillStyle = "#202124";
+      ctx.fillText(lab.name, r.x, r.y);
+    }
+  }
 }

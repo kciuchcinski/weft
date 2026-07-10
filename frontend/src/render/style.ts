@@ -1,4 +1,4 @@
-import type { GeneShapeKind, LayoutConfig } from "./layout";
+import type { ClusterLabelPlacement, ClusterLabelSide, GeneShapeKind, LayoutConfig } from "./layout";
 
 // Internal spacing between loci within a single cluster (px). Previously a
 // user-facing "Locus spacing" control; kept as a fixed sensible default.
@@ -21,9 +21,15 @@ export interface StyleConfig {
   backboneColour: string;
   backboneWidth: number;
   backboneOpacity: number;
-  // Labels
+  // Cluster name labels
   showClusterNames: boolean;
   clusterFontSize: number;
+  /** Above the sequence, or beside it (vertically centred on the track). */
+  clusterLabelPlacement: ClusterLabelPlacement;
+  /** Which end of the cluster the name sits at. */
+  clusterLabelSide: ClusterLabelSide;
+  /** Pin names to the canvas edge (stationary) instead of moving with the sequence. */
+  clusterLabelPinned: boolean;
   // Links
   showLinks: boolean;
   straightLinks: boolean;
@@ -72,6 +78,9 @@ export const DEFAULT_STYLE: StyleConfig = {
   backboneOpacity: 1,
   showClusterNames: true,
   clusterFontSize: 13,
+  clusterLabelPlacement: "above",
+  clusterLabelSide: "left",
+  clusterLabelPinned: false,
   showLinks: true,
   straightLinks: false,
   colourLinks: true,
@@ -107,6 +116,9 @@ export function makeConfig(style: StyleConfig): LayoutConfig {
     geneStrokeWidth: style.geneStrokeWidth,
     showClusterNames: style.showClusterNames,
     clusterFontSize: style.clusterFontSize,
+    clusterLabelPlacement: style.clusterLabelPlacement,
+    clusterLabelSide: style.clusterLabelSide,
+    clusterLabelPinned: style.clusterLabelPinned,
     showLinks: style.showLinks,
     straight: style.straightLinks,
     colourLinks: style.colourLinks,
