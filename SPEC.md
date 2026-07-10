@@ -1,4 +1,4 @@
-# Syntenic — Functional Specification
+# Weft — Functional Specification
 
 > A browser-based tool for generating publication-quality **gene cluster comparison figures**.
 > New, standalone app (not a fork of clinker). Server does the heavy lifting; the browser is a thin, fast, canvas-first client.
@@ -9,7 +9,7 @@ Legend: **[MVP]** = first release / build order, **[Later]** = layers on after t
 
 ## 0. Scope & assumptions
 
-Syntenic covers clinker's use case (gene cluster comparison figures) plus five requested capabilities: **multiple entries per line**, **per-cluster colour control**, **colour palettes**, **alternative similarity metrics**, and **speed**. The user interacts only through a browser; a server parses inputs, computes similarity, groups and orders clusters, and returns a figure description the client renders, refines, and exports.
+Weft covers clinker's use case (gene cluster comparison figures) plus five requested capabilities: **multiple entries per line**, **per-cluster colour control**, **colour palettes**, **alternative similarity metrics**, and **speed**. The user interacts only through a browser; a server parses inputs, computes similarity, groups and orders clusters, and returns a figure description the client renders, refines, and exports.
 
 **Stack (decided):** Python + FastAPI backend; DIAMOND/MMseqs2 for heavy alignment; async job model; React + TypeScript client; Canvas/WebGL interactive rendering with SVG export.
 
@@ -30,7 +30,7 @@ Syntenic covers clinker's use case (gene cluster comparison figures) plus five r
 - **GFF3 + FASTA** — GFF3 (`.gff .gff3 .gtf`) paired with a nucleotide FASTA; trace CDS→gene for true coordinates. **[MVP]**
 - **EMBL** — via BioPython. **[Later]**
 - **Protein multi-FASTA per cluster** — no coordinates; genes laid out evenly. **[Later]**
-- **Precomputed session JSON** — reload a saved Syntenic session (§11). **[MVP]**
+- **Precomputed session JSON** — reload a saved Weft session (§11). **[MVP]**
 - **Precomputed alignment import** — user supplies their own all-vs-all table (BLAST/DIAMOND tabular) to skip computation. **[Later]**
 
 ### 1.2 Upload UX **[MVP]**

@@ -74,7 +74,7 @@ def _write_fasta(genes: dict, path: Path) -> None:
 def _run_diamond(genes, gene_cluster, identity_cutoff, evalue_cutoff, sensitivity) -> list[Link]:
     # Keep one (best-bitscore) undirected link per cross-cluster gene pair.
     best: dict = {}
-    with tempfile.TemporaryDirectory(prefix="syntenic_diamond_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="weft_diamond_") as tmp:
         tmp = Path(tmp)
         fasta, db, out = tmp / "proteins.fasta", tmp / "db.dmnd", tmp / "hits.tsv"
         _write_fasta(genes, fasta)

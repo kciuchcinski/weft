@@ -31,7 +31,7 @@ function sceneFrom(s: FigureState) {
 export function exportSVG(s: FigureState): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
-  download(new Blob([sceneToSVG(scene, cfg)], { type: "image/svg+xml" }), "syntenic.svg");
+  download(new Blob([sceneToSVG(scene, cfg)], { type: "image/svg+xml" }), "weft.svg");
 }
 
 export function exportPNG(s: FigureState, scale = 2): void {
@@ -52,7 +52,7 @@ export function exportPNG(s: FigureState, scale = 2): void {
     { dpr: 1, cssW: w, cssH: h, zoom: scale, panX: (m - b.minX) * scale, panY: (m - b.minY) * scale },
     cfg,
   );
-  canvas.toBlob((blob) => { if (blob) download(blob, "syntenic.png"); });
+  canvas.toBlob((blob) => { if (blob) download(blob, "weft.png"); });
 }
 
 export function exportAlignmentTableCSV(s: FigureState): void {
@@ -71,7 +71,7 @@ export function exportAlignmentTableCSV(s: FigureState): void {
       ].join(",")
     ),
   ];
-  download(new Blob([rows.join("\n")], { type: "text/csv" }), "syntenic-alignment-table.csv");
+  download(new Blob([rows.join("\n")], { type: "text/csv" }), "weft-alignment-table.csv");
 }
 
 export function exportSimilarityMatrixCSV(s: FigureState): void {
@@ -97,5 +97,5 @@ export function exportSimilarityMatrixCSV(s: FigureState): void {
   for (const row of names) {
     lines.push([row, ...names.map((col) => String(matrix.get(`${row}\t${col}`) ?? 0))].join(","));
   }
-  download(new Blob([lines.join("\n")], { type: "text/csv" }), "syntenic-similarity-matrix.csv");
+  download(new Blob([lines.join("\n")], { type: "text/csv" }), "weft-similarity-matrix.csv");
 }

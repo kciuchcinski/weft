@@ -4,7 +4,7 @@ phage1 and phage2 (in backend/example_src/) share a virion structural /
 morphogenesis module. This script trims both to that block plus a little
 context, and additionally emits phage1 as three consecutive tiles so the
 figure can show the same cluster both intact and split across one row
-(Syntenic's "more than one entry per line").
+(Weft's "more than one entry per line").
 
 Pharokka's PHROG annotations (/product, /function, /phrog, /locus_tag) are
 preserved untouched — no enrichment. Run via ``pixi run example`` (build_example

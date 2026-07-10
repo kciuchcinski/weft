@@ -1,7 +1,7 @@
 [workspace]
-name = "syntenic-backend"
+name = "weft-backend"
 version = "0.0.1"
-description = "Syntenic backend — parse, align (DIAMOND), group, order → figure JSON"
+description = "Weft backend — parse, align (DIAMOND), group, order → figure JSON"
 channels = ["conda-forge", "bioconda"]
 platforms = ["osx-arm64"]
 

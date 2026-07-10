@@ -40,7 +40,7 @@ export interface Session {
   view: SessionView;
 }
 
-const SESSION_STORAGE_KEY = "syntenic.session.v1";
+const SESSION_STORAGE_KEY = "weft.session.v1";
 
 function defaultSessionView(): SessionView {
   return {

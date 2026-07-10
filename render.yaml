@@ -1,9 +1,9 @@
-# Render blueprint for the Syntenic beta (https://render.com/docs/blueprint-spec).
+# Render blueprint for the Weft beta (https://render.com/docs/blueprint-spec).
 # One Docker web service serving both /api and the built client. Render injects
 # PORT and provides HTTPS + a domain. Fly.io is an equivalent alternative.
 services:
   - type: web
-    name: syntenic
+    name: weft
     runtime: docker
     dockerfilePath: ./Dockerfile
     # 512 MB (starter) works for parasail on small inputs; bump if you raise caps.

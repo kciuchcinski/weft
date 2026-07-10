@@ -1,4 +1,4 @@
-"""Syntenic API entry point.
+"""Weft API entry point.
 
 Serves the JSON API under ``/api`` and, when a built frontend is present
 (``STATIC_DIR``), the single-page client from the same origin — so the whole app
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Syntenic API", version=__version__, lifespan=lifespan)
+app = FastAPI(title="Weft API", version=__version__, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,4 +44,4 @@ if _static.is_dir() and (_static / "index.html").exists():
 else:
     @app.get("/")
     def root():
-        return {"name": "Syntenic API", "version": __version__, "docs": "/docs"}
+        return {"name": "Weft API", "version": __version__, "docs": "/docs"}

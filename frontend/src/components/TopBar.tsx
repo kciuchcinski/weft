@@ -52,7 +52,7 @@ export default function TopBar() {
 
   const onSave = () => {
     const session = useStore.getState().getSession();
-    download(new Blob([JSON.stringify(session)], { type: "application/json" }), "syntenic-session.json");
+    download(new Blob([JSON.stringify(session)], { type: "application/json" }), "weft-session.json");
   };
 
   const onLoadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +72,7 @@ export default function TopBar() {
         <button className="icon-btn" title="Toggle control panel" onClick={togglePanel}>☰</button>
         <span className="brand">
           <BrandMark />
-          Syntenic
+          Weft
         </span>
         {hasData && (
           <span className="topbar-info">

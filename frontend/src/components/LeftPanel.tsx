@@ -375,7 +375,7 @@ export default function LeftPanel() {
 
   const exportColourCSV = () => {
     const csv = ["label,colour", ...items.map((i) => `${i.label},${i.colour}`)].join("\n");
-    download(new Blob([csv], { type: "text/csv" }), "syntenic-colours.csv");
+    download(new Blob([csv], { type: "text/csv" }), "weft-colours.csv");
   };
 
   const importColourCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {

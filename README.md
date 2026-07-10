@@ -1,4 +1,15 @@
-# Syntenic
+---
+title: Weft
+emoji: 🧬
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+short_description: Publication-quality gene cluster comparison figures
+---
+
+# Weft
 
 Browser-based **gene cluster comparison figures**. A new, standalone app (not a fork of clinker):
 a FastAPI backend does parsing + alignment; a canvas-first React client renders and refines the figure.
@@ -57,13 +68,20 @@ is a stock `python:3.11-slim` runtime that serves both `/api` and the built clie
 origin — so there's no CORS to configure.
 
 ```bash
-docker build -t syntenic .
-docker run -p 8000:8000 syntenic          # → http://localhost:8000
+docker build -t weft .
+docker run -p 8000:8000 weft          # → http://localhost:8000
 ```
 
-On a managed PaaS, [`render.yaml`](render.yaml) defines a Docker web service with a
-`/api/health` check (Fly.io works equivalently). Push the repo, point the platform at the
-blueprint, and it builds + serves on HTTPS.
+**Hugging Face Spaces** (free, no card) is the recommended zero-cost host: the YAML
+frontmatter at the top of this README configures a Docker Space (`sdk: docker`,
+`app_port: 8000`). Create a Space, add it as a git remote, and `git push` — HF builds the
+Dockerfile and serves it. The container writes only to `/tmp` (`SCRATCH_DIR`), so it runs
+fine under the Space's sandbox. Note: free Spaces sleep after inactivity, and the in-memory
+job store means running jobs don't survive a sleep/restart — fine for a beta.
+
+Alternatively, on a managed PaaS [`render.yaml`](render.yaml) defines a Docker web service
+with a `/api/health` check (Fly.io works equivalently). Push the repo, point the platform at
+the blueprint, and it builds + serves on HTTPS.
 
 **Configuration** is entirely via environment variables (defaults in
 [`backend/app/config.py`](backend/app/config.py)). For an **open public beta** the important
