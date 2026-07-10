@@ -23,6 +23,9 @@ export interface SessionView {
   customGroups: CustomGroup[];
   /** Which custom group receives genes clicked on the figure (null = none). */
   activeCustomGroup: string | null;
+  /** Names given to merged (pinned, multi-cluster) rows, keyed by `rowKey` of their
+   * members. Per-cluster names are never touched, so splitting a row restores them. */
+  rowNames: Record<string, string>;
   style: StyleConfig;
   /** Alignment engine used for the next similarity job ("diamond" | "parasail"). */
   engine: string;
@@ -53,8 +56,11 @@ function defaultSessionView(): SessionView {
     colourField: "",
     customGroups: [],
     activeCustomGroup: null,
+    rowNames: {},
     style: { ...DEFAULT_STYLE },
-    engine: "parasail",
+    // DIAMOND is the fast default. Where its binary is absent (a parasail-only
+    // image), fetchCapabilities swaps this for the server's advertised default.
+    engine: "diamond",
     mode: "global",
     identityCutoff: 0.3,
     evalueCutoff: 1e-3,
@@ -109,6 +115,8 @@ interface AppState extends SessionView {
   clearClusterOffsets: () => void;
   toggleClusterReversed: (uid: string) => void;
   renameCluster: (uid: string, name: string) => void;
+  /** Name a merged row (see SessionView.rowNames). Empty clears the override. */
+  setRowName: (key: string, name: string) => void;
   setActiveMetric: (m: MetricKey) => void;
   setEngine: (engine: string) => void;
   setMode: (mode: string) => void;
@@ -153,8 +161,9 @@ export const useStore = create<AppState>((set, get) => ({
   colourField: initialView.colourField ?? "",
   customGroups: initialView.customGroups ?? [],
   activeCustomGroup: initialView.activeCustomGroup ?? null,
+  rowNames: initialView.rowNames ?? {},
   style: { ...DEFAULT_STYLE, ...(initialView.style ?? {}) },
-  engine: initialView.engine ?? "parasail",
+  engine: initialView.engine ?? "diamond",
   mode: initialView.mode ?? "global",
   identityCutoff: initialView.identityCutoff ?? 0.3,
   evalueCutoff: initialView.evalueCutoff ?? 1e-3,
@@ -170,6 +179,8 @@ export const useStore = create<AppState>((set, get) => ({
       clusterOffsets: {},
       customGroups: [],
       activeCustomGroup: null,
+      // Row names key off cluster uids, which are fresh for each dataset.
+      rowNames: {},
       activeMetric: clampMetric(s.activeMetric, data),
     })),
 
@@ -226,7 +237,7 @@ export const useStore = create<AppState>((set, get) => ({
       if (!s.data) return {};
       const cfg = makeConfig(s.style);
       const colours = computeColours(s.data, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups);
-      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets);
+      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames);
       const clusterOffsets = computeCenteringOffsets(scene, s.data, geneUid, s.clusterOffsets, s.activeMetric);
       return clusterOffsets === s.clusterOffsets ? {} : { clusterOffsets };
     }),
@@ -245,6 +256,15 @@ export const useStore = create<AppState>((set, get) => ({
       if (!s.data) return {};
       const clusters = s.data.clusters.map((c) => (c.uid === uid ? { ...c, name } : c));
       return { data: { ...s.data, clusters } };
+    }),
+
+  setRowName: (key, name) =>
+    set((s) => {
+      const rowNames = { ...s.rowNames };
+      // An empty name falls back to the joined member names rather than an empty label.
+      if (name.trim()) rowNames[key] = name;
+      else delete rowNames[key];
+      return { rowNames };
     }),
 
   setActiveMetric: (activeMetric) => set({ activeMetric }),
@@ -314,7 +334,7 @@ export const useStore = create<AppState>((set, get) => ({
   resetStyle: () => set({ style: { ...DEFAULT_STYLE } }),
 
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, overrides: {}, customGroups: [], activeCustomGroup: null, jobStatus: "idle" }),
+    set({ data: null, lanes: [], clusterOffsets: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle" }),
 
   loadSession: (session) =>
     set({
@@ -328,8 +348,9 @@ export const useStore = create<AppState>((set, get) => ({
       colourField: session.view.colourField ?? "",
       customGroups: session.view.customGroups ?? [],
       activeCustomGroup: session.view.activeCustomGroup ?? null,
+      rowNames: session.view.rowNames ?? {},
       style: { ...DEFAULT_STYLE, ...(session.view.style ?? {}) },
-      engine: session.view.engine ?? "parasail",
+      engine: session.view.engine ?? "diamond",
       mode: session.view.mode ?? "global",
       identityCutoff: session.view.identityCutoff ?? 0.3,
       evalueCutoff: session.view.evalueCutoff ?? 1e-3,
@@ -351,6 +372,7 @@ export const useStore = create<AppState>((set, get) => ({
         colourField: s.colourField,
         customGroups: s.customGroups,
         activeCustomGroup: s.activeCustomGroup,
+        rowNames: s.rowNames,
         style: s.style,
         engine: s.engine,
         mode: s.mode,

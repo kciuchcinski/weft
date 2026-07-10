@@ -1,13 +1,17 @@
 # Render blueprint for the Weft beta (https://render.com/docs/blueprint-spec).
 # One Docker web service serving both /api and the built client. Render injects
-# PORT and provides HTTPS + a domain. Fly.io is an equivalent alternative.
+# PORT and provides HTTPS + a domain. No credit card needed on the free plan.
+#
+# Free plan reality check: ~0.1 CPU / 512 MB, spins down after 15 min idle (~1 min
+# cold start), 750 instance-hours per month. WebSockets aren't supported on free —
+# fine, the client polls /api/jobs/{id}. Because the job store is in-process,
+# in-flight jobs do not survive a spin-down.
 services:
   - type: web
     name: weft
     runtime: docker
     dockerfilePath: ./Dockerfile
-    # 512 MB (starter) works for parasail on small inputs; bump if you raise caps.
-    plan: starter
+    plan: free
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -16,11 +20,16 @@ services:
         value: "6000"
       - key: MAX_CLUSTERS
         value: "100"
+      # One at a time: a free instance is a fraction of a CPU, and alignment is
+      # CPU-bound. Two concurrent jobs just make both miss the timeout.
       - key: MAX_CONCURRENT_JOBS
-        value: "2"
+        value: "1"
       - key: JOB_TIMEOUT_SECONDS
         value: "300"
       - key: MAX_UPLOAD_BYTES
         value: "52428800" # 50 MB
       - key: SCRATCH_TTL_SECONDS
         value: "1800" # auto-delete uploads after 30 min
+      # Fallback when the client's chosen engine isn't available in this image.
+      - key: DEFAULT_ENGINE
+        value: "diamond"

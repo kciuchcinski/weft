@@ -13,7 +13,9 @@ interface ClusterCtl {
   name: string;
   lane: number;
   reversed: boolean;
-  left: number; // screen x where the control starts (just past the label text)
+  /** True when the pill hangs off the cluster's left edge (so it anchors right). */
+  atLeft: boolean;
+  left: number; // screen x of the pill's anchor edge, just outside the cluster
   centerY: number; // screen y of the track baseline (drag/drop truth)
   renderY: number; // screen y used to place the control (de-collided)
   centerX: number; // screen x of the cluster's horizontal centre
@@ -29,7 +31,16 @@ interface DropTarget {
   x?: number;
 }
 
-type LabelEdit = { uid: string; value: string; left: number; top: number; width: number; fontSize: number };
+type LabelEdit = {
+  /** A cluster uid, or a merged row's key. `kind` says which. */
+  id: string;
+  kind: "cluster" | "row";
+  value: string;
+  left: number;
+  top: number;
+  width: number;
+  fontSize: number;
+};
 
 // Controls anchored at each cluster's left edge collapse into a single left
 // column at fit-zoom (every lane's leading cluster starts near x=0), so they
@@ -89,6 +100,7 @@ export default function CanvasView() {
   const colourField = useStore((s) => s.colourField);
   const customGroups = useStore((s) => s.customGroups);
   const activeCustomGroup = useStore((s) => s.activeCustomGroup);
+  const rowNames = useStore((s) => s.rowNames);
   const style = useStore((s) => s.style);
 
   const colours = useMemo(
@@ -119,11 +131,12 @@ export default function CanvasView() {
             clusterOffsets,
             hDraggingUid ?? undefined,
             colours.items,
+            rowNames,
           )
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid,
+      data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
       style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,
@@ -186,28 +199,31 @@ export default function CanvasView() {
     const py = pan.current.y;
     const cfg = cfgRef.current;
     const fs = cfg.clusterFontSize;
-    const showNames = cfg.showClusterNames;
-    const view = { zoom: z, panX: px, panY: py, cssW: wrapRef.current?.clientWidth ?? 0 };
+    const atLeft = cfg.clusterLabelSide === "left";
     const reversedByUid = new Map<string, boolean>();
-    useStore.getState().data?.clusters.forEach((c) => reversedByUid.set(c.uid, !!c.reversed));
-    const next: ClusterCtl[] = s.labels.map((lab) => {
-      const r = labelScreenRect(lab, cfg, view);
-      return {
-        uid: lab.uid,
-        name: lab.name,
-        lane: lab.lane,
-        reversed: !!reversedByUid.get(lab.uid),
-        // Sit just past the end of the name text, wherever that now is.
-        left: showNames ? r.right + 8 : r.x,
-        // The cluster's own track row: the drag/drop truth (join zones align to the
-        // arrow row), independent of where the name was placed.
-        centerY: lab.trackY * z + py,
-        // Vertically centre the control on the name. When the name sits on a baseline
-        // ("above"), nudge up to its optical middle.
-        renderY: r.middle ? r.y : r.y - fs * 0.32,
-        centerX: (lab.x0 + lab.w / 2) * z + px,
-      };
+    const nameByUid = new Map<string, string>();
+    useStore.getState().data?.clusters.forEach((c) => {
+      reversedByUid.set(c.uid, !!c.reversed);
+      nameByUid.set(c.uid, c.name);
     });
+    // Pills are anchored to the *cluster*, never to its name: in pinned mode the
+    // names share one column, so following them would pile every pill on the same
+    // spot. Each pill sits in the band above its own sequence, just outside the
+    // chosen end, so it can't collide with a name drawn inside that span.
+    const PILL_GAP = 8;
+    const next: ClusterCtl[] = s.clusters.map((box) => ({
+      uid: box.uid,
+      name: nameByUid.get(box.uid) ?? box.uid,
+      lane: box.lane,
+      reversed: !!reversedByUid.get(box.uid),
+      atLeft,
+      left: (atLeft ? box.x0 * z + px - PILL_GAP : box.x1 * z + px + PILL_GAP),
+      // Track row: the drag/drop truth (join zones align to the arrow row).
+      centerY: box.trackY * z + py,
+      // The band above the sequence, level with where an "above" name would sit.
+      renderY: (box.trackY - cfg.trackHeight) * z + py - fs * 0.32,
+      centerX: ((box.x0 + box.x1) / 2) * z + px,
+    }));
     decollideCtls(next);
     if (!sameCtls(ctlsRef.current, next)) setCtls(next);
   };
@@ -247,11 +263,25 @@ export default function CanvasView() {
     const cssH = wrap.clientHeight;
     const bw = Math.max(1, s.bounds.maxX - s.bounds.minX);
     const bh = Math.max(1, s.bounds.maxY - s.bounds.minY);
+    const cfg = cfgRef.current;
     const pad = 48;
-    const z = Math.min((cssW - 2 * pad) / bw, (cssH - 2 * pad) / bh, 4);
+
+    // Pinned names occupy a fixed-width column in *screen* space, so the room the
+    // world bounds reserve for them shrinks as you zoom out and the figure slides
+    // under the text. Reserve the column's true on-screen width on that side instead.
+    let padL = pad;
+    let padR = pad;
+    if (cfg.showClusterNames && cfg.clusterLabelPinned && s.labels.length) {
+      const colW = s.labels.reduce((m, l) => Math.max(m, measureLabel(l.name, cfg.clusterFontSize)), 0) + 2 * pad;
+      if (cfg.clusterLabelSide === "left") padL = Math.max(padL, colW);
+      else padR = Math.max(padR, colW);
+    }
+
+    const availW = Math.max(1, cssW - padL - padR);
+    const z = Math.min(availW / bw, (cssH - 2 * pad) / bh, 4);
     zoom.current = z > 0 && isFinite(z) ? z : 1;
     pan.current = {
-      x: (cssW - bw * zoom.current) / 2 - s.bounds.minX * zoom.current,
+      x: padL + (availW - bw * zoom.current) / 2 - s.bounds.minX * zoom.current,
       y: (cssH - bh * zoom.current) / 2 - s.bounds.minY * zoom.current,
     };
     render();
@@ -334,16 +364,16 @@ export default function CanvasView() {
 
   // Open the inline editor over a cluster's label, in screen space. Works whether
   // the label is visible or hidden (positions from the same world coords draw uses).
-  const openLabelEditor = (uid: string) => {
+  const openLabelEditor = (id: string) => {
     const s = sceneRef.current;
-    const lab = s?.labels.find((l) => l.uid === uid);
+    const lab = s?.labels.find((l) => l.id === id);
     if (!lab) return;
     const cfg = cfgRef.current;
     const fs = cfg.clusterFontSize;
     const view = { zoom: zoom.current, panX: pan.current.x, panY: pan.current.y, cssW: wrapRef.current?.clientWidth ?? 0 };
     const r = labelScreenRect(lab, cfg, view);
     const w = measureLabel(lab.name, fs);
-    setEditing({ uid, value: lab.name, left: r.left, top: r.top, width: Math.max(w + 28, 130), fontSize: fs });
+    setEditing({ id, kind: lab.kind, value: lab.name, left: r.left, top: r.top, width: Math.max(w + 28, 130), fontSize: fs });
   };
 
   // Commit the rename. Reads the latest value from the ref and nulls it first, so
@@ -358,7 +388,10 @@ export default function CanvasView() {
     const name = cur.value.trim();
     if (name) {
       skipNextFit.current = true; // keep the current zoom/pan; renaming isn't a layout change
-      useStore.getState().renameCluster(cur.uid, name);
+      // A merged row gets its own name, stored against the row rather than any one
+      // cluster — so the members' original names survive and return on a split.
+      if (cur.kind === "row") useStore.getState().setRowName(cur.id, name);
+      else useStore.getState().renameCluster(cur.id, name);
     }
   };
 
@@ -495,7 +528,7 @@ export default function CanvasView() {
           return mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
         });
         if (labHit) {
-          openLabelEditor(labHit.uid);
+          openLabelEditor(labHit.id);
           return;
         }
       }
@@ -565,20 +598,20 @@ export default function CanvasView() {
   const commitSlide = (uid: string) => {
     const s = sceneRef.current;
     if (!s) return;
-    const lab = s.labels.find((l) => l.uid === uid);
-    if (!lab) return;
-    const laneIdx = lab.lane;
-    // Order by where each *cluster* sits, not by its name — the name may be pinned to
-    // the canvas edge or placed on the right, so it no longer tracks the left edge.
-    const laneLabels = s.labels.filter((l) => l.lane === laneIdx).sort((a, b) => a.x0 - b.x0);
+    const box = s.clusters.find((b) => b.uid === uid);
+    if (!box) return;
+    const laneIdx = box.lane;
+    // Order by where each *cluster* sits. Never by its name: names can be pinned to a
+    // shared column, or merged away entirely when a row holds several clusters.
+    const laneBoxes = s.clusters.filter((b) => b.lane === laneIdx).sort((a, b) => a.x0 - b.x0);
     const colGap = cfgRef.current.colGap;
     const order: string[] = [];
     const offsets: Record<string, number> = {};
     let base = 0;
-    for (const l of laneLabels) {
-      order.push(l.uid);
-      offsets[l.uid] = l.x0 - base; // reproduce current left edge from the new base
-      base += l.w + colGap;
+    for (const b of laneBoxes) {
+      order.push(b.uid);
+      offsets[b.uid] = b.x0 - base; // reproduce current left edge from the new base
+      base += b.w + colGap;
     }
     useStore.getState().setLaneArrangement(laneIdx, order, offsets);
   };
@@ -613,7 +646,11 @@ export default function CanvasView() {
           {ctls.map((c) => (
             <div
               key={c.uid}
-              className={"cluster-control" + (draggingUid === c.uid ? " dragging" : "")}
+              className={
+                "cluster-control" +
+                (c.atLeft ? " anchor-right" : "") +
+                (draggingUid === c.uid ? " dragging" : "")
+              }
               style={{ left: c.left, top: c.renderY }}
             >
               <button

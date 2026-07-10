@@ -669,6 +669,7 @@ body {
 .cluster-control {
   position: absolute;
   transform: translate(0, -50%);
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 1px;
@@ -682,6 +683,10 @@ body {
   opacity: 0.35;
   transition: opacity 0.14s var(--ease), background 0.14s var(--ease),
     border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+/* Pill hanging off a cluster's left edge: grow leftwards from its anchor. */
+.cluster-control.anchor-right {
+  transform: translate(-100%, -50%);
 }
 .cluster-control:hover {
   opacity: 1;

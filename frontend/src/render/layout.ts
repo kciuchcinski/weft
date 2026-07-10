@@ -23,8 +23,6 @@ export type GeneShapeKind = "triangle" | "arrow" | "rounded" | "box";
 export type ClusterLabelPlacement = "above" | "beside";
 export type ClusterLabelSide = "left" | "right";
 
-/** Gap between a "beside" name and its cluster's edge (world px). */
-const LABEL_SIDE_GAP = 10;
 /** Gap between a pinned name column and the figure's edge, in SVG export. */
 const LABEL_PIN_GAP = 12;
 
@@ -138,14 +136,31 @@ export interface GeneShape {
 
 export interface LocusLine { x0: number; x1: number; y: number; }
 /**
- * A cluster's name plus the geometry needed to place and interact with it.
+ * Where a cluster's *sequence* sits, in world coordinates. Always one per cluster.
  *
- * `x`/`y` are the *text anchor* in world coordinates and move with the chosen
- * placement. The cluster's own extents (`x0`, `x1`, `w`) and its track row
- * (`trackY`) are kept separately: drag-reorder and the drop zones depend on where
- * the *sequence* is, not on where its name happens to sit.
+ * Kept separate from the drawn label: drag-reorder, drop zones and the control pill
+ * depend on where the sequence is, never on where its name happens to be placed
+ * (which may be a pinned column, or merged with its row-mates).
+ */
+export interface ClusterBox {
+  uid: string;
+  lane: number;
+  x0: number;
+  x1: number;
+  w: number;
+  /** World y of the sequence track (the gene row). */
+  trackY: number;
+}
+
+/**
+ * A drawn name. Usually one per cluster, but when names are pinned and a row holds
+ * several clusters their names would stack on the same spot, so the row merges into
+ * a single label the user can name independently (`kind: "row"`).
  */
 export interface ClusterLabel {
+  /** A cluster uid, or a stable row key (see `rowKey`) when several merged. */
+  id: string;
+  kind: "cluster" | "row";
   name: string;
   /** World x of the text anchor (interpretation depends on `align`). */
   x: number;
@@ -154,14 +169,14 @@ export interface ClusterLabel {
   align: ClusterLabelSide;
   /** Vertically centre the text on the track (the "beside" placement). */
   middle: boolean;
-  /** Cluster left/right edge and width, in world coordinates. */
-  x0: number;
-  x1: number;
-  w: number;
-  /** World y of the cluster's sequence track (the gene row). */
-  trackY: number;
-  uid: string;
   lane: number;
+  /** Cluster uids this label stands for. */
+  members: string[];
+}
+
+/** Stable identity for a merged row, independent of the clusters' visual order. */
+export function rowKey(members: string[]): string {
+  return [...members].sort().join("|");
 }
 export interface LinkRibbon {
   ax0: number; ax1: number; ay: number;
@@ -205,6 +220,9 @@ export interface Legend {
 export interface Scene {
   genes: GeneShape[];
   loci: LocusLine[];
+  /** One per cluster: sequence geometry, for controls and drag-reorder. */
+  clusters: ClusterBox[];
+  /** Drawn names; may be fewer than clusters when a pinned row is merged. */
   labels: ClusterLabel[];
   links: LinkRibbon[];
   scaleBar?: ScaleBar;
@@ -396,9 +414,12 @@ export function buildScene(
   anchorUid?: string,
   /** Colour legend rows (from computeColours); drawn below the figure. */
   legendItems: LegendItem[] = [],
+  /** User-chosen names for merged rows, keyed by `rowKey` of their members. */
+  rowNames: Record<string, string> = {},
 ): Scene {
   const genes: GeneShape[] = [];
   const loci: LocusLine[] = [];
+  const clusterBoxes: ClusterBox[] = [];
   const labels: ClusterLabel[] = [];
   const shapeByUid = new Map<string, GeneShape>();
   const indexByUid = new Map(data.clusters.map((c, i) => [c.uid, i]));
@@ -415,28 +436,13 @@ export function buildScene(
     const reversed = !!c.reversed;
     const width = clusterWidth(ci);
     const mirror = (x: number) => 2 * originX + width - x;
-
-    // Name placement. "above" sits on the track's top edge and reads outward from
-    // the chosen end; "beside" sits vertically centred, clear of the sequence.
-    const above = cfg.clusterLabelPlacement === "above";
-    const atLeft = cfg.clusterLabelSide === "left";
-    const x0 = originX;
-    const x1 = originX + width;
-    const labelX = above ? (atLeft ? x0 : x1) : atLeft ? x0 - LABEL_SIDE_GAP : x1 + LABEL_SIDE_GAP;
-    // Anchor the text so it always reads away from the sequence.
-    const align: ClusterLabelSide = above ? (atLeft ? "left" : "right") : atLeft ? "right" : "left";
-    labels.push({
-      name: c.name,
-      x: labelX,
-      y: above ? originY - cfg.trackHeight : originY,
-      align,
-      middle: !above,
-      x0,
-      x1,
-      w: width,
-      trackY: originY,
+    clusterBoxes.push({
       uid: c.uid,
       lane: laneIdx,
+      x0: originX,
+      x1: originX + width,
+      w: width,
+      trackY: originY,
     });
     let cursor = originX;
     for (const locus of c.loci) {
@@ -519,6 +525,66 @@ export function buildScene(
     for (const p of placed) placeCluster(p.ci, p.x, originY, laneIdx);
   });
 
+  // Names, built once every cluster's final x is known.
+  //
+  // Unpinned names sit at their own cluster's end (placement is always "above"
+  // there — "beside" is normalised to pinned, since an unpinned beside-name would
+  // land on the neighbouring cluster). Pinned names share one column, so a row with
+  // several clusters would stack them all at the same point: merge those into a
+  // single row label the user can name independently. Their per-cluster names are
+  // untouched and reappear when the row is split.
+  {
+    const above = cfg.clusterLabelPlacement === "above";
+    const atLeft = cfg.clusterLabelSide === "left";
+    const pinned = cfg.clusterLabelPinned;
+    const nameByUid = new Map(data.clusters.map((c) => [c.uid, c.name]));
+
+    const byLane = new Map<number, ClusterBox[]>();
+    for (const b of clusterBoxes) {
+      const bucket = byLane.get(b.lane);
+      if (bucket) bucket.push(b);
+      else byLane.set(b.lane, [b]);
+    }
+
+    for (const [laneIdx, boxes] of byLane) {
+      boxes.sort((a, b) => a.x0 - b.x0);
+      const trackY = boxes[0].trackY;
+      // x is finalised in the pinned pass below; align already reads away from the figure.
+      const y = above ? trackY - cfg.trackHeight : trackY;
+      const middle = !above;
+
+      if (pinned && boxes.length > 1) {
+        const members = boxes.map((b) => b.uid);
+        const id = rowKey(members);
+        labels.push({
+          id,
+          kind: "row",
+          name: rowNames[id] ?? members.map((u) => nameByUid.get(u) ?? u).join(", "),
+          x: 0,
+          y,
+          align: atLeft ? "right" : "left",
+          middle,
+          lane: laneIdx,
+          members,
+        });
+      } else {
+        for (const b of boxes) {
+          labels.push({
+            id: b.uid,
+            kind: "cluster",
+            name: nameByUid.get(b.uid) ?? b.uid,
+            x: pinned ? 0 : atLeft ? b.x0 : b.x1,
+            y,
+            align: pinned ? (atLeft ? "right" : "left") : atLeft ? "left" : "right",
+            middle,
+            lane: laneIdx,
+            members: [b.uid],
+          });
+        }
+      }
+    }
+  }
+
   // Links between genes on vertically adjacent lanes.
   const links: LinkRibbon[] = [];
   // Protein lengths, only needed when the fragment-length filter is active.
@@ -587,10 +653,7 @@ export function buildScene(
   if (cfg.clusterLabelPinned && isFinite(minX)) {
     const atLeft = cfg.clusterLabelSide === "left";
     const pinX = atLeft ? figMinX - LABEL_PIN_GAP : figMaxX + LABEL_PIN_GAP;
-    for (const l of labels) {
-      l.x = pinX;
-      l.align = atLeft ? "right" : "left";
-    }
+    for (const l of labels) l.x = pinX;
   }
 
   // Grow the bounds around each name's drawn extent, or the SVG viewBox clips
@@ -676,7 +739,7 @@ export function buildScene(
 
   if (!isFinite(minX)) { minX = 0; minY = 0; maxX = 1; maxY = 1; }
 
-  return { genes, loci, labels, links, scaleBar, legend, bounds: { minX, minY, maxX, maxY } };
+  return { genes, loci, clusters: clusterBoxes, labels, links, scaleBar, legend, bounds: { minX, minY, maxX, maxY } };
 }
 
 /**

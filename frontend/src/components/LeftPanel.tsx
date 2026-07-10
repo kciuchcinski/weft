@@ -434,8 +434,8 @@ export default function LeftPanel() {
         <label className="field">
           <span>Engine</span>
           <select value={engine} onChange={(e) => setEngine(e.target.value)}>
-            <option value="parasail">parasail (exact pairwise)</option>
             {engines.includes("diamond") && <option value="diamond">DIAMOND (fast)</option>}
+            <option value="parasail">parasail (exact pairwise)</option>
           </select>
         </label>
         {engine === "parasail" && (
@@ -567,13 +567,17 @@ export default function LeftPanel() {
         />
         <CheckField
           label="Pin names to canvas edge"
-          checked={style.clusterLabelPinned}
-          disabled={!style.showClusterNames}
+          // "Beside" is inherently pinned — an unpinned beside-name collides with the
+          // neighbouring cluster — so the toggle reads as on and locked in that mode.
+          checked={style.clusterLabelPinned || style.clusterLabelPlacement === "beside"}
+          disabled={!style.showClusterNames || style.clusterLabelPlacement === "beside"}
           onChange={(v) => setStyle({ clusterLabelPinned: v })}
         />
         <p className="muted">
           Pinned names stay stationary against the chosen edge while you pan and zoom, instead of moving
-          with their sequence. An exported SVG has no viewport, so there they line up in a column against
+          with their sequence. <b>Beside</b> is always pinned. Where a row holds several clusters, their
+          names merge into one label you can rename independently — the original names come back when the
+          row is split. An exported SVG has no viewport, so there pinned names line up in a column against
           the figure's edge.
         </p>
       </Section>

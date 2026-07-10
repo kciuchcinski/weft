@@ -1,14 +1,3 @@
----
-title: Weft
-emoji: 🧬
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8000
-pinned: false
-short_description: Publication-quality gene cluster comparison figures
----
-
 # Weft
 
 Browser-based **gene cluster comparison figures**. A new, standalone app (not a fork of clinker):
@@ -24,12 +13,12 @@ exposed as an async job API. The **canvas renderer and full control panel are bu
 metric selection + live thresholds, colour system, arrangement, styling, and SVG/PNG/CSV export,
 with session save/load and localStorage autosave.
 
-**Alignment engines.** DIAMOND is fast but ships as a bioconda binary (via pixi); parasail is an
-exact O(N²) pairwise aligner that installs as a plain pip wheel. The **hosted image ships
-parasail only** so it can build on a stock `python:slim` base with no conda. The DIAMOND code
-path is retained and lights up automatically wherever the `diamond` binary is on `PATH` (local
-pixi dev, or a future conda-based image) — the API advertises available engines at
-`/api/health` and the client hides options it can't run.
+**Alignment engines.** DIAMOND is fast; parasail is an exact O(N²) pairwise aligner and is
+therefore CPU-bound. **Both ship in the image** (DIAMOND from bioconda via pixi) and DIAMOND is
+the default — it's what makes a fraction-of-a-CPU free host usable. The engine is **gated at
+runtime**: `/api/health` advertises what this deployment can actually run, and the client hides,
+and falls back from, any engine whose binary is absent. A parasail-only build therefore still
+works with no code change.
 
 ## Layout
 
@@ -63,8 +52,8 @@ npm run dev     # http://localhost:5173  (proxies /api to the backend)
 
 ## Deploy (hosted beta)
 
-The whole app ships as **one Docker image** (parasail-only): stage 1 builds the client, stage 2
-is a stock `python:3.11-slim` runtime that serves both `/api` and the built client from a single
+The whole app ships as **one Docker image**: stage 1 builds the client, stage 2 is a pixi/conda
+runtime (carrying the DIAMOND binary) that serves both `/api` and the built client from a single
 origin — so there's no CORS to configure.
 
 ```bash
@@ -72,16 +61,19 @@ docker build -t weft .
 docker run -p 8000:8000 weft          # → http://localhost:8000
 ```
 
-**Hugging Face Spaces** (free, no card) is the recommended zero-cost host: the YAML
-frontmatter at the top of this README configures a Docker Space (`sdk: docker`,
-`app_port: 8000`). Create a Space, add it as a git remote, and `git push` — HF builds the
-Dockerfile and serves it. The container writes only to `/tmp` (`SCRATCH_DIR`), so it runs
-fine under the Space's sandbox. Note: free Spaces sleep after inactivity, and the in-memory
-job store means running jobs don't survive a sleep/restart — fine for a beta.
+**Render's free plan** is the recommended zero-cost host: no credit card, Docker supported.
+[`render.yaml`](render.yaml) declares the web service and its `/api/health` check — push the
+repo, point Render at the blueprint, and it builds and serves on HTTPS. Fly.io works
+equivalently from the same Dockerfile.
 
-Alternatively, on a managed PaaS [`render.yaml`](render.yaml) defines a Docker web service
-with a `/api/health` check (Fly.io works equivalently). Push the repo, point the platform at
-the blueprint, and it builds + serves on HTTPS.
+Free-plan realities worth knowing: roughly **0.1 CPU / 512 MB**, spin-down after 15 minutes idle
+(~1 min cold start), and 750 instance-hours a month. Alignment is CPU-bound, which is why
+DIAMOND ships and `MAX_CONCURRENT_JOBS` is 1. WebSockets aren't available on free — fine, the
+client polls `/api/jobs/{id}`. The job store is in-process, so in-flight jobs don't survive a
+spin-down; acceptable for a beta.
+
+> Hugging Face Spaces was the original target, but HF moved the **Docker SDK to paid** in 2026,
+> so its free tier no longer fits a FastAPI + React app.
 
 **Configuration** is entirely via environment variables (defaults in
 [`backend/app/config.py`](backend/app/config.py)). For an **open public beta** the important
@@ -101,6 +93,6 @@ Because the job store is in-process, run **one uvicorn worker** (the image alrea
 `MAX_CONCURRENT_JOBS` handles parallelism within it. Jobs are lost on restart — acceptable for a
 beta. Uploaded sequences are auto-deleted on the `SCRATCH_TTL_SECONDS` schedule.
 
-To re-enable DIAMOND later, build on a conda/pixi base with the `diamond` binary and add
-`linux-64` to `platforms` in [`backend/pixi.toml`](backend/pixi.toml) — no application-code
-change is needed.
+[`backend/requirements.txt`](backend/requirements.txt) is a pip-only mirror of the conda deps
+**minus DIAMOND**; CI uses it to run the tests without conda (the DIAMOND tests self-skip when
+the binary is absent).

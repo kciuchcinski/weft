@@ -118,7 +118,10 @@ export function makeConfig(style: StyleConfig): LayoutConfig {
     clusterFontSize: style.clusterFontSize,
     clusterLabelPlacement: style.clusterLabelPlacement,
     clusterLabelSide: style.clusterLabelSide,
-    clusterLabelPinned: style.clusterLabelPinned,
+    // "Beside" only makes sense pinned: a per-cluster name placed next to its own
+    // sequence lands on top of the neighbouring cluster whenever a row holds more
+    // than one. Normalising here means every consumer sees one coherent state.
+    clusterLabelPinned: style.clusterLabelPinned || style.clusterLabelPlacement === "beside",
     showLinks: style.showLinks,
     straight: style.straightLinks,
     colourLinks: style.colourLinks,

@@ -16,6 +16,9 @@ export interface FigureState {
   overrides: Record<string, string>;
   colourField: string;
   customGroups: CustomGroup[];
+  /** Names given to merged rows. Without these an export falls back to the default
+   * joined names and silently disagrees with what's drawn on the canvas. */
+  rowNames: Record<string, string>;
   style: StyleConfig;
 }
 
@@ -24,7 +27,7 @@ function sceneFrom(s: FigureState) {
   const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries);
   return {
     cfg,
-    scene: buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items),
+    scene: buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames),
   };
 }
 
