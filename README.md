@@ -61,6 +61,12 @@ docker build -t weft .
 docker run -p 8000:8000 weft          # → http://localhost:8000
 ```
 
+The runtime stage is pinned to `linux/amd64`, because `pixi.lock` only solves for
+`linux-64` (bioconda ships no DIAMOND for `linux-aarch64`) and that's what Render runs.
+So a plain `docker build` produces the right image everywhere — but on an Apple Silicon
+machine that stage is emulated and the build takes a few minutes. The frontend stage
+builds natively (`$BUILDPLATFORM`), since its output is just JS/CSS.
+
 **Render's free plan** is the recommended zero-cost host: no credit card, Docker supported.
 [`render.yaml`](render.yaml) declares the web service and its `/api/health` check — push the
 repo, point Render at the blueprint, and it builds and serves on HTTPS. Fly.io works

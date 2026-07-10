@@ -6,7 +6,9 @@
 # /api/health), so the app still works anywhere the binary is absent.
 
 # ---- Stage 1: build the frontend ----
-FROM node:20-slim AS frontend
+# Runs on the *build* machine's native arch: its output is plain JS/CSS, so there's
+# no reason to emulate it just because the runtime stage is amd64.
+FROM --platform=$BUILDPLATFORM node:20-slim AS frontend
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -14,7 +16,11 @@ COPY frontend/ ./
 RUN npm run build
 
 # ---- Stage 2: backend runtime (Python + DIAMOND + parasail, via pixi) ----
-FROM debian:bookworm-slim
+# Pinned to amd64: pixi.lock only solves for linux-64 (bioconda has no DIAMOND for
+# linux-aarch64), and it's what Render runs. Without this pin, `docker build` on an
+# ARM machine targets linux/arm64 and `pixi install --locked` fails. Building this
+# stage on an ARM host is therefore emulated, and slow — that's expected.
+FROM --platform=linux/amd64 debian:bookworm-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl ca-certificates \
