@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours } from "../render/palette";
-import { buildScene, type Scene } from "../render/layout";
+import { buildScene, formatMetric, type Scene } from "../render/layout";
+import { toCircular } from "../render/circular";
 import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
 import { draw } from "../render/draw";
+import { ribbonPath } from "../render/geometry";
 import CanvasWelcome from "./CanvasWelcome";
-import type { Gene } from "../types";
+import type { Gene, Link, MetricKey } from "../types";
+
+// Display names for link metrics in the ribbon hover tooltip.
+const METRIC_LABELS: Record<string, string> = {
+  identity: "Identity",
+  similarity: "Similarity",
+  coverage: "Coverage",
+  bitscore: "Bit score",
+  evalue: "E-value",
+  jaccard: "Jaccard",
+};
 
 interface ClusterCtl {
   uid: string;
@@ -19,6 +31,7 @@ interface ClusterCtl {
   centerY: number; // screen y of the track baseline (drag/drop truth)
   renderY: number; // screen y used to place the control (de-collided)
   centerX: number; // screen x of the cluster's horizontal centre
+  circular: boolean; // circular mode: the pill offers rotate (not drag-reorder)
 }
 
 // Label geometry lives in render/labels.ts so the renderer, hit-testing, the drag
@@ -93,6 +106,7 @@ export default function CanvasView() {
   const data = useStore((s) => s.data);
   const lanes = useStore((s) => s.lanes);
   const clusterOffsets = useStore((s) => s.clusterOffsets);
+  const clusterAngles = useStore((s) => s.clusterAngles);
   const activeMetric = useStore((s) => s.activeMetric);
   const colourBy = useStore((s) => s.colourBy);
   const paletteName = useStore((s) => s.paletteName);
@@ -120,23 +134,27 @@ export default function CanvasView() {
   const [hDraggingUid, setHDraggingUid] = useState<string | null>(null);
 
   const scene = useMemo<Scene | null>(
-    () =>
-      data
-        ? buildScene(
-            data,
-            lanes,
-            cfg,
-            colours.gene,
-            activeMetric,
-            clusterOffsets,
-            hDraggingUid ?? undefined,
-            colours.items,
-            rowNames,
-          )
-        : null,
+    () => {
+      if (!data) return null;
+      const linear = buildScene(
+        data,
+        lanes,
+        cfg,
+        colours.gene,
+        activeMetric,
+        clusterOffsets,
+        hDraggingUid ?? undefined,
+        colours.items,
+        rowNames,
+      );
+      return style.layoutMode === "circular"
+        ? toCircular(linear, cfg, clusterAngles, data.clusters.map((c) => c.uid))
+        : linear;
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
+      style.layoutMode, clusterAngles,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
       style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,
@@ -147,6 +165,8 @@ export default function CanvasView() {
       // anchor, and their drawn extent grows the bounds the SVG viewBox is cut from.
       style.showClusterNames, style.clusterFontSize,
       style.clusterLabelPlacement, style.clusterLabelSide, style.clusterLabelPinned,
+      // Resolved into each gene's drawn label, so it changes the scene's text.
+      style.geneLabelField,
     ]
   );
 
@@ -156,6 +176,46 @@ export default function CanvasView() {
     return m;
   }, [data]);
 
+  // Ribbon hit-test paths (world coords), rebuilt with the scene. Tested against an
+  // identity-transform context so the point and path share the same (world) space.
+  const linkPaths = useMemo(
+    () => (scene ? scene.links.map((l) => ({ link: l.link, path: new Path2D(ribbonPath(l, cfg.straight)) })) : []),
+    [scene, cfg.straight]
+  );
+  const linkPathsRef = useRef(linkPaths);
+  linkPathsRef.current = linkPaths;
+  // Circular genes are annular wedges, so hit-testing uses their polygon (via
+  // isPointInPath) rather than a rectangle. Empty in linear mode.
+  const genePaths = useMemo(() => {
+    if (!scene || cfg.layoutMode !== "circular") return [];
+    return scene.genes
+      .filter((g) => g.points)
+      .map((g) => {
+        const path = new Path2D();
+        const pts = g.points as Array<[number, number]>;
+        path.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) path.lineTo(pts[i][0], pts[i][1]);
+        path.closePath();
+        return { uid: g.uid, path };
+      });
+  }, [scene, cfg.layoutMode]);
+  const genePathsRef = useRef(genePaths);
+  genePathsRef.current = genePaths;
+  const hitCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+  if (!hitCtxRef.current && typeof document !== "undefined") {
+    hitCtxRef.current = document.createElement("canvas").getContext("2d");
+  }
+
+  // Which genes may carry a CDS label under the current scope (null = all genes).
+  const geneLabelEligible = useMemo(() => {
+    if (style.geneLabelScope !== "custom") return null;
+    const set = new Set<string>();
+    customGroups.forEach((g) => g.genes.forEach((u) => set.add(u)));
+    return set;
+  }, [style.geneLabelScope, customGroups]);
+  const geneLabelEligibleRef = useRef(geneLabelEligible);
+  geneLabelEligibleRef.current = geneLabelEligible;
+
   const zoom = useRef(1);
   const pan = useRef({ x: 0, y: 0 });
   const sceneRef = useRef<Scene | null>(scene);
@@ -163,6 +223,7 @@ export default function CanvasView() {
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
   const [hover, setHover] = useState<{ gene: Gene; sx: number; sy: number } | null>(null);
+  const [hoverLink, setHoverLink] = useState<{ link: Link; sx: number; sy: number } | null>(null);
 
   // Inline cluster-label (track name) editor, anchored over the label in screen space.
   const [editing, setEditing] = useState<LabelEdit | null>(null);
@@ -187,6 +248,9 @@ export default function CanvasView() {
   // Skip the next auto-refit (used when committing a slide, so the view doesn't
   // recenter just because lanes/offsets changed while positions stayed put).
   const skipNextFit = useRef(false);
+  // Circular-mode cluster rotation gesture.
+  const rotateUid = useRef<string | null>(null);
+  const rotateLastAngle = useRef(0); // cursor angle (rad) about the circle centre
 
   const syncCtls = () => {
     const s = sceneRef.current;
@@ -211,20 +275,34 @@ export default function CanvasView() {
     // spot. Each pill sits in the band above its own sequence, just outside the
     // chosen end, so it can't collide with a name drawn inside that span.
     const PILL_GAP = 8;
-    const next: ClusterCtl[] = s.clusters.map((box) => ({
-      uid: box.uid,
-      name: nameByUid.get(box.uid) ?? box.uid,
-      lane: box.lane,
-      reversed: !!reversedByUid.get(box.uid),
-      atLeft,
-      left: (atLeft ? box.x0 * z + px - PILL_GAP : box.x1 * z + px + PILL_GAP),
-      // Track row: the drag/drop truth (join zones align to the arrow row).
-      centerY: box.trackY * z + py,
-      // The band above the sequence, level with where an "above" name would sit.
-      renderY: (box.trackY - cfg.trackHeight) * z + py - fs * 0.32,
-      centerX: ((box.x0 + box.x1) / 2) * z + px,
-    }));
-    decollideCtls(next);
+    const next: ClusterCtl[] = s.clusters.map((box) => {
+      const base = {
+        uid: box.uid,
+        name: nameByUid.get(box.uid) ?? box.uid,
+        lane: box.lane,
+        reversed: !!reversedByUid.get(box.uid),
+      };
+      if (box.circular) {
+        // Sit the pill just outside the cluster's ring at its mid-angle.
+        const th = cfg.trackHeight / 2;
+        const rr = box.circular.r + th + 12;
+        const sx = Math.cos(box.circular.aMid) * rr * z + px;
+        const sy = Math.sin(box.circular.aMid) * rr * z + py;
+        return { ...base, atLeft: false, circular: true, left: sx, centerY: sy, renderY: sy, centerX: sx };
+      }
+      return {
+        ...base,
+        atLeft,
+        circular: false,
+        left: atLeft ? box.x0 * z + px - PILL_GAP : box.x1 * z + px + PILL_GAP,
+        // Track row: the drag/drop truth (join zones align to the arrow row).
+        centerY: box.trackY * z + py,
+        // The band above the sequence, level with where an "above" name would sit.
+        renderY: (box.trackY - cfg.trackHeight) * z + py - fs * 0.32,
+        centerX: ((box.x0 + box.x1) / 2) * z + px,
+      };
+    });
+    if (cfg.layoutMode !== "circular") decollideCtls(next);
     if (!sameCtls(ctlsRef.current, next)) setCtls(next);
   };
 
@@ -250,7 +328,7 @@ export default function CanvasView() {
       syncCtls();
       return;
     }
-    draw(ctx, sceneRef.current, { dpr, cssW, cssH, zoom: zoom.current, panX: pan.current.x, panY: pan.current.y }, cfgRef.current);
+    draw(ctx, sceneRef.current, { dpr, cssW, cssH, zoom: zoom.current, panX: pan.current.x, panY: pan.current.y }, cfgRef.current, geneLabelEligibleRef.current);
     syncCtls();
   };
 
@@ -291,7 +369,7 @@ export default function CanvasView() {
   // While sliding a cluster horizontally we redraw in place instead, so the view
   // doesn't recenter on every offset change.
   useEffect(() => {
-    if (hDraggingRef.current || skipNextFit.current) {
+    if (hDraggingRef.current || rotateUid.current != null || skipNextFit.current) {
       skipNextFit.current = false;
       render();
       return;
@@ -301,11 +379,11 @@ export default function CanvasView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
-  // Redraw (no refit) when draw-only style changes.
+  // Redraw (no refit) when draw-only style changes, or the CDS-label scope changes.
   useEffect(() => {
     render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg]);
+  }, [cfg, geneLabelEligible]);
 
   // Keep the canvas sized to its container.
   useEffect(() => {
@@ -417,10 +495,43 @@ export default function CanvasView() {
       zoomAtCenter(Math.exp(-e.deltaY * 0.0015));
     };
 
+    // Gene under a world point. Circular genes are wedges (polygon hit-test); linear
+    // genes are axis-aligned (fast rectangle test).
+    const geneAt = (wx: number, wy: number): string | null => {
+      const s = sceneRef.current;
+      if (!s) return null;
+      if (cfgRef.current.layoutMode === "circular") {
+        const hitCtx = hitCtxRef.current;
+        const gps = genePathsRef.current;
+        if (!hitCtx) return null;
+        for (let i = gps.length - 1; i >= 0; i--) {
+          if (hitCtx.isPointInPath(gps[i].path, wx, wy)) return gps[i].uid;
+        }
+        return null;
+      }
+      const th = cfgRef.current.trackHeight / 2;
+      const hit = s.genes.find(
+        (g) => wx >= Math.min(g.x0, g.x1) && wx <= Math.max(g.x0, g.x1) && wy >= g.y - th && wy <= g.y + th
+      );
+      return hit ? hit.uid : null;
+    };
+
     const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
+
+      // Circular cluster rotation: map the cursor's angle about the circle centre
+      // (world origin → screen pan) to an angular delta.
+      if (rotateUid.current != null) {
+        const ang = Math.atan2(my - pan.current.y, mx - pan.current.x);
+        let delta = ang - rotateLastAngle.current;
+        if (delta > Math.PI) delta -= 2 * Math.PI;
+        else if (delta < -Math.PI) delta += 2 * Math.PI;
+        rotateLastAngle.current = ang;
+        useStore.getState().rotateCluster(rotateUid.current, delta);
+        return;
+      }
 
       // Moving a cluster from its handle: horizontal movement slides it within its
       // row; dragging over another row (or a gap) switches to a re-home, previewed
@@ -453,23 +564,42 @@ export default function CanvasView() {
       if (!s) return;
       const wx = (mx - pan.current.x) / zoom.current;
       const wy = (my - pan.current.y) / zoom.current;
-      const th = cfgRef.current.trackHeight / 2;
-      const hit = s.genes.find(
-        (g) => wx >= Math.min(g.x0, g.x1) && wx <= Math.max(g.x0, g.x1) && wy >= g.y - th && wy <= g.y + th
-      );
-      if (hit) {
-        const gene = geneById.get(hit.uid);
+      const hitUid = geneAt(wx, wy);
+      if (hitUid) {
+        const gene = geneById.get(hitUid);
         if (gene) {
           setHover({ gene, sx: mx, sy: my });
+          setHoverLink(null);
           canvas.style.cursor = "pointer";
           return;
         }
       }
+      // No gene under the cursor — fall back to ribbons (drawn beneath the genes).
+      if (cfgRef.current.showLinks && hitCtxRef.current) {
+        const hitCtx = hitCtxRef.current;
+        const lps = linkPathsRef.current;
+        // Iterate topmost-first (later ribbons draw over earlier ones).
+        for (let i = lps.length - 1; i >= 0; i--) {
+          if (hitCtx.isPointInPath(lps[i].path, wx, wy)) {
+            setHoverLink({ link: lps[i].link, sx: mx, sy: my });
+            setHover(null);
+            canvas.style.cursor = "pointer";
+            return;
+          }
+        }
+      }
       setHover(null);
+      setHoverLink(null);
       canvas.style.cursor = "default";
     };
 
     const onUp = () => {
+      if (rotateUid.current != null) {
+        rotateUid.current = null;
+        skipNextFit.current = true; // rotation changed clusterAngles; keep the view
+        canvas.style.cursor = "default";
+        return;
+      }
       if (dragUid.current != null) {
         const uid = dragUid.current;
         const target = pendingTarget.current;
@@ -491,7 +621,10 @@ export default function CanvasView() {
         }
       }
     };
-    const onLeave = () => setHover(null);
+    const onLeave = () => {
+      setHover(null);
+      setHoverLink(null);
+    };
 
     // In "custom" colour mode, a single click on a gene toggles its membership
     // in the active custom group (no-op in other modes / with no active group).
@@ -503,11 +636,8 @@ export default function CanvasView() {
       const rect = canvas.getBoundingClientRect();
       const wx = (e.clientX - rect.left - pan.current.x) / zoom.current;
       const wy = (e.clientY - rect.top - pan.current.y) / zoom.current;
-      const th = cfgRef.current.trackHeight / 2;
-      const hit = s.genes.find(
-        (g) => wx >= Math.min(g.x0, g.x1) && wx <= Math.max(g.x0, g.x1) && wy >= g.y - th && wy <= g.y + th
-      );
-      if (hit) st.toggleGeneInCustomGroup(hit.uid);
+      const uid = geneAt(wx, wy);
+      if (uid) st.toggleGeneInCustomGroup(uid);
     };
 
     // Double-clicking a gene aligns every cluster's homolog of that gene to the
@@ -534,13 +664,12 @@ export default function CanvasView() {
       }
 
       // Otherwise, double-clicking a gene aligns every cluster's homolog of it.
+      // (Centering is a linear-layout operation; it's a no-op in circular mode.)
+      if (cfgRef.current.layoutMode === "circular") return;
       const wx = (mx - pan.current.x) / zoom.current;
       const wy = (my - pan.current.y) / zoom.current;
-      const th = cfgRef.current.trackHeight / 2;
-      const hit = s.genes.find(
-        (g) => wx >= Math.min(g.x0, g.x1) && wx <= Math.max(g.x0, g.x1) && wy >= g.y - th && wy <= g.y + th
-      );
-      if (hit) useStore.getState().centerClustersOnGene(hit.uid);
+      const uid = geneAt(wx, wy);
+      if (uid) useStore.getState().centerClustersOnGene(uid);
     };
 
     canvas.addEventListener("wheel", onWheel, { passive: false });
@@ -575,6 +704,8 @@ export default function CanvasView() {
 
   const startDrag = (uid: string) => (e: React.MouseEvent) => {
     e.preventDefault();
+    // Checkpoint before the drag so the whole gesture is one undo step.
+    useStore.getState().beginHistoryStep();
     const canvas = canvasRef.current;
     const rect = canvas?.getBoundingClientRect();
     dragUid.current = uid;
@@ -586,6 +717,19 @@ export default function CanvasView() {
     hDraggingRef.current = true;
     setDraggingUid(uid);
     setHDraggingUid(uid);
+    if (canvas) canvas.style.cursor = "grabbing";
+  };
+
+  // Circular mode: drag the pill to spin its cluster about the ring centre.
+  const startRotate = (uid: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    useStore.getState().beginHistoryStep();
+    const canvas = canvasRef.current;
+    const rect = canvas?.getBoundingClientRect();
+    const mx = rect ? e.clientX - rect.left : e.clientX;
+    const my = rect ? e.clientY - rect.top : e.clientY;
+    rotateUid.current = uid;
+    rotateLastAngle.current = Math.atan2(my - pan.current.y, mx - pan.current.x);
     if (canvas) canvas.style.cursor = "grabbing";
   };
 
@@ -653,13 +797,23 @@ export default function CanvasView() {
               }
               style={{ left: c.left, top: c.renderY }}
             >
-              <button
-                className="row-handle"
-                title="Drag to move — sideways to slide within its row, up/down to move to another row"
-                onMouseDown={startDrag(c.uid)}
-              >
-                ⠿
-              </button>
+              {c.circular ? (
+                <button
+                  className="row-handle"
+                  title="Drag to rotate this cluster around the circle"
+                  onMouseDown={startRotate(c.uid)}
+                >
+                  ↻
+                </button>
+              ) : (
+                <button
+                  className="row-handle"
+                  title="Drag to move — sideways to slide within its row, up/down to move to another row"
+                  onMouseDown={startDrag(c.uid)}
+                >
+                  ⠿
+                </button>
+              )}
               <button
                 className={"row-reverse" + (c.reversed ? " active" : "")}
                 title={c.reversed ? "Restore original direction" : "Reverse cluster direction"}
@@ -713,6 +867,33 @@ export default function CanvasView() {
           )}
         </div>
       )}
+      {hoverLink && (() => {
+        const l = hoverLink.link;
+        const q = geneById.get(l.query);
+        const t = geneById.get(l.target);
+        // Present metrics, active metric first.
+        const rows = (Object.keys(l.metrics) as MetricKey[])
+          .filter((k) => l.metrics[k] != null)
+          .sort((a, b) => (a === activeMetric ? -1 : b === activeMetric ? 1 : 0));
+        const partial = l.query_start != null && l.query_end != null;
+        return (
+          <div className="gene-tooltip" style={{ left: hoverLink.sx + 14, top: hoverLink.sy + 14 }}>
+            <div className="tt-title">
+              {(q?.label ?? l.query)} ↔ {(t?.label ?? l.target)}
+            </div>
+            {rows.map((k) => (
+              <div className="tt-row" key={k}>
+                <span className="tt-key">{METRIC_LABELS[k] ?? k}</span> {formatMetric(l.metrics[k], k)}
+              </div>
+            ))}
+            {partial && (
+              <div className="tt-row tt-hint">
+                aligned {Math.round((l.query_start as number) * 100)}–{Math.round((l.query_end as number) * 100)}% of query
+              </div>
+            )}
+          </div>
+        );
+      })()}
       {data && (
         <div className="canvas-controls">
           <button className="icon-btn" title="Zoom out" onClick={() => zoomBy(1 / 1.2)}>−</button>

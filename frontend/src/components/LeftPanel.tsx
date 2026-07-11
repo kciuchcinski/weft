@@ -433,20 +433,23 @@ export default function LeftPanel() {
         <p className="style-group">Alignment</p>
         <label className="field">
           <span>Engine</span>
-          <select value={engine} onChange={(e) => setEngine(e.target.value)}>
+          <select
+            value={engine === "parasail" ? `parasail-${mode}` : "diamond"}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "diamond") {
+                setEngine("diamond");
+              } else {
+                setEngine("parasail");
+                setMode(v === "parasail-local" ? "local" : "global");
+              }
+            }}
+          >
+            <option value="parasail-global">parasail — global (whole protein)</option>
+            <option value="parasail-local">parasail — local (partial regions)</option>
             {engines.includes("diamond") && <option value="diamond">DIAMOND (fast)</option>}
-            <option value="parasail">parasail (exact pairwise)</option>
           </select>
         </label>
-        {engine === "parasail" && (
-          <label className="field">
-            <span>Mode</span>
-            <select value={mode} onChange={(e) => setMode(e.target.value)}>
-              <option value="global">Global (whole protein)</option>
-              <option value="local">Local (partial regions)</option>
-            </select>
-          </label>
-        )}
         <SliderField
           label="Min identity"
           value={identityCutoff}
@@ -580,6 +583,72 @@ export default function LeftPanel() {
           row is split. An exported SVG has no viewport, so there pinned names line up in a column against
           the figure's edge.
         </p>
+
+        <p className="style-group">CDS labels</p>
+        <SelectField
+          label="Show CDS labels"
+          value={style.showGeneLabels}
+          options={[
+            { value: "auto", label: "Auto (on zoom-in)" },
+            { value: "always", label: "Always" },
+            { value: "never", label: "Never" },
+          ]}
+          onChange={(v) => setStyle({ showGeneLabels: v })}
+        />
+        <SelectField
+          label="Label field"
+          value={style.geneLabelField}
+          disabled={style.showGeneLabels === "never"}
+          options={[
+            { value: "", label: "Auto (gene → locus_tag → protein_id)" },
+            ...fields.map((f) => ({ value: f, label: f })),
+          ]}
+          onChange={(v) => setStyle({ geneLabelField: v })}
+        />
+        <SelectField
+          label="Label scope"
+          value={style.geneLabelScope}
+          disabled={style.showGeneLabels === "never"}
+          options={[
+            { value: "all", label: "All genes" },
+            { value: "custom", label: "Custom groups only" },
+          ]}
+          onChange={(v) => setStyle({ geneLabelScope: v })}
+        />
+        <SelectField
+          label="Label position"
+          value={style.geneLabelPosition}
+          disabled={style.showGeneLabels === "never"}
+          options={[
+            { value: "above", label: "Above the gene" },
+            { value: "on", label: "On the gene" },
+          ]}
+          onChange={(v) => setStyle({ geneLabelPosition: v })}
+        />
+        <SelectField
+          label="Label rotation"
+          value={String(style.geneLabelRotation)}
+          disabled={style.showGeneLabels === "never"}
+          options={[
+            { value: "0", label: "Horizontal" },
+            { value: "45", label: "Diagonal (45°)" },
+            { value: "90", label: "Vertical (90°)" },
+          ]}
+          onChange={(v) => setStyle({ geneLabelRotation: Number(v) })}
+        />
+        <SliderField
+          label="Label font size"
+          value={style.geneLabelFontSize}
+          min={6}
+          max={20}
+          disabled={style.showGeneLabels === "never"}
+          onChange={(v) => setStyle({ geneLabelFontSize: v })}
+        />
+        <p className="muted">
+          Labels are horizontal and adaptive: each sits above its gene, truncates to fit, and is dropped
+          when it would overlap another. <b>Auto</b> reveals them only once a gene is wide enough on screen,
+          so they appear as you zoom in. <b>Custom groups only</b> labels just the genes you've grouped.
+        </p>
       </Section>
 
       <Section key={data ? "colour-data" : "colour-empty"} title="Colour" defaultOpen={!!data}>
@@ -666,8 +735,19 @@ export default function LeftPanel() {
       <Section title="Arrangement" defaultOpen={!!data}>
         {data ? (
           <>
+            <SelectField
+              label="Layout"
+              value={style.layoutMode}
+              options={[
+                { value: "linear", label: "Linear (tracks)" },
+                { value: "circular", label: "Circular (rings)" },
+              ]}
+              onChange={(v) => setStyle({ layoutMode: v })}
+            />
             <p className="muted">
-              Drag the ⠿ handle to move a cluster — sideways to slide it within its row, or up/down to move it to another row.
+              {style.layoutMode === "circular"
+                ? "Lanes become concentric rings; base-pairs map to angle. Drag a cluster's ↻ handle to rotate it around the circle; ⇄ still reverses direction. Drag-to-reorder is available in linear mode."
+                : "Drag the ⠿ handle to move a cluster — sideways to slide it within its row, or up/down to move it to another row."}
             </p>
             <SliderField label="Scale (px/kb)" value={style.pxPerKb} min={5} max={500} step={5} onChange={(v) => setStyle({ pxPerKb: v })} />
             <SliderField label="Cluster spacing" value={style.clusterSpacing} min={10} max={200} onChange={(v) => setStyle({ clusterSpacing: v })} />

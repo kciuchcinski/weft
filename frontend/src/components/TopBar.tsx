@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useStore } from "../state/store";
 import { describeAlignment } from "../render/layout";
 import { exportSVG } from "../export";
@@ -33,8 +33,26 @@ export default function TopBar() {
   const jobStatus = useStore((s) => s.jobStatus);
   const togglePanel = useStore((s) => s.togglePanel);
   const data = useStore((s) => s.data);
+  const canUndo = useStore((s) => s.past.length > 0);
+  const canRedo = useStore((s) => s.future.length > 0);
   const hasData = !!data;
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard: ⌘Z / Ctrl+Z to undo, ⇧⌘Z or Ctrl+Y to redo. Ignore while typing in
+  // an input (so the rename editor keeps native text undo).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z" && e.key.toLowerCase() !== "y") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      e.preventDefault();
+      const redo = e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey);
+      if (redo) useStore.getState().redo();
+      else useStore.getState().undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Base info: how much is loaded and which alignment produced it.
   const clusterCount = data?.clusters.length ?? 0;
@@ -88,6 +106,8 @@ export default function TopBar() {
         )}
       </div>
       <div className="topbar-actions">
+        <button className="btn" onClick={() => useStore.getState().undo()} disabled={!canUndo} title="Undo (⌘Z)">↶</button>
+        <button className="btn" onClick={() => useStore.getState().redo()} disabled={!canRedo} title="Redo (⇧⌘Z)">↷</button>
         <button className="btn" onClick={onNew}>New</button>
         <button className="btn" onClick={() => fileRef.current?.click()}>Load</button>
         <button className="btn" onClick={onSave} disabled={!hasData}>Save</button>

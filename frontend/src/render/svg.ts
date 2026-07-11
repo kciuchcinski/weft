@@ -1,12 +1,13 @@
 import type { LayoutConfig, Scene } from "./layout";
 import { genePoints, ribbonPath } from "./geometry";
+import { placeGeneLabels } from "./labels";
 
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 }
 
 /** Serialise a scene to a standalone, correctly-sized SVG document (SPEC §11). */
-export function sceneToSVG(scene: Scene, cfg: LayoutConfig): string {
+export function sceneToSVG(scene: Scene, cfg: LayoutConfig, geneLabelEligible: Set<string> | null = null): string {
   const m = 24;
   const { minX, minY, maxX, maxY } = scene.bounds;
   const w = (maxX - minX) + 2 * m;
@@ -26,7 +27,16 @@ export function sceneToSVG(scene: Scene, cfg: LayoutConfig): string {
     parts.push(`<path d="${ribbonPath(l, cfg.straight)}" fill="${l.colour}" fill-opacity="${l.alpha.toFixed(3)}"/>`);
   }
   for (const lo of scene.loci) {
-    parts.push(`<line x1="${lo.x0.toFixed(1)}" y1="${lo.y.toFixed(1)}" x2="${lo.x1.toFixed(1)}" y2="${lo.y.toFixed(1)}" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
+    if (lo.arc) {
+      const { cx, cy, r, a0, a1 } = lo.arc;
+      const lo0 = Math.min(a0, a1), hi = Math.max(a0, a1);
+      const p0 = [cx + r * Math.cos(lo0), cy + r * Math.sin(lo0)];
+      const p1 = [cx + r * Math.cos(hi), cy + r * Math.sin(hi)];
+      const large = hi - lo0 > Math.PI ? 1 : 0;
+      parts.push(`<path d="M${p0[0].toFixed(1)},${p0[1].toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${large} 1 ${p1[0].toFixed(1)},${p1[1].toFixed(1)}" fill="none" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
+    } else {
+      parts.push(`<line x1="${lo.x0.toFixed(1)}" y1="${lo.y.toFixed(1)}" x2="${lo.x1.toFixed(1)}" y2="${lo.y.toFixed(1)}" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
+    }
   }
   for (const g of scene.genes) {
     const pts = genePoints(g, cfg.trackHeight, cfg.geneShape, cfg.tipLength).map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
@@ -49,6 +59,34 @@ export function sceneToSVG(scene: Scene, cfg: LayoutConfig): string {
       const anchor = lab.align === "left" ? "start" : "end";
       const baseline = lab.middle ? ` dominant-baseline="central"` : "";
       parts.push(`<text x="${lab.x.toFixed(1)}" y="${lab.y.toFixed(1)}" text-anchor="${anchor}"${baseline} font-family="system-ui, sans-serif" font-size="${cfg.clusterFontSize}" font-weight="600" fill="#202124">${esc(lab.name)}</text>`);
+    }
+  }
+
+  // CDS labels, placed in world space (export is zoom-independent, so the layout is
+  // computed at 1:1 with no pan). Halo via paint-order keeps them legible.
+  if (cfg.showGeneLabels !== "never") {
+    const placements = placeGeneLabels(
+      scene.genes,
+      { zoom: 1, panX: 0, panY: 0, cssW: w },
+      {
+        mode: cfg.showGeneLabels,
+        fontSize: cfg.geneLabelFontSize,
+        trackHeight: cfg.trackHeight,
+        position: cfg.geneLabelPosition,
+        rotationDeg: cfg.geneLabelRotation,
+        eligible: geneLabelEligible,
+      },
+    );
+    const rot = cfg.geneLabelRotation;
+    for (const p of placements) {
+      // SVG rotate is clockwise; negate to match the canvas (positive reads up-right).
+      // placement.y is the label's vertical centre, so anchor on the central baseline.
+      const transform = rot !== 0 ? ` transform="rotate(${(-rot).toFixed(1)} ${p.x.toFixed(1)} ${p.y.toFixed(1)})"` : "";
+      parts.push(
+        `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="central"${transform} ` +
+        `font-family="system-ui, sans-serif" font-size="${cfg.geneLabelFontSize}" font-weight="500" fill="#202124" ` +
+        `stroke="${cfg.background}" stroke-width="3" paint-order="stroke">${esc(p.text)}</text>`
+      );
     }
   }
 

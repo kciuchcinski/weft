@@ -44,6 +44,8 @@ export function genePoints(
   shape: GeneShapeKind = "triangle",
   tipLength: number = h * 0.9,
 ): Array<[number, number]> {
+  // Circular layout precomputes an annular wedge; use it verbatim.
+  if (g.points) return g.points;
   const th = h / 2;
   const x0 = g.x0, x1 = g.x1, y = g.y;
   const len = Math.abs(x1 - x0);
@@ -75,6 +77,8 @@ export function genePoints(
 
 /** SVG path data for a homology-link ribbon (usable as Path2D in canvas too). */
 export function ribbonPath(l: LinkRibbon, straight = false): string {
+  // Circular layout precomputes a centre-pulled chord; use it verbatim.
+  if (l.path) return l.path;
   if (straight) {
     return `M${l.ax0},${l.ay} L${l.bx0},${l.by} L${l.bx1},${l.by} L${l.ax1},${l.ay} Z`;
   }

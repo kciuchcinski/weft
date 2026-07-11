@@ -1,6 +1,6 @@
 import type { LayoutConfig, Scene } from "./layout";
 import { genePoints, ribbonPath } from "./geometry";
-import { labelScreenRect } from "./labels";
+import { labelScreenRect, placeGeneLabels } from "./labels";
 
 export interface View {
   dpr: number;
@@ -11,7 +11,13 @@ export interface View {
   panY: number;
 }
 
-export function draw(ctx: CanvasRenderingContext2D, scene: Scene, view: View, cfg: LayoutConfig): void {
+export function draw(
+  ctx: CanvasRenderingContext2D,
+  scene: Scene,
+  view: View,
+  cfg: LayoutConfig,
+  geneLabelEligible: Set<string> | null = null,
+): void {
   ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
   ctx.clearRect(0, 0, view.cssW, view.cssH);
   ctx.fillStyle = cfg.background;
@@ -33,8 +39,13 @@ export function draw(ctx: CanvasRenderingContext2D, scene: Scene, view: View, cf
   ctx.strokeStyle = cfg.backboneColour;
   for (const lo of scene.loci) {
     ctx.beginPath();
-    ctx.moveTo(lo.x0, lo.y);
-    ctx.lineTo(lo.x1, lo.y);
+    if (lo.arc) {
+      const { cx, cy, r, a0, a1 } = lo.arc;
+      ctx.arc(cx, cy, r, Math.min(a0, a1), Math.max(a0, a1));
+    } else {
+      ctx.moveTo(lo.x0, lo.y);
+      ctx.lineTo(lo.x1, lo.y);
+    }
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
@@ -134,6 +145,51 @@ export function draw(ctx: CanvasRenderingContext2D, scene: Scene, view: View, cf
       if (cfg.clusterLabelPinned) ctx.strokeText(lab.name, r.x, r.y);
       ctx.fillStyle = "#202124";
       ctx.fillText(lab.name, r.x, r.y);
+    }
+  }
+
+  // CDS labels: adaptive, horizontal, screen-space (constant size, placed against
+  // the live zoom so they reveal on zoom-in and never rotate). A background halo
+  // keeps them legible over arrows and ribbons.
+  if (cfg.showGeneLabels !== "never") {
+    const placements = placeGeneLabels(
+      scene.genes,
+      { zoom: view.zoom, panX: view.panX, panY: view.panY, cssW: view.cssW },
+      {
+        mode: cfg.showGeneLabels,
+        fontSize: cfg.geneLabelFontSize,
+        trackHeight: cfg.trackHeight,
+        position: cfg.geneLabelPosition,
+        rotationDeg: cfg.geneLabelRotation,
+        eligible: geneLabelEligible,
+      },
+    );
+    if (placements.length) {
+      ctx.font = `500 ${cfg.geneLabelFontSize}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle"; // placement.y is the label's vertical centre
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 3;
+      // Canvas +angle is clockwise (y-down); negate so a positive rotation reads
+      // upward-to-the-right, matching the SVG export.
+      const rad = -(cfg.geneLabelRotation * Math.PI) / 180;
+      if (rad === 0) {
+        ctx.strokeStyle = cfg.background;
+        for (const p of placements) ctx.strokeText(p.text, p.x, p.y);
+        ctx.fillStyle = "#202124";
+        for (const p of placements) ctx.fillText(p.text, p.x, p.y);
+      } else {
+        for (const p of placements) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(rad);
+          ctx.strokeStyle = cfg.background;
+          ctx.strokeText(p.text, 0, 0);
+          ctx.fillStyle = "#202124";
+          ctx.fillText(p.text, 0, 0);
+          ctx.restore();
+        }
+      }
     }
   }
 }

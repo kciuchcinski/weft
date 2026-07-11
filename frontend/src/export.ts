@@ -1,5 +1,6 @@
 import type { FigureData, MetricKey } from "./types";
 import { buildScene } from "./render/layout";
+import { toCircular } from "./render/circular";
 import { computeColours, type ColourBy, type CustomGroup } from "./render/palette";
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
@@ -19,22 +20,33 @@ export interface FigureState {
   /** Names given to merged rows. Without these an export falls back to the default
    * joined names and silently disagrees with what's drawn on the canvas. */
   rowNames: Record<string, string>;
+  /** Per-cluster angular rotation, applied when the style's layout is circular. */
+  clusterAngles: Record<string, number>;
   style: StyleConfig;
 }
 
 function sceneFrom(s: FigureState) {
   const cfg = makeConfig(s.style);
   const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries);
-  return {
-    cfg,
-    scene: buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames),
-  };
+  const linear = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames);
+  const scene = s.style.layoutMode === "circular"
+    ? toCircular(linear, cfg, s.clusterAngles, s.data!.clusters.map((c) => c.uid))
+    : linear;
+  return { cfg, scene };
+}
+
+/** Gene uids eligible for CDS labels under the current scope (null = all genes). */
+function geneLabelEligible(s: FigureState): Set<string> | null {
+  if (s.style.geneLabelScope !== "custom") return null;
+  const set = new Set<string>();
+  s.customGroups.forEach((g) => g.genes.forEach((u) => set.add(u)));
+  return set;
 }
 
 export function exportSVG(s: FigureState): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
-  download(new Blob([sceneToSVG(scene, cfg)], { type: "image/svg+xml" }), "weft.svg");
+  download(new Blob([sceneToSVG(scene, cfg, geneLabelEligible(s))], { type: "image/svg+xml" }), "weft.svg");
 }
 
 export function exportPNG(s: FigureState, scale = 2): void {
@@ -54,6 +66,7 @@ export function exportPNG(s: FigureState, scale = 2): void {
     scene,
     { dpr: 1, cssW: w, cssH: h, zoom: scale, panX: (m - b.minX) * scale, panY: (m - b.minY) * scale },
     cfg,
+    geneLabelEligible(s),
   );
   canvas.toBlob((blob) => { if (blob) download(blob, "weft.png"); });
 }

@@ -1,4 +1,4 @@
-import type { FigureData, Link, MetricKey } from "../types";
+import type { FigureData, Gene, Link, MetricKey } from "../types";
 import { UNGROUPED, type LegendItem } from "./palette";
 import { measureLabel } from "./labels";
 
@@ -22,6 +22,27 @@ export type GeneShapeKind = "triangle" | "arrow" | "rounded" | "box";
 /** Cluster-name placement relative to its sequence track. */
 export type ClusterLabelPlacement = "above" | "beside";
 export type ClusterLabelSide = "left" | "right";
+
+/** Figure layout: the default linear tracks, or a concentric circular (Circos) view. */
+export type LayoutMode = "linear" | "circular";
+
+/** CDS-label visibility: never; always (per gene in scope, truncated to fit); or
+ * auto (only once a gene is wide enough on screen — labels appear as you zoom in). */
+export type GeneLabelMode = "auto" | "always" | "never";
+/** Which genes may be labelled: every gene, or only custom-group members. */
+export type GeneLabelScope = "all" | "custom";
+/** Where a CDS label sits relative to its arrow: above it, or centred on it. */
+export type GeneLabelPosition = "above" | "on";
+
+/**
+ * The text to label a gene with, for a chosen qualifier field. When `field` is set
+ * and present use it; otherwise fall back through the conventional names (gene →
+ * locus_tag → protein_id) and finally the gene's own label.
+ */
+export function resolveGeneLabel(gene: Gene, field: string): string {
+  if (field && gene.names[field]) return gene.names[field];
+  return gene.names.gene || gene.names.locus_tag || gene.names.protein_id || gene.label || "";
+}
 
 /** Gap between a pinned name column and the figure's edge, in SVG export. */
 const LABEL_PIN_GAP = 12;
@@ -82,6 +103,17 @@ export interface LayoutConfig {
   legendFontSize: number;
   /** Horizontal gap between legend entries in world units. */
   legendSpacing: number;
+  // CDS (gene) labels — adaptive, horizontal, placed at render time (see labels.ts).
+  showGeneLabels: GeneLabelMode;
+  geneLabelFontSize: number;
+  /** Qualifier key resolved into each GeneShape.label ("" = fallback chain). */
+  geneLabelField: string;
+  /** Above the arrow, or centred on it. */
+  geneLabelPosition: GeneLabelPosition;
+  /** Label rotation in degrees (0 = horizontal; positive tilts upward to the right). */
+  geneLabelRotation: number;
+  /** Linear tracks (default) or a concentric circular view. */
+  layoutMode: LayoutMode;
 }
 
 export const DEFAULT_LAYOUT: LayoutConfig = {
@@ -120,6 +152,12 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
   showLegend: true,
   legendFontSize: 13,
   legendSpacing: 18,
+  showGeneLabels: "never",
+  geneLabelFontSize: 11,
+  geneLabelField: "",
+  geneLabelPosition: "above",
+  geneLabelRotation: 0,
+  layoutMode: "linear",
 };
 
 export interface GeneShape {
@@ -132,9 +170,22 @@ export interface GeneShape {
   strand: number;
   colour: string;
   label: string;
+  /** Precomputed world-space polygon (circular mode: an annular wedge). When set,
+   * renderers draw these points verbatim instead of the axis-aligned glyph. */
+  points?: Array<[number, number]>;
+  /** Circular mode: where a CDS label should sit (world coords), since the gene's
+   * x0/x1/y describe its linear position, not its place on the ring. `x`,`y` is the
+   * label's top-centre anchor; `w` is the available width for truncation. */
+  labelAnchor?: { x: number; y: number; w: number };
 }
 
-export interface LocusLine { x0: number; x1: number; y: number; }
+export interface LocusLine {
+  x0: number; x1: number; y: number;
+  /** Owning cluster index, so the circular transform can apply its rotation. */
+  cluster?: number;
+  /** Circular mode: draw the backbone as an arc instead of a straight segment. */
+  arc?: { cx: number; cy: number; r: number; a0: number; a1: number };
+}
 /**
  * Where a cluster's *sequence* sits, in world coordinates. Always one per cluster.
  *
@@ -150,6 +201,9 @@ export interface ClusterBox {
   w: number;
   /** World y of the sequence track (the gene row). */
   trackY: number;
+  /** Circular mode: ring centre/radius and the cluster's mid-angle, for placing the
+   * rotate control and mapping a drag to an angular offset. */
+  circular?: { cx: number; cy: number; r: number; aMid: number };
 }
 
 /**
@@ -186,6 +240,10 @@ export interface LinkRibbon {
   mx: number; my: number;
   /** Formatted active-metric value, present only when link labels are enabled. */
   label?: string;
+  /** The source homology link, for hover tooltips (connected genes + metrics). */
+  link: Link;
+  /** Circular mode: a precomputed chord path. When set, renderers use it verbatim. */
+  path?: string;
 }
 
 /** Horizontal scale bar (a nice round bp length) drawn below the figure. */
@@ -449,7 +507,7 @@ export function buildScene(
       const w = (locus.end - locus.start) * cfg.pxPerBp;
       const lx0 = cursor;
       const lx1 = cursor + w;
-      loci.push(reversed ? { x0: mirror(lx1), x1: mirror(lx0), y: originY } : { x0: lx0, x1: lx1, y: originY });
+      loci.push(reversed ? { x0: mirror(lx1), x1: mirror(lx0), y: originY, cluster: ci } : { x0: lx0, x1: lx1, y: originY, cluster: ci });
       for (const g of locus.genes) {
         const gx0 = cursor + (g.start - locus.start) * cfg.pxPerBp;
         const gx1 = cursor + (g.end - locus.start) * cfg.pxPerBp;
@@ -462,7 +520,7 @@ export function buildScene(
           y: originY,
           strand: reversed ? -g.strand : g.strand,
           colour: geneColour.get(g.uid) ?? UNGROUPED,
-          label: g.label,
+          label: resolveGeneLabel(g, cfg.geneLabelField),
         };
         genes.push(shape);
         shapeByUid.set(g.uid, shape);
@@ -629,6 +687,7 @@ export function buildScene(
         mx: (ax0 + ax1 + bx0 + bx1) / 4,
         my: (upper.y + lower.y) / 2,
         label: cfg.showLinkLabels ? formatMetric(link.metrics[metric], metric) : undefined,
+        link,
       });
     }
   }

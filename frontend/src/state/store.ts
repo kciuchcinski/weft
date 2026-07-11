@@ -13,6 +13,8 @@ export interface SessionView {
   lanes: string[][];
   /** Per-cluster horizontal shift (world px) applied on top of sequential lane packing. */
   clusterOffsets: Record<string, number>;
+  /** Per-cluster angular rotation (radians), applied in circular layout mode. */
+  clusterAngles: Record<string, number>;
   activeMetric: MetricKey;
   colourBy: ColourBy;
   paletteName: string;
@@ -49,6 +51,7 @@ function defaultSessionView(): SessionView {
   return {
     lanes: [],
     clusterOffsets: {},
+    clusterAngles: {},
     activeMetric: "identity",
     colourBy: "group",
     paletteName: DEFAULT_PALETTE,
@@ -58,9 +61,10 @@ function defaultSessionView(): SessionView {
     activeCustomGroup: null,
     rowNames: {},
     style: { ...DEFAULT_STYLE },
-    // DIAMOND is the fast default. Where its binary is absent (a parasail-only
-    // image), fetchCapabilities swaps this for the server's advertised default.
-    engine: "diamond",
+    // parasail global is the default: exact, always available, and matches the
+    // backend's JobRequest default. fetchCapabilities may still swap this for the
+    // server's advertised default if the stored engine isn't runnable.
+    engine: "parasail",
     mode: "global",
     identityCutoff: 0.3,
     evalueCutoff: 1e-3,
@@ -102,6 +106,60 @@ function singletonLanes(data: FigureData | null): string[][] {
   return data ? data.clusters.map((c) => [c.uid]) : [];
 }
 
+/** A complete, serialisable snapshot of the current session (data + view). All
+ * mutations are immutable, so the referenced arrays/objects are safe to keep as
+ * history entries — they are never mutated in place. Shared by getSession (save,
+ * persistence) and the undo/redo history stack. */
+function snapshotOf(s: AppState): Session {
+  return {
+    schemaVersion: 1,
+    data: s.data,
+    view: {
+      lanes: s.lanes,
+      clusterOffsets: s.clusterOffsets,
+      clusterAngles: s.clusterAngles,
+      activeMetric: s.activeMetric,
+      colourBy: s.colourBy,
+      paletteName: s.paletteName,
+      overrides: s.overrides,
+      colourField: s.colourField,
+      customGroups: s.customGroups,
+      activeCustomGroup: s.activeCustomGroup,
+      rowNames: s.rowNames,
+      style: s.style,
+      engine: s.engine,
+      mode: s.mode,
+      identityCutoff: s.identityCutoff,
+      evalueCutoff: s.evalueCutoff,
+    },
+  };
+}
+
+/** Field-restoration patch applied when a session snapshot becomes the live state
+ * — the single code path shared by loadSession (file open) and undo/redo. */
+function sessionToState(session: Session) {
+  return {
+    data: session.data,
+    lanes: session.view.lanes ?? singletonLanes(session.data),
+    clusterOffsets: session.view.clusterOffsets ?? {},
+    clusterAngles: session.view.clusterAngles ?? {},
+    activeMetric: clampMetric(session.view.activeMetric, session.data),
+    colourBy: session.view.colourBy,
+    paletteName: session.view.paletteName,
+    overrides: session.view.overrides ?? {},
+    colourField: session.view.colourField ?? "",
+    customGroups: session.view.customGroups ?? [],
+    activeCustomGroup: session.view.activeCustomGroup ?? null,
+    rowNames: session.view.rowNames ?? {},
+    style: { ...DEFAULT_STYLE, ...(session.view.style ?? {}) },
+    engine: session.view.engine ?? "parasail",
+    mode: session.view.mode ?? "global",
+    identityCutoff: session.view.identityCutoff ?? 0.3,
+    evalueCutoff: session.view.evalueCutoff ?? 1e-3,
+    jobStatus: "idle",
+  };
+}
+
 interface AppState extends SessionView {
   data: FigureData | null;
   panelCollapsed: boolean;
@@ -110,6 +168,8 @@ interface AppState extends SessionView {
   setData: (d: FigureData | null) => void;
   moveClusterTo: (uid: string, target: MoveTarget) => void;
   setClusterOffset: (uid: string, offset: number) => void;
+  /** Add `delta` radians to a cluster's rotation (circular mode). */
+  rotateCluster: (uid: string, delta: number) => void;
   setLaneArrangement: (laneIndex: number, order: string[], offsets: Record<string, number>) => void;
   centerClustersOnGene: (geneUid: string) => void;
   clearClusterOffsets: () => void;
@@ -145,15 +205,59 @@ interface AppState extends SessionView {
   newSession: () => void;
   loadSession: (s: Session) => void;
   getSession: () => Session;
+
+  // Undo/redo history (not persisted). `past`/`future` hold session snapshots;
+  // buttons read their lengths to enable/disable.
+  past: Session[];
+  future: Session[];
+  undo: () => void;
+  redo: () => void;
+  /** Record a history checkpoint at the start of a gesture (e.g. a cluster drag)
+   * so the whole gesture collapses to a single undo step. */
+  beginHistoryStep: () => void;
 }
 
 const persisted = loadPersistedSession();
 const initialView = persisted?.view ?? defaultSessionView();
 
-export const useStore = create<AppState>((set, get) => ({
+const HISTORY_LIMIT = 50;
+
+export const useStore = create<AppState>((set, get) => {
+  // Coalesce rapid same-kind changes (slider/colour-picker drags fire onChange
+  // continuously) into one history entry, keyed by an action tag + a short time
+  // window. Gesture starts (beginHistoryStep) bypass this by resetting the tag.
+  let lastTag: string | null = null;
+  let lastTime = 0;
+  const COALESCE_MS = 400;
+
+  const pushPast = (tag: string) => {
+    const now = Date.now();
+    if (tag === lastTag && now - lastTime < COALESCE_MS) {
+      lastTime = now;
+      return;
+    }
+    lastTag = tag;
+    lastTime = now;
+    set((s) => ({ past: [...s.past, snapshotOf(s)].slice(-HISTORY_LIMIT), future: [] }));
+  };
+
+  // Wrap a mutating action so it records a pre-mutation checkpoint. `tag` may be a
+  // string or a function of the action args (so e.g. per-gene colour edits coalesce
+  // per gene, but two different controls stay as separate undo steps).
+  // `tag` keys history coalescing; its args are only used to build a string, so it
+  // is typed loosely (any[]) to keep A inferred solely from the wrapped action.
+  const hist =
+    <A extends unknown[]>(tag: string | ((...a: any[]) => string), fn: (...a: A) => void) =>
+    (...a: A) => {
+      pushPast(typeof tag === "function" ? tag(...a) : tag);
+      fn(...a);
+    };
+
+  return {
   data: persisted?.data ?? null,
   lanes: initialView.lanes ?? [],
   clusterOffsets: initialView.clusterOffsets ?? {},
+  clusterAngles: initialView.clusterAngles ?? {},
   activeMetric: clampMetric(initialView.activeMetric, persisted?.data ?? null),
   colourBy: initialView.colourBy,
   paletteName: initialView.paletteName,
@@ -163,27 +267,36 @@ export const useStore = create<AppState>((set, get) => ({
   activeCustomGroup: initialView.activeCustomGroup ?? null,
   rowNames: initialView.rowNames ?? {},
   style: { ...DEFAULT_STYLE, ...(initialView.style ?? {}) },
-  engine: initialView.engine ?? "diamond",
+  engine: initialView.engine ?? "parasail",
   mode: initialView.mode ?? "global",
   identityCutoff: initialView.identityCutoff ?? 0.3,
   evalueCutoff: initialView.evalueCutoff ?? 1e-3,
   panelCollapsed: false,
   jobStatus: "idle",
+  past: [],
+  future: [],
 
   // Loading fresh data resets grouping to one cluster per row and clears positions.
   // Custom groups reference gene uids from the previous dataset, so drop them too.
+  // A new dataset invalidates prior gene-uid-keyed state, so it clears history too.
   setData: (data) =>
     set((s) => ({
       data,
       lanes: singletonLanes(data),
       clusterOffsets: {},
+      clusterAngles: {},
       customGroups: [],
       activeCustomGroup: null,
       // Row names key off cluster uids, which are fresh for each dataset.
       rowNames: {},
       activeMetric: clampMetric(s.activeMetric, data),
+      past: [],
+      future: [],
     })),
 
+  // moveClusterTo / setClusterOffset / setLaneArrangement are the cluster-drag
+  // path and deliberately do NOT record history themselves: CanvasView calls
+  // beginHistoryStep() once at drag start, so the whole gesture is one undo step.
   moveClusterTo: (uid, target) =>
     set((s) => {
       if (!s.data) return {};
@@ -214,6 +327,12 @@ export const useStore = create<AppState>((set, get) => ({
   setClusterOffset: (uid, offset) =>
     set((s) => ({ clusterOffsets: { ...s.clusterOffsets, [uid]: offset } })),
 
+  // Angular rotation for circular mode. Like the drag path above, it does not record
+  // history itself — CanvasView calls beginHistoryStep() once when the rotate gesture
+  // starts, so the whole rotation collapses to a single undo step.
+  rotateCluster: (uid, delta) =>
+    set((s) => ({ clusterAngles: { ...s.clusterAngles, [uid]: (s.clusterAngles[uid] ?? 0) + delta } })),
+
   // Commit a resolved horizontal arrangement for one lane: reorder its clusters
   // to their final visual left-to-right order and rewrite their offsets so the
   // new sequential base + offset reproduces exactly where they sit now. Keeping
@@ -232,7 +351,7 @@ export const useStore = create<AppState>((set, get) => ({
   // world X, as a single offsets update (one undo-able/persisted change). We
   // rebuild the current scene from the same inputs CanvasView uses so offsets
   // are computed against live geometry (existing offsets + overlap resolution).
-  centerClustersOnGene: (geneUid) =>
+  centerClustersOnGene: hist("center", (geneUid) =>
     set((s) => {
       if (!s.data) return {};
       const cfg = makeConfig(s.style);
@@ -240,50 +359,50 @@ export const useStore = create<AppState>((set, get) => ({
       const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames);
       const clusterOffsets = computeCenteringOffsets(scene, s.data, geneUid, s.clusterOffsets, s.activeMetric);
       return clusterOffsets === s.clusterOffsets ? {} : { clusterOffsets };
-    }),
+    })),
 
-  clearClusterOffsets: () => set({ clusterOffsets: {} }),
+  clearClusterOffsets: hist("clearOffsets", () => set({ clusterOffsets: {} })),
 
-  toggleClusterReversed: (uid) =>
+  toggleClusterReversed: hist((uid) => `reverse:${uid}`, (uid) =>
     set((s) => {
       if (!s.data) return {};
       const clusters = s.data.clusters.map((c) => (c.uid === uid ? { ...c, reversed: !c.reversed } : c));
       return { data: { ...s.data, clusters } };
-    }),
+    })),
 
-  renameCluster: (uid, name) =>
+  renameCluster: hist((uid) => `rename:${uid}`, (uid, name) =>
     set((s) => {
       if (!s.data) return {};
       const clusters = s.data.clusters.map((c) => (c.uid === uid ? { ...c, name } : c));
       return { data: { ...s.data, clusters } };
-    }),
+    })),
 
-  setRowName: (key, name) =>
+  setRowName: hist((key) => `rowname:${key}`, (key, name) =>
     set((s) => {
       const rowNames = { ...s.rowNames };
       // An empty name falls back to the joined member names rather than an empty label.
       if (name.trim()) rowNames[key] = name;
       else delete rowNames[key];
       return { rowNames };
-    }),
+    })),
 
-  setActiveMetric: (activeMetric) => set({ activeMetric }),
-  setEngine: (engine) => set({ engine }),
-  setMode: (mode) => set({ mode }),
-  setIdentityCutoff: (identityCutoff) => set({ identityCutoff }),
-  setEvalueCutoff: (evalueCutoff) => set({ evalueCutoff }),
+  setActiveMetric: hist("metric", (activeMetric) => set({ activeMetric })),
+  setEngine: hist("engine", (engine) => set({ engine })),
+  setMode: hist("mode", (mode) => set({ mode })),
+  setIdentityCutoff: hist("identity", (identityCutoff) => set({ identityCutoff })),
+  setEvalueCutoff: hist("evalue", (evalueCutoff) => set({ evalueCutoff })),
   togglePanel: () => set((s) => ({ panelCollapsed: !s.panelCollapsed })),
   setJobStatus: (jobStatus) => set({ jobStatus }),
 
-  setColourBy: (colourBy) => set({ colourBy }),
-  setPaletteName: (paletteName) => set({ paletteName }),
-  setOverride: (id, colour) => set((s) => ({ overrides: { ...s.overrides, [id]: colour } })),
-  setOverrides: (overrides) => set({ overrides }),
-  clearOverrides: () => set({ overrides: {} }),
+  setColourBy: hist("colourBy", (colourBy) => set({ colourBy })),
+  setPaletteName: hist("palette", (paletteName) => set({ paletteName })),
+  setOverride: hist((id) => `override:${id}`, (id, colour) => set((s) => ({ overrides: { ...s.overrides, [id]: colour } }))),
+  setOverrides: hist("overrides", (overrides) => set({ overrides })),
+  clearOverrides: hist("clearOverrides", () => set({ overrides: {} })),
 
-  setColourField: (colourField) => set({ colourField }),
+  setColourField: hist("colourField", (colourField) => set({ colourField })),
 
-  addCustomGroup: () =>
+  addCustomGroup: hist("addGroup", () =>
     set((s) => {
       const id = newGroupId();
       const group: CustomGroup = {
@@ -293,25 +412,25 @@ export const useStore = create<AppState>((set, get) => ({
         genes: [],
       };
       return { customGroups: [...s.customGroups, group], activeCustomGroup: id };
-    }),
+    })),
 
-  renameCustomGroup: (id, label) =>
-    set((s) => ({ customGroups: s.customGroups.map((g) => (g.id === id ? { ...g, label } : g)) })),
+  renameCustomGroup: hist((id) => `renameGroup:${id}`, (id, label) =>
+    set((s) => ({ customGroups: s.customGroups.map((g) => (g.id === id ? { ...g, label } : g)) }))),
 
-  setCustomGroupColour: (id, colour) =>
-    set((s) => ({ customGroups: s.customGroups.map((g) => (g.id === id ? { ...g, colour } : g)) })),
+  setCustomGroupColour: hist((id) => `groupColour:${id}`, (id, colour) =>
+    set((s) => ({ customGroups: s.customGroups.map((g) => (g.id === id ? { ...g, colour } : g)) }))),
 
-  removeCustomGroup: (id) =>
+  removeCustomGroup: hist("removeGroup", (id) =>
     set((s) => ({
       customGroups: s.customGroups.filter((g) => g.id !== id),
       activeCustomGroup: s.activeCustomGroup === id ? null : s.activeCustomGroup,
-    })),
+    }))),
 
   setActiveCustomGroup: (activeCustomGroup) => set({ activeCustomGroup }),
 
   // Toggle a gene in the active custom group. A gene belongs to at most one
   // custom group, so adding it here removes it from any other group.
-  toggleGeneInCustomGroup: (geneUid) =>
+  toggleGeneInCustomGroup: hist((geneUid) => `toggleGene:${geneUid}`, (geneUid) =>
     set((s) => {
       const targetId = s.activeCustomGroup;
       if (!targetId) return {};
@@ -328,60 +447,46 @@ export const useStore = create<AppState>((set, get) => ({
         return g;
       });
       return { customGroups };
-    }),
+    })),
 
-  setStyle: (partial) => set((s) => ({ style: { ...s.style, ...partial } })),
-  resetStyle: () => set({ style: { ...DEFAULT_STYLE } }),
+  // Coalesce per changed key so dragging one slider is a single undo step, while
+  // two different controls stay separate.
+  setStyle: hist((partial) => `style:${Object.keys(partial).sort().join(",")}`, (partial) =>
+    set((s) => ({ style: { ...s.style, ...partial } }))),
+  resetStyle: hist("resetStyle", () => set({ style: { ...DEFAULT_STYLE } })),
 
+  // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle" }),
+    set({ data: null, lanes: [], clusterOffsets: {}, clusterAngles: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", past: [], future: [] }),
 
-  loadSession: (session) =>
-    set({
-      data: session.data,
-      lanes: session.view.lanes ?? singletonLanes(session.data),
-      clusterOffsets: session.view.clusterOffsets ?? {},
-      activeMetric: clampMetric(session.view.activeMetric, session.data),
-      colourBy: session.view.colourBy,
-      paletteName: session.view.paletteName,
-      overrides: session.view.overrides ?? {},
-      colourField: session.view.colourField ?? "",
-      customGroups: session.view.customGroups ?? [],
-      activeCustomGroup: session.view.activeCustomGroup ?? null,
-      rowNames: session.view.rowNames ?? {},
-      style: { ...DEFAULT_STYLE, ...(session.view.style ?? {}) },
-      engine: session.view.engine ?? "diamond",
-      mode: session.view.mode ?? "global",
-      identityCutoff: session.view.identityCutoff ?? 0.3,
-      evalueCutoff: session.view.evalueCutoff ?? 1e-3,
-      jobStatus: "idle",
+  loadSession: (session) => set({ ...sessionToState(session), past: [], future: [] }),
+
+  getSession: () => snapshotOf(get()),
+
+  undo: () =>
+    set((s) => {
+      if (!s.past.length) return {};
+      const prev = s.past[s.past.length - 1];
+      const current = snapshotOf(s);
+      return { ...sessionToState(prev), past: s.past.slice(0, -1), future: [current, ...s.future].slice(0, HISTORY_LIMIT) };
     }),
 
-  getSession: () => {
-    const s = get();
-    return {
-      schemaVersion: 1,
-      data: s.data,
-      view: {
-        lanes: s.lanes,
-        clusterOffsets: s.clusterOffsets,
-        activeMetric: s.activeMetric,
-        colourBy: s.colourBy,
-        paletteName: s.paletteName,
-        overrides: s.overrides,
-        colourField: s.colourField,
-        customGroups: s.customGroups,
-        activeCustomGroup: s.activeCustomGroup,
-        rowNames: s.rowNames,
-        style: s.style,
-        engine: s.engine,
-        mode: s.mode,
-        identityCutoff: s.identityCutoff,
-        evalueCutoff: s.evalueCutoff,
-      },
-    };
+  redo: () =>
+    set((s) => {
+      if (!s.future.length) return {};
+      const next = s.future[0];
+      const current = snapshotOf(s);
+      return { ...sessionToState(next), future: s.future.slice(1), past: [...s.past, current].slice(-HISTORY_LIMIT) };
+    }),
+
+  beginHistoryStep: () => {
+    // A fresh gesture: force a checkpoint (bypass coalescing) capturing the state
+    // before any offsets change, and drop the redo stack.
+    lastTag = null;
+    set((s) => ({ past: [...s.past, snapshotOf(s)].slice(-HISTORY_LIMIT), future: [] }));
   },
-}));
+  };
+});
 
 useStore.subscribe((state) => {
   const session = state.getSession();

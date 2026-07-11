@@ -1,4 +1,4 @@
-import type { ClusterLabelPlacement, ClusterLabelSide, GeneShapeKind, LayoutConfig } from "./layout";
+import type { ClusterLabelPlacement, ClusterLabelSide, GeneLabelMode, GeneLabelPosition, GeneLabelScope, GeneShapeKind, LayoutConfig, LayoutMode } from "./layout";
 
 // Internal spacing between loci within a single cluster (px). Previously a
 // user-facing "Locus spacing" control; kept as a fixed sensible default.
@@ -7,6 +7,8 @@ const LOCUS_GAP = 24;
 /** User-tunable figure style (SPEC §10). */
 export interface StyleConfig {
   // Arrangement
+  /** Linear tracks (default) or a concentric circular (Circos-style) view. */
+  layoutMode: LayoutMode;
   pxPerKb: number;
   clusterSpacing: number;
   /** When true, clusters dragged along their row cannot overlap their neighbours. */
@@ -30,6 +32,18 @@ export interface StyleConfig {
   clusterLabelSide: ClusterLabelSide;
   /** Pin names to the canvas edge (stationary) instead of moving with the sequence. */
   clusterLabelPinned: boolean;
+  // CDS (gene) labels
+  /** never / always / auto (auto reveals labels only once a gene is wide enough). */
+  showGeneLabels: GeneLabelMode;
+  /** Qualifier key to label genes by; "" uses the gene→locus_tag→protein_id fallback. */
+  geneLabelField: string;
+  /** Label every gene, or only custom-group members. */
+  geneLabelScope: GeneLabelScope;
+  geneLabelFontSize: number;
+  /** Above the arrow, or centred on it. */
+  geneLabelPosition: GeneLabelPosition;
+  /** Label rotation in degrees (0 = horizontal). */
+  geneLabelRotation: number;
   // Links
   showLinks: boolean;
   straightLinks: boolean;
@@ -65,6 +79,7 @@ export interface StyleConfig {
 }
 
 export const DEFAULT_STYLE: StyleConfig = {
+  layoutMode: "linear",
   pxPerKb: 50,
   clusterSpacing: 54,
   preventOverlap: true,
@@ -81,6 +96,12 @@ export const DEFAULT_STYLE: StyleConfig = {
   clusterLabelPlacement: "above",
   clusterLabelSide: "left",
   clusterLabelPinned: false,
+  showGeneLabels: "never",
+  geneLabelField: "",
+  geneLabelScope: "all",
+  geneLabelFontSize: 11,
+  geneLabelPosition: "above",
+  geneLabelRotation: 0,
   showLinks: true,
   straightLinks: false,
   colourLinks: true,
@@ -103,6 +124,7 @@ export const DEFAULT_STYLE: StyleConfig = {
 /** Build the full render config consumed by layout + draw + svg. */
 export function makeConfig(style: StyleConfig): LayoutConfig {
   return {
+    layoutMode: style.layoutMode,
     pxPerBp: style.pxPerKb / 1000,
     trackHeight: style.trackHeight,
     rowGap: style.clusterSpacing,
@@ -121,7 +143,16 @@ export function makeConfig(style: StyleConfig): LayoutConfig {
     // "Beside" only makes sense pinned: a per-cluster name placed next to its own
     // sequence lands on top of the neighbouring cluster whenever a row holds more
     // than one. Normalising here means every consumer sees one coherent state.
-    clusterLabelPinned: style.clusterLabelPinned || style.clusterLabelPlacement === "beside",
+    // Circular labels sit at each ring's angular position (a world anchor), so pinning
+    // to a screen edge would tear them off the figure — force it off in that mode.
+    clusterLabelPinned: style.layoutMode === "circular"
+      ? false
+      : style.clusterLabelPinned || style.clusterLabelPlacement === "beside",
+    showGeneLabels: style.showGeneLabels,
+    geneLabelFontSize: style.geneLabelFontSize,
+    geneLabelField: style.geneLabelField,
+    geneLabelPosition: style.geneLabelPosition,
+    geneLabelRotation: style.geneLabelRotation,
     showLinks: style.showLinks,
     straight: style.straightLinks,
     colourLinks: style.colourLinks,

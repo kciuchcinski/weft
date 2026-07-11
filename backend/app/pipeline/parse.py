@@ -18,6 +18,10 @@ FASTA_SUFFIXES = (".fa", ".fna", ".fasta", ".fas", ".faa")
 # Ordered preference for the gene display label (SPEC §1.3).
 LABEL_QUALIFIERS = ("protein_id", "locus_tag", "gene", "ID", "product", "label", "name")
 
+# Feature types that describe the record itself or merely duplicate CDS coordinates,
+# so they are never rendered as individual genes.
+NON_GENE_TYPES = frozenset({"source", "gene"})
+
 
 def _flatten_qualifiers(qualifiers: dict) -> dict[str, str]:
     """Keep all qualifiers (except translation) as flat strings for later label switching."""
@@ -39,10 +43,10 @@ def _pick_label(names: dict[str, str], fallback: str) -> str:
     return fallback
 
 
-def _gene_from_feature(feature: SeqFeature, record) -> Gene:
+def _gene_from_feature(feature: SeqFeature, record, translate: bool = True) -> Gene:
     names = _flatten_qualifiers(feature.qualifiers)
     translation = feature.qualifiers.get("translation", [None])[0]
-    if not translation:
+    if not translation and translate:
         try:
             translation = str(feature.extract(record.seq).translate(to_stop=True))
         except Exception:
@@ -68,11 +72,21 @@ def parse_genbank(path: str, as_separate_clusters: bool = False) -> list[Cluster
     description: str | None = None
 
     for record in SeqIO.parse(str(path), "genbank"):
-        genes = [
-            _gene_from_feature(f, record)
-            for f in record.features
-            if f.type == "CDS"
-        ]
+        cds = [f for f in record.features if f.type == "CDS"]
+        if cds:
+            # Standard case: CDS features are the genes, translated for homology.
+            genes = [_gene_from_feature(f, record) for f in cds]
+        else:
+            # Annotation-only records (e.g. RGI/antiSMASH ARG/BGC feature tracks with
+            # no CDS) would otherwise render empty. Fall back to every other located
+            # feature so the file still draws. These aren't guaranteed single-frame
+            # coding regions, so we don't synthesise translations for them; they render
+            # as positioned, labelled features and simply don't take part in linking.
+            genes = [
+                _gene_from_feature(f, record, translate=False)
+                for f in record.features
+                if f.type not in NON_GENE_TYPES
+            ]
         genes.sort(key=lambda g: g.start)
         loci.append(
             Locus(
