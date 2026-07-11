@@ -23,9 +23,6 @@ export type GeneShapeKind = "triangle" | "arrow" | "rounded" | "box";
 export type ClusterLabelPlacement = "above" | "beside";
 export type ClusterLabelSide = "left" | "right";
 
-/** Figure layout: the default linear tracks, or a concentric circular (Circos) view. */
-export type LayoutMode = "linear" | "circular";
-
 /** CDS-label visibility: never; always (per gene in scope, truncated to fit); or
  * auto (only once a gene is wide enough on screen — labels appear as you zoom in). */
 export type GeneLabelMode = "auto" | "always" | "never";
@@ -112,8 +109,6 @@ export interface LayoutConfig {
   geneLabelPosition: GeneLabelPosition;
   /** Label rotation in degrees (0 = horizontal; positive tilts upward to the right). */
   geneLabelRotation: number;
-  /** Linear tracks (default) or a concentric circular view. */
-  layoutMode: LayoutMode;
 }
 
 export const DEFAULT_LAYOUT: LayoutConfig = {
@@ -157,7 +152,6 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
   geneLabelField: "",
   geneLabelPosition: "above",
   geneLabelRotation: 0,
-  layoutMode: "linear",
 };
 
 export interface GeneShape {
@@ -170,21 +164,12 @@ export interface GeneShape {
   strand: number;
   colour: string;
   label: string;
-  /** Precomputed world-space polygon (circular mode: an annular wedge). When set,
-   * renderers draw these points verbatim instead of the axis-aligned glyph. */
-  points?: Array<[number, number]>;
-  /** Circular mode: where a CDS label should sit (world coords), since the gene's
-   * x0/x1/y describe its linear position, not its place on the ring. `x`,`y` is the
-   * label's top-centre anchor; `w` is the available width for truncation. */
-  labelAnchor?: { x: number; y: number; w: number };
 }
 
 export interface LocusLine {
   x0: number; x1: number; y: number;
-  /** Owning cluster index, so the circular transform can apply its rotation. */
+  /** Owning cluster index. */
   cluster?: number;
-  /** Circular mode: draw the backbone as an arc instead of a straight segment. */
-  arc?: { cx: number; cy: number; r: number; a0: number; a1: number };
 }
 /**
  * Where a cluster's *sequence* sits, in world coordinates. Always one per cluster.
@@ -201,9 +186,6 @@ export interface ClusterBox {
   w: number;
   /** World y of the sequence track (the gene row). */
   trackY: number;
-  /** Circular mode: ring centre/radius and the cluster's mid-angle, for placing the
-   * rotate control and mapping a drag to an angular offset. */
-  circular?: { cx: number; cy: number; r: number; aMid: number };
 }
 
 /**
@@ -242,8 +224,6 @@ export interface LinkRibbon {
   label?: string;
   /** The source homology link, for hover tooltips (connected genes + metrics). */
   link: Link;
-  /** Circular mode: a precomputed chord path. When set, renderers use it verbatim. */
-  path?: string;
 }
 
 /** Horizontal scale bar (a nice round bp length) drawn below the figure. */
@@ -474,6 +454,10 @@ export function buildScene(
   legendItems: LegendItem[] = [],
   /** User-chosen names for merged rows, keyed by `rowKey` of their members. */
   rowNames: Record<string, string> = {},
+  /** Clusters treated as circular sequences (origin can be rotated), keyed by uid. */
+  circularClusters: Record<string, boolean> = {},
+  /** Per-cluster origin rotation in whole-CDS steps (only used when circular). */
+  clusterRotation: Record<string, number> = {},
 ): Scene {
   const genes: GeneShape[] = [];
   const loci: LocusLine[] = [];
@@ -493,7 +477,8 @@ export function buildScene(
     // reads right-to-left with every gene's strand flipped.
     const reversed = !!c.reversed;
     const width = clusterWidth(ci);
-    const mirror = (x: number) => 2 * originX + width - x;
+    const toAbs = (relX: number) => originX + relX;
+    const mirror = (absX: number) => 2 * originX + width - absX;
     clusterBoxes.push({
       uid: c.uid,
       lane: laneIdx,
@@ -502,30 +487,69 @@ export function buildScene(
       w: width,
       trackY: originY,
     });
-    let cursor = originX;
+
+    // First pass: gene + locus positions in cluster-relative coords [0, width].
+    const relGenes: { g: Gene; x0: number; x1: number }[] = [];
+    const relLoci: { x0: number; x1: number }[] = [];
+    let cursor = 0;
     for (const locus of c.loci) {
       const w = (locus.end - locus.start) * cfg.pxPerBp;
-      const lx0 = cursor;
-      const lx1 = cursor + w;
-      loci.push(reversed ? { x0: mirror(lx1), x1: mirror(lx0), y: originY, cluster: ci } : { x0: lx0, x1: lx1, y: originY, cluster: ci });
+      relLoci.push({ x0: cursor, x1: cursor + w });
       for (const g of locus.genes) {
-        const gx0 = cursor + (g.start - locus.start) * cfg.pxPerBp;
-        const gx1 = cursor + (g.end - locus.start) * cfg.pxPerBp;
-        const shape: GeneShape = {
-          uid: g.uid,
-          cluster: ci,
-          lane: laneIdx,
-          x0: reversed ? mirror(gx1) : gx0,
-          x1: reversed ? mirror(gx0) : gx1,
-          y: originY,
-          strand: reversed ? -g.strand : g.strand,
-          colour: geneColour.get(g.uid) ?? UNGROUPED,
-          label: resolveGeneLabel(g, cfg.geneLabelField),
-        };
-        genes.push(shape);
-        shapeByUid.set(g.uid, shape);
+        relGenes.push({
+          g,
+          x0: cursor + (g.start - locus.start) * cfg.pxPerBp,
+          x1: cursor + (g.end - locus.start) * cfg.pxPerBp,
+        });
       }
       cursor += w + cfg.locusGap;
+    }
+
+    // Circular origin rotation: cyclically shift the sequence so the chosen origin
+    // gene starts at x=0. The origin snaps to a gene's left edge, so no gene ever
+    // straddles the cut — genes before the origin wrap intact to the right end.
+    const isCircular = !!circularClusters[c.uid];
+    let R = 0;
+    if (isCircular && relGenes.length) {
+      const n = relGenes.length;
+      const k = (((clusterRotation[c.uid] ?? 0) % n) + n) % n;
+      R = relGenes[k].x0;
+    }
+    const rotate = (x0: number, x1: number): [number, number] => {
+      if (!R) return [x0, x1];
+      let n0 = x0 - R;
+      let n1 = x1 - R;
+      if (n0 < -1e-6) { n0 += width; n1 += width; } // wrapped: shift the whole gene
+      return [n0, n1];
+    };
+
+    // Backbone: a circular cluster is one continuous loop, so draw a single line over
+    // the full extent; a linear cluster keeps its per-locus segments (with gaps).
+    const emitLocus = (rel0: number, rel1: number) => {
+      const a0 = toAbs(rel0), a1 = toAbs(rel1);
+      loci.push(reversed
+        ? { x0: mirror(a1), x1: mirror(a0), y: originY, cluster: ci }
+        : { x0: a0, x1: a1, y: originY, cluster: ci });
+    };
+    if (isCircular) emitLocus(0, width);
+    else for (const rl of relLoci) emitLocus(rl.x0, rl.x1);
+
+    for (const rg of relGenes) {
+      const [r0, r1] = rotate(rg.x0, rg.x1);
+      const a0 = toAbs(r0), a1 = toAbs(r1);
+      const shape: GeneShape = {
+        uid: rg.g.uid,
+        cluster: ci,
+        lane: laneIdx,
+        x0: reversed ? mirror(a1) : a0,
+        x1: reversed ? mirror(a0) : a1,
+        y: originY,
+        strand: reversed ? -rg.g.strand : rg.g.strand,
+        colour: geneColour.get(rg.g.uid) ?? UNGROUPED,
+        label: resolveGeneLabel(rg.g, cfg.geneLabelField),
+      };
+      genes.push(shape);
+      shapeByUid.set(rg.g.uid, shape);
     }
   };
 

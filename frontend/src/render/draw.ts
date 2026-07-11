@@ -39,13 +39,8 @@ export function draw(
   ctx.strokeStyle = cfg.backboneColour;
   for (const lo of scene.loci) {
     ctx.beginPath();
-    if (lo.arc) {
-      const { cx, cy, r, a0, a1 } = lo.arc;
-      ctx.arc(cx, cy, r, Math.min(a0, a1), Math.max(a0, a1));
-    } else {
-      ctx.moveTo(lo.x0, lo.y);
-      ctx.lineTo(lo.x1, lo.y);
-    }
+    ctx.moveTo(lo.x0, lo.y);
+    ctx.lineTo(lo.x1, lo.y);
     ctx.stroke();
   }
   ctx.globalAlpha = 1;

@@ -92,12 +92,6 @@ export function placeGeneLabels(genes: GeneShape[], view: LabelView, opts: GeneL
   const cands = genes
     .filter((g) => g.label && (!opts.eligible || opts.eligible.has(g.uid)))
     .map((g) => {
-      // Circular genes carry an explicit label anchor (their x0/x1/y are linear).
-      if (g.labelAnchor) {
-        const a = g.labelAnchor;
-        const arrowTop = a.y * view.zoom + view.panY;
-        return { g, w: a.w * view.zoom, cx: a.x * view.zoom + view.panX, arrowTop };
-      }
       const w = Math.abs(g.x1 - g.x0) * view.zoom;
       const cx = ((g.x0 + g.x1) / 2) * view.zoom + view.panX;
       const arrowTop = (g.y - opts.trackHeight / 2) * view.zoom + view.panY;

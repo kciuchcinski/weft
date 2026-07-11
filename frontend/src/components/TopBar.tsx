@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "../state/store";
 import { describeAlignment } from "../render/layout";
-import { exportSVG } from "../export";
+import { exportAlignmentTableCSV, exportPNG, exportSimilarityMatrixCSV, exportSVG } from "../export";
 import { download } from "../download";
 
 // A compact synteny glyph: two aligned rows of gene arrows joined by a link
@@ -111,9 +111,19 @@ export default function TopBar() {
         <button className="btn" onClick={onNew}>New</button>
         <button className="btn" onClick={() => fileRef.current?.click()}>Load</button>
         <button className="btn" onClick={onSave} disabled={!hasData}>Save</button>
-        <button className="btn btn-primary" onClick={() => exportSVG(useStore.getState())} disabled={!hasData}>
-          Export
-        </button>
+        <details className="topbar-export">
+          <summary className={"btn btn-primary" + (!hasData ? " is-disabled" : "")} onClick={(e) => { if (!hasData) e.preventDefault(); }}>Export</summary>
+          {hasData && (
+            <div className="topbar-export-menu">
+              <p>Figure</p>
+              <button onClick={() => exportSVG(useStore.getState())}>SVG</button>
+              <button onClick={() => exportPNG(useStore.getState())}>PNG</button>
+              <p>Similarity data</p>
+              <button onClick={() => exportAlignmentTableCSV(useStore.getState())}>Alignment CSV</button>
+              <button onClick={() => exportSimilarityMatrixCSV(useStore.getState())}>Matrix CSV</button>
+            </div>
+          )}
+        </details>
         <span className="job-status" data-status={jobStatus}>
           <span className="status-dot" />
           {jobStatus}

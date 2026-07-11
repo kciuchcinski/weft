@@ -13,8 +13,11 @@ export interface SessionView {
   lanes: string[][];
   /** Per-cluster horizontal shift (world px) applied on top of sequential lane packing. */
   clusterOffsets: Record<string, number>;
-  /** Per-cluster angular rotation (radians), applied in circular layout mode. */
-  clusterAngles: Record<string, number>;
+  /** Clusters treated as circular sequences (origin can be rotated). Keyed by uid. */
+  circularClusters: Record<string, boolean>;
+  /** Per-cluster origin rotation for circular clusters, in whole-CDS steps. Positive
+   * moves the origin forward, so the first CDS wraps to the end. */
+  clusterRotation: Record<string, number>;
   activeMetric: MetricKey;
   colourBy: ColourBy;
   paletteName: string;
@@ -51,7 +54,8 @@ function defaultSessionView(): SessionView {
   return {
     lanes: [],
     clusterOffsets: {},
-    clusterAngles: {},
+    circularClusters: {},
+    clusterRotation: {},
     activeMetric: "identity",
     colourBy: "group",
     paletteName: DEFAULT_PALETTE,
@@ -117,7 +121,8 @@ function snapshotOf(s: AppState): Session {
     view: {
       lanes: s.lanes,
       clusterOffsets: s.clusterOffsets,
-      clusterAngles: s.clusterAngles,
+      circularClusters: s.circularClusters,
+      clusterRotation: s.clusterRotation,
       activeMetric: s.activeMetric,
       colourBy: s.colourBy,
       paletteName: s.paletteName,
@@ -142,7 +147,8 @@ function sessionToState(session: Session) {
     data: session.data,
     lanes: session.view.lanes ?? singletonLanes(session.data),
     clusterOffsets: session.view.clusterOffsets ?? {},
-    clusterAngles: session.view.clusterAngles ?? {},
+    circularClusters: session.view.circularClusters ?? {},
+    clusterRotation: session.view.clusterRotation ?? {},
     activeMetric: clampMetric(session.view.activeMetric, session.data),
     colourBy: session.view.colourBy,
     paletteName: session.view.paletteName,
@@ -168,8 +174,14 @@ interface AppState extends SessionView {
   setData: (d: FigureData | null) => void;
   moveClusterTo: (uid: string, target: MoveTarget) => void;
   setClusterOffset: (uid: string, offset: number) => void;
-  /** Add `delta` radians to a cluster's rotation (circular mode). */
+  /** Mark/unmark a cluster as a circular sequence (enables origin rotation). */
+  toggleClusterCircular: (uid: string) => void;
+  /** Mark every loaded cluster circular or linear in one undoable action. */
+  setAllClustersCircular: (on: boolean) => void;
+  /** Rotate a circular cluster's origin by `delta` whole-CDS steps (+forward). */
   rotateCluster: (uid: string, delta: number) => void;
+  /** Restore every circular cluster to its original origin. */
+  resetAllClusterRotations: () => void;
   setLaneArrangement: (laneIndex: number, order: string[], offsets: Record<string, number>) => void;
   centerClustersOnGene: (geneUid: string) => void;
   clearClusterOffsets: () => void;
@@ -257,7 +269,8 @@ export const useStore = create<AppState>((set, get) => {
   data: persisted?.data ?? null,
   lanes: initialView.lanes ?? [],
   clusterOffsets: initialView.clusterOffsets ?? {},
-  clusterAngles: initialView.clusterAngles ?? {},
+  circularClusters: initialView.circularClusters ?? {},
+  clusterRotation: initialView.clusterRotation ?? {},
   activeMetric: clampMetric(initialView.activeMetric, persisted?.data ?? null),
   colourBy: initialView.colourBy,
   paletteName: initialView.paletteName,
@@ -284,7 +297,8 @@ export const useStore = create<AppState>((set, get) => {
       data,
       lanes: singletonLanes(data),
       clusterOffsets: {},
-      clusterAngles: {},
+      circularClusters: {},
+      clusterRotation: {},
       customGroups: [],
       activeCustomGroup: null,
       // Row names key off cluster uids, which are fresh for each dataset.
@@ -327,11 +341,31 @@ export const useStore = create<AppState>((set, get) => {
   setClusterOffset: (uid, offset) =>
     set((s) => ({ clusterOffsets: { ...s.clusterOffsets, [uid]: offset } })),
 
-  // Angular rotation for circular mode. Like the drag path above, it does not record
-  // history itself — CanvasView calls beginHistoryStep() once when the rotate gesture
-  // starts, so the whole rotation collapses to a single undo step.
-  rotateCluster: (uid, delta) =>
-    set((s) => ({ clusterAngles: { ...s.clusterAngles, [uid]: (s.clusterAngles[uid] ?? 0) + delta } })),
+  // Mark a cluster circular (or not). Unmarking clears any origin rotation so the
+  // sequence returns to its stored orientation.
+  toggleClusterCircular: hist((uid) => `circular:${uid}`, (uid) =>
+    set((s) => {
+      const on = !s.circularClusters[uid];
+      const circularClusters = { ...s.circularClusters, [uid]: on };
+      if (on) return { circularClusters };
+      const clusterRotation = { ...s.clusterRotation };
+      delete clusterRotation[uid];
+      return { circularClusters, clusterRotation };
+    })),
+
+  setAllClustersCircular: hist("circular:all", (on) =>
+    set((s) => {
+      if (!s.data) return {};
+      const circularClusters = Object.fromEntries(s.data.clusters.map((c) => [c.uid, on]));
+      return on ? { circularClusters } : { circularClusters, clusterRotation: {} };
+    })),
+
+  // Rotate a circular cluster's origin by whole-CDS steps (buildScene wraps genes at
+  // gene boundaries, so a step moves the first CDS to the end / vice versa).
+  rotateCluster: hist((uid) => `rotate:${uid}`, (uid, delta) =>
+    set((s) => ({ clusterRotation: { ...s.clusterRotation, [uid]: (s.clusterRotation[uid] ?? 0) + delta } }))),
+
+  resetAllClusterRotations: hist("rotate:all", () => set({ clusterRotation: {} })),
 
   // Commit a resolved horizontal arrangement for one lane: reorder its clusters
   // to their final visual left-to-right order and rewrite their offsets so the
@@ -356,7 +390,7 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.data) return {};
       const cfg = makeConfig(s.style);
       const colours = computeColours(s.data, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups);
-      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames);
+      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames, s.circularClusters, s.clusterRotation);
       const clusterOffsets = computeCenteringOffsets(scene, s.data, geneUid, s.clusterOffsets, s.activeMetric);
       return clusterOffsets === s.clusterOffsets ? {} : { clusterOffsets };
     })),
@@ -457,7 +491,7 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, clusterAngles: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", past: [], future: [] }),
 
   loadSession: (session) => set({ ...sessionToState(session), past: [], future: [] }),
 

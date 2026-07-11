@@ -1,6 +1,5 @@
 import type { FigureData, MetricKey } from "./types";
 import { buildScene } from "./render/layout";
-import { toCircular } from "./render/circular";
 import { computeColours, type ColourBy, type CustomGroup } from "./render/palette";
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
@@ -20,18 +19,17 @@ export interface FigureState {
   /** Names given to merged rows. Without these an export falls back to the default
    * joined names and silently disagrees with what's drawn on the canvas. */
   rowNames: Record<string, string>;
-  /** Per-cluster angular rotation, applied when the style's layout is circular. */
-  clusterAngles: Record<string, number>;
+  /** Clusters treated as circular sequences, keyed by uid. */
+  circularClusters: Record<string, boolean>;
+  /** Per-cluster origin rotation (whole-CDS steps) for circular clusters. */
+  clusterRotation: Record<string, number>;
   style: StyleConfig;
 }
 
 function sceneFrom(s: FigureState) {
   const cfg = makeConfig(s.style);
   const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries);
-  const linear = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames);
-  const scene = s.style.layoutMode === "circular"
-    ? toCircular(linear, cfg, s.clusterAngles, s.data!.clusters.map((c) => c.uid))
-    : linear;
+  const scene = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames, s.circularClusters, s.clusterRotation);
   return { cfg, scene };
 }
 

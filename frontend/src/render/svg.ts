@@ -27,16 +27,7 @@ export function sceneToSVG(scene: Scene, cfg: LayoutConfig, geneLabelEligible: S
     parts.push(`<path d="${ribbonPath(l, cfg.straight)}" fill="${l.colour}" fill-opacity="${l.alpha.toFixed(3)}"/>`);
   }
   for (const lo of scene.loci) {
-    if (lo.arc) {
-      const { cx, cy, r, a0, a1 } = lo.arc;
-      const lo0 = Math.min(a0, a1), hi = Math.max(a0, a1);
-      const p0 = [cx + r * Math.cos(lo0), cy + r * Math.sin(lo0)];
-      const p1 = [cx + r * Math.cos(hi), cy + r * Math.sin(hi)];
-      const large = hi - lo0 > Math.PI ? 1 : 0;
-      parts.push(`<path d="M${p0[0].toFixed(1)},${p0[1].toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${large} 1 ${p1[0].toFixed(1)},${p1[1].toFixed(1)}" fill="none" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
-    } else {
-      parts.push(`<line x1="${lo.x0.toFixed(1)}" y1="${lo.y.toFixed(1)}" x2="${lo.x1.toFixed(1)}" y2="${lo.y.toFixed(1)}" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
-    }
+    parts.push(`<line x1="${lo.x0.toFixed(1)}" y1="${lo.y.toFixed(1)}" x2="${lo.x1.toFixed(1)}" y2="${lo.y.toFixed(1)}" stroke="${cfg.backboneColour}" stroke-width="${cfg.backboneWidth}" stroke-opacity="${cfg.backboneOpacity.toFixed(3)}"/>`);
   }
   for (const g of scene.genes) {
     const pts = genePoints(g, cfg.trackHeight, cfg.geneShape, cfg.tipLength).map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");

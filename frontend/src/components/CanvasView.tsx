@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours } from "../render/palette";
 import { buildScene, formatMetric, type Scene } from "../render/layout";
-import { toCircular } from "../render/circular";
 import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
 import { draw } from "../render/draw";
@@ -31,7 +30,6 @@ interface ClusterCtl {
   centerY: number; // screen y of the track baseline (drag/drop truth)
   renderY: number; // screen y used to place the control (de-collided)
   centerX: number; // screen x of the cluster's horizontal centre
-  circular: boolean; // circular mode: the pill offers rotate (not drag-reorder)
 }
 
 // Label geometry lives in render/labels.ts so the renderer, hit-testing, the drag
@@ -106,7 +104,8 @@ export default function CanvasView() {
   const data = useStore((s) => s.data);
   const lanes = useStore((s) => s.lanes);
   const clusterOffsets = useStore((s) => s.clusterOffsets);
-  const clusterAngles = useStore((s) => s.clusterAngles);
+  const circularClusters = useStore((s) => s.circularClusters);
+  const clusterRotation = useStore((s) => s.clusterRotation);
   const activeMetric = useStore((s) => s.activeMetric);
   const colourBy = useStore((s) => s.colourBy);
   const paletteName = useStore((s) => s.paletteName);
@@ -134,27 +133,26 @@ export default function CanvasView() {
   const [hDraggingUid, setHDraggingUid] = useState<string | null>(null);
 
   const scene = useMemo<Scene | null>(
-    () => {
-      if (!data) return null;
-      const linear = buildScene(
-        data,
-        lanes,
-        cfg,
-        colours.gene,
-        activeMetric,
-        clusterOffsets,
-        hDraggingUid ?? undefined,
-        colours.items,
-        rowNames,
-      );
-      return style.layoutMode === "circular"
-        ? toCircular(linear, cfg, clusterAngles, data.clusters.map((c) => c.uid))
-        : linear;
-    },
+    () =>
+      data
+        ? buildScene(
+            data,
+            lanes,
+            cfg,
+            colours.gene,
+            activeMetric,
+            clusterOffsets,
+            hDraggingUid ?? undefined,
+            colours.items,
+            rowNames,
+            circularClusters,
+            clusterRotation,
+          )
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
-      style.layoutMode, clusterAngles,
+      circularClusters, clusterRotation,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
       style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,
@@ -184,23 +182,6 @@ export default function CanvasView() {
   );
   const linkPathsRef = useRef(linkPaths);
   linkPathsRef.current = linkPaths;
-  // Circular genes are annular wedges, so hit-testing uses their polygon (via
-  // isPointInPath) rather than a rectangle. Empty in linear mode.
-  const genePaths = useMemo(() => {
-    if (!scene || cfg.layoutMode !== "circular") return [];
-    return scene.genes
-      .filter((g) => g.points)
-      .map((g) => {
-        const path = new Path2D();
-        const pts = g.points as Array<[number, number]>;
-        path.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) path.lineTo(pts[i][0], pts[i][1]);
-        path.closePath();
-        return { uid: g.uid, path };
-      });
-  }, [scene, cfg.layoutMode]);
-  const genePathsRef = useRef(genePaths);
-  genePathsRef.current = genePaths;
   const hitCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   if (!hitCtxRef.current && typeof document !== "undefined") {
     hitCtxRef.current = document.createElement("canvas").getContext("2d");
@@ -248,9 +229,6 @@ export default function CanvasView() {
   // Skip the next auto-refit (used when committing a slide, so the view doesn't
   // recenter just because lanes/offsets changed while positions stayed put).
   const skipNextFit = useRef(false);
-  // Circular-mode cluster rotation gesture.
-  const rotateUid = useRef<string | null>(null);
-  const rotateLastAngle = useRef(0); // cursor angle (rad) about the circle centre
 
   const syncCtls = () => {
     const s = sceneRef.current;
@@ -275,34 +253,20 @@ export default function CanvasView() {
     // spot. Each pill sits in the band above its own sequence, just outside the
     // chosen end, so it can't collide with a name drawn inside that span.
     const PILL_GAP = 8;
-    const next: ClusterCtl[] = s.clusters.map((box) => {
-      const base = {
-        uid: box.uid,
-        name: nameByUid.get(box.uid) ?? box.uid,
-        lane: box.lane,
-        reversed: !!reversedByUid.get(box.uid),
-      };
-      if (box.circular) {
-        // Sit the pill just outside the cluster's ring at its mid-angle.
-        const th = cfg.trackHeight / 2;
-        const rr = box.circular.r + th + 12;
-        const sx = Math.cos(box.circular.aMid) * rr * z + px;
-        const sy = Math.sin(box.circular.aMid) * rr * z + py;
-        return { ...base, atLeft: false, circular: true, left: sx, centerY: sy, renderY: sy, centerX: sx };
-      }
-      return {
-        ...base,
-        atLeft,
-        circular: false,
-        left: atLeft ? box.x0 * z + px - PILL_GAP : box.x1 * z + px + PILL_GAP,
-        // Track row: the drag/drop truth (join zones align to the arrow row).
-        centerY: box.trackY * z + py,
-        // The band above the sequence, level with where an "above" name would sit.
-        renderY: (box.trackY - cfg.trackHeight) * z + py - fs * 0.32,
-        centerX: ((box.x0 + box.x1) / 2) * z + px,
-      };
-    });
-    if (cfg.layoutMode !== "circular") decollideCtls(next);
+    const next: ClusterCtl[] = s.clusters.map((box) => ({
+      uid: box.uid,
+      name: nameByUid.get(box.uid) ?? box.uid,
+      lane: box.lane,
+      reversed: !!reversedByUid.get(box.uid),
+      atLeft,
+      left: atLeft ? box.x0 * z + px - PILL_GAP : box.x1 * z + px + PILL_GAP,
+      // Track row: the drag/drop truth (join zones align to the arrow row).
+      centerY: box.trackY * z + py,
+      // The band above the sequence, level with where an "above" name would sit.
+      renderY: (box.trackY - cfg.trackHeight) * z + py - fs * 0.32,
+      centerX: ((box.x0 + box.x1) / 2) * z + px,
+    }));
+    decollideCtls(next);
     if (!sameCtls(ctlsRef.current, next)) setCtls(next);
   };
 
@@ -369,7 +333,7 @@ export default function CanvasView() {
   // While sliding a cluster horizontally we redraw in place instead, so the view
   // doesn't recenter on every offset change.
   useEffect(() => {
-    if (hDraggingRef.current || rotateUid.current != null || skipNextFit.current) {
+    if (hDraggingRef.current || skipNextFit.current) {
       skipNextFit.current = false;
       render();
       return;
@@ -495,20 +459,10 @@ export default function CanvasView() {
       zoomAtCenter(Math.exp(-e.deltaY * 0.0015));
     };
 
-    // Gene under a world point. Circular genes are wedges (polygon hit-test); linear
-    // genes are axis-aligned (fast rectangle test).
+    // Gene under a world point (axis-aligned rectangle test).
     const geneAt = (wx: number, wy: number): string | null => {
       const s = sceneRef.current;
       if (!s) return null;
-      if (cfgRef.current.layoutMode === "circular") {
-        const hitCtx = hitCtxRef.current;
-        const gps = genePathsRef.current;
-        if (!hitCtx) return null;
-        for (let i = gps.length - 1; i >= 0; i--) {
-          if (hitCtx.isPointInPath(gps[i].path, wx, wy)) return gps[i].uid;
-        }
-        return null;
-      }
       const th = cfgRef.current.trackHeight / 2;
       const hit = s.genes.find(
         (g) => wx >= Math.min(g.x0, g.x1) && wx <= Math.max(g.x0, g.x1) && wy >= g.y - th && wy <= g.y + th
@@ -520,18 +474,6 @@ export default function CanvasView() {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
-
-      // Circular cluster rotation: map the cursor's angle about the circle centre
-      // (world origin → screen pan) to an angular delta.
-      if (rotateUid.current != null) {
-        const ang = Math.atan2(my - pan.current.y, mx - pan.current.x);
-        let delta = ang - rotateLastAngle.current;
-        if (delta > Math.PI) delta -= 2 * Math.PI;
-        else if (delta < -Math.PI) delta += 2 * Math.PI;
-        rotateLastAngle.current = ang;
-        useStore.getState().rotateCluster(rotateUid.current, delta);
-        return;
-      }
 
       // Moving a cluster from its handle: horizontal movement slides it within its
       // row; dragging over another row (or a gap) switches to a re-home, previewed
@@ -594,12 +536,6 @@ export default function CanvasView() {
     };
 
     const onUp = () => {
-      if (rotateUid.current != null) {
-        rotateUid.current = null;
-        skipNextFit.current = true; // rotation changed clusterAngles; keep the view
-        canvas.style.cursor = "default";
-        return;
-      }
       if (dragUid.current != null) {
         const uid = dragUid.current;
         const target = pendingTarget.current;
@@ -664,8 +600,6 @@ export default function CanvasView() {
       }
 
       // Otherwise, double-clicking a gene aligns every cluster's homolog of it.
-      // (Centering is a linear-layout operation; it's a no-op in circular mode.)
-      if (cfgRef.current.layoutMode === "circular") return;
       const wx = (mx - pan.current.x) / zoom.current;
       const wy = (my - pan.current.y) / zoom.current;
       const uid = geneAt(wx, wy);
@@ -717,19 +651,6 @@ export default function CanvasView() {
     hDraggingRef.current = true;
     setDraggingUid(uid);
     setHDraggingUid(uid);
-    if (canvas) canvas.style.cursor = "grabbing";
-  };
-
-  // Circular mode: drag the pill to spin its cluster about the ring centre.
-  const startRotate = (uid: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    useStore.getState().beginHistoryStep();
-    const canvas = canvasRef.current;
-    const rect = canvas?.getBoundingClientRect();
-    const mx = rect ? e.clientX - rect.left : e.clientX;
-    const my = rect ? e.clientY - rect.top : e.clientY;
-    rotateUid.current = uid;
-    rotateLastAngle.current = Math.atan2(my - pan.current.y, mx - pan.current.x);
     if (canvas) canvas.style.cursor = "grabbing";
   };
 
@@ -797,23 +718,13 @@ export default function CanvasView() {
               }
               style={{ left: c.left, top: c.renderY }}
             >
-              {c.circular ? (
-                <button
-                  className="row-handle"
-                  title="Drag to rotate this cluster around the circle"
-                  onMouseDown={startRotate(c.uid)}
-                >
-                  ↻
-                </button>
-              ) : (
-                <button
-                  className="row-handle"
-                  title="Drag to move — sideways to slide within its row, up/down to move to another row"
-                  onMouseDown={startDrag(c.uid)}
-                >
-                  ⠿
-                </button>
-              )}
+              <button
+                className="row-handle"
+                title="Drag to move — sideways to slide within its row, up/down to move to another row"
+                onMouseDown={startDrag(c.uid)}
+              >
+                ⠿
+              </button>
               <button
                 className={"row-reverse" + (c.reversed ? " active" : "")}
                 title={c.reversed ? "Restore original direction" : "Reverse cluster direction"}

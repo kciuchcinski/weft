@@ -108,6 +108,27 @@ function Section({
   );
 }
 
+function Subsection({
+  title,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children?: ReactNode;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className={"subsection" + (open ? " open" : "")}>
+      <button className="subsection-header" onClick={() => setOpen((o) => !o)}>
+        <span>{title}</span>
+        <span className="subsection-chevron">{open ? "−" : "+"}</span>
+      </button>
+      {open && <div className="subsection-body">{children}</div>}
+    </div>
+  );
+}
+
 // A bounded numeric field: a range slider paired with a manual number input.
 // The two stay in sync; manual entry is clamped to [min, max] so the value
 // always stays valid for rendering.
@@ -275,9 +296,16 @@ export default function LeftPanel() {
   const clusterOffsets = useStore((s) => s.clusterOffsets);
   const clearClusterOffsets = useStore((s) => s.clearClusterOffsets);
   const hasOffsets = Object.values(clusterOffsets).some((v) => v !== 0);
+  const circularClusters = useStore((s) => s.circularClusters);
+  const clusterRotation = useStore((s) => s.clusterRotation);
+  const toggleClusterCircular = useStore((s) => s.toggleClusterCircular);
+  const setAllClustersCircular = useStore((s) => s.setAllClustersCircular);
+  const rotateCluster = useStore((s) => s.rotateCluster);
+  const resetAllClusterRotations = useStore((s) => s.resetAllClusterRotations);
 
   const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
+  const [sequenceFilter, setSequenceFilter] = useState("");
   // Engines this deployment can run. The hosted beta ships parasail only; DIAMOND
   // appears only where the binary is present (local dev / a conda-based image).
   const [engines, setEngines] = useState<string[]>(["parasail"]);
@@ -342,6 +370,9 @@ export default function LeftPanel() {
     return Math.max(10, Math.ceil(max));
   })();
   const minFragment = Math.min(fragMax, style.minFragmentAa);
+  const visibleClusters = data?.clusters.filter((c) => c.name.toLowerCase().includes(sequenceFilter.trim().toLowerCase())) ?? [];
+  const circularCount = data?.clusters.filter((c) => circularClusters[c.uid]).length ?? 0;
+  const hasRotations = Object.values(clusterRotation).some((v) => v !== 0);
 
   const loadExample = async () => {
     setLoading(true);
@@ -396,264 +427,169 @@ export default function LeftPanel() {
 
   return (
     <aside className="left-panel">
-      <Section title="Input & data" defaultOpen>
-        {data ? (
-          <p className="muted">
-            {data.clusters.length} clusters · {geneCount} genes · {data.links.length} links loaded.
-          </p>
-        ) : (
-          <p className="muted">Add GenBank or GFF3/GTF+FASTA files, or run the bundled example.</p>
-        )}
-        <label
-          className={"dropzone" + (drag ? " drag" : "")}
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
-        >
-          {loading ? "Running…" : "Drop input files here (GenBank or GFF3/GTF+FASTA), or click to choose"}
-          <input
-            type="file"
-            accept=".gbk,.gb,.genbank,.gbf,.gbff,.gff,.gff3,.gtf,.fa,.fna,.fasta,.fas,.faa"
-            multiple
-            hidden
-            onChange={(e) => onFiles(e.target.files)}
-          />
-        </label>
-        <label className="field">
-          <span>Folder upload</span>
-          <input
-            type="file"
-            multiple
-            // @ts-expect-error non-standard attribute supported by Chromium-based browsers
-            webkitdirectory=""
-            onChange={(e) => onFiles(e.target.files)}
-          />
-        </label>
-
-        <p className="style-group">Alignment</p>
-        <label className="field">
-          <span>Engine</span>
-          <select
-            value={engine === "parasail" ? `parasail-${mode}` : "diamond"}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "diamond") {
-                setEngine("diamond");
-              } else {
-                setEngine("parasail");
-                setMode(v === "parasail-local" ? "local" : "global");
-              }
-            }}
+      <Section key={data ? "data-loaded" : "data-empty"} title="Data & alignment" defaultOpen={!data}>
+        <Subsection title="Input" defaultOpen>
+          {data ? (
+            <p className="muted">{data.clusters.length} sequences · {geneCount} genes · {data.links.length} similarity links loaded.</p>
+          ) : (
+            <p className="muted">Add GenBank or GFF3/GTF+FASTA files, or start with the bundled example.</p>
+          )}
+          <label
+            className={"dropzone" + (drag ? " drag" : "")}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
           >
-            <option value="parasail-global">parasail — global (whole protein)</option>
-            <option value="parasail-local">parasail — local (partial regions)</option>
-            {engines.includes("diamond") && <option value="diamond">DIAMOND (fast)</option>}
-          </select>
-        </label>
-        <SliderField
-          label="Min identity"
-          value={identityCutoff}
-          min={0}
-          max={1}
-          step={0.05}
-          onChange={setIdentityCutoff}
-        />
-        {engine === "diamond" && (
+            {loading ? "Running…" : "Drop input files here, or click to choose"}
+            <input type="file" accept=".gbk,.gb,.genbank,.gbf,.gbff,.gff,.gff3,.gtf,.fa,.fna,.fasta,.fas,.faa" multiple hidden onChange={(e) => onFiles(e.target.files)} />
+          </label>
           <label className="field">
-            <span>Max E-value</span>
-            <select value={String(evalueCutoff)} onChange={(e) => setEvalueCutoff(Number(e.target.value))}>
-              {[1e-1, 1e-2, 1e-3, 1e-5, 1e-10].map((v) => (
-                <option key={v} value={String(v)}>{v.toExponential(0)}</option>
-              ))}
+            <span>Upload a folder</span>
+            <input
+              type="file"
+              multiple
+              // @ts-expect-error non-standard attribute supported by Chromium-based browsers
+              webkitdirectory=""
+              onChange={(e) => onFiles(e.target.files)}
+            />
+          </label>
+          <button className="btn btn-block" onClick={loadExample} disabled={loading}>{loading ? "Loading…" : "Load example dataset"}</button>
+          <p className="muted privacy-note">Files are processed on the server and deleted shortly after the job runs. This is a beta, so avoid sensitive unpublished data.</p>
+        </Subsection>
+
+        <Subsection title="Alignment for new uploads" defaultOpen={!data}>
+          <p className="scope-note">These settings apply when you upload new files. They do not recompute the figure already on screen.</p>
+          <label className="field">
+            <span>Method</span>
+            <select
+              value={engine === "parasail" ? `parasail-${mode}` : "diamond"}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "diamond") setEngine("diamond");
+                else {
+                  setEngine("parasail");
+                  setMode(v === "parasail-local" ? "local" : "global");
+                }
+              }}
+            >
+              <option value="parasail-global">Global — compare whole proteins</option>
+              <option value="parasail-local">Local — find matching regions</option>
+              {engines.includes("diamond") && <option value="diamond">DIAMOND — fast for large datasets</option>}
             </select>
           </label>
-        )}
-        <p className="muted">
-          {engine === "parasail"
-            ? mode === "local"
-              ? "Smith–Waterman: links shared sub-regions, so a partial match (e.g. one shared domain) draws a ribbon over just that region. Exact but slower — best for smaller sets."
-              : "Needleman–Wunsch: one identity/similarity per protein pair over the full length (clinker-style). Exact but slower than DIAMOND."
-            : "DIAMOND all-vs-all blastp. Fast; recommended for large datasets."}{" "}
-          These apply to the next upload; the bundled example is precomputed.
-        </p>
-
-        <button className="btn btn-block" onClick={loadExample} disabled={loading}>
-          {loading ? "Loading…" : "Load example dataset"}
-        </button>
-        <p className="muted privacy-note">
-          Uploaded files are processed on the server and automatically deleted a short while
-          after your job runs. This is a beta — avoid uploading sensitive unpublished data.
-        </p>
+          <SliderField label="Minimum identity" value={identityCutoff} min={0} max={1} step={0.05} onChange={setIdentityCutoff} />
+          {engine === "diamond" && (
+            <label className="field">
+              <span>Maximum E-value</span>
+              <select value={String(evalueCutoff)} onChange={(e) => setEvalueCutoff(Number(e.target.value))}>
+                {[1e-1, 1e-2, 1e-3, 1e-5, 1e-10].map((v) => <option key={v} value={String(v)}>{v.toExponential(0)}</option>)}
+              </select>
+            </label>
+          )}
+          <p className="muted">
+            {engine === "parasail"
+              ? mode === "local"
+                ? "Local alignment finds shared regions such as individual domains. It is exact, but best suited to smaller datasets."
+                : "Global alignment compares each protein across its full length. It is exact, but slower than DIAMOND."
+              : "DIAMOND performs a fast all-vs-all protein search and is recommended for large datasets."}
+          </p>
+        </Subsection>
       </Section>
 
-      <Section title="Links" defaultOpen={!!data}>
-        <p className="style-group">Filter</p>
-        <label className="field">
-          <span>Active metric</span>
-          <select value={activeMetric} onChange={(e) => onMetricChange(e.target.value as MetricKey)}>
-            {metricChoices.map((m) => (
-              <option key={m} value={m}>{METRIC_OPTION_LABEL[m]}</option>
-            ))}
-          </select>
-        </label>
-        <p className="muted">{METRIC_INFO[activeMetric]} Drives homology-link opacity live.</p>
-        <SliderField
-          label={mr.lower ? `Max ${METRIC_LABEL[activeMetric]}` : `Min ${METRIC_LABEL[activeMetric]}`}
-          value={threshold}
-          min={mr.lo}
-          max={mr.hi}
-          step={mr.step}
-          onChange={(v) => setStyle({ linkThreshold: v })}
-        />
-        <p className="muted">
-          {mr.lower
-            ? `Hide links with an ${METRIC_LABEL[activeMetric]} above this cutoff.`
-            : `Hide links scoring below this ${METRIC_LABEL[activeMetric]}.`}
-        </p>
-        {spanned && (
-          <>
-            <SliderField
-              label="Min fragment length (aa)"
-              value={minFragment}
-              min={0}
-              max={fragMax}
-              step={1}
-              onChange={(v) => setStyle({ minFragmentAa: v })}
-            />
-            <p className="muted">
-              Hide partial-similarity links whose shared aligned region is shorter than this many residues.
-            </p>
-          </>
-        )}
-        <p className="style-group">Style</p>
-        <CheckField label="Show links" checked={style.showLinks} onChange={(v) => setStyle({ showLinks: v })} />
-        <CheckField label="Colour links" checked={style.colourLinks} onChange={(v) => setStyle({ colourLinks: v })} />
-        <CheckField label="Straight links" checked={style.straightLinks} onChange={(v) => setStyle({ straightLinks: v })} />
-        <CheckField label={`Show ${METRIC_LABEL[activeMetric]} values`} checked={style.showLinkLabels} onChange={(v) => setStyle({ showLinkLabels: v })} />
-        <CheckField label="Anchor to aligned region" checked={style.anchorLinksToAligned} onChange={(v) => setStyle({ anchorLinksToAligned: v })} />
-        <SliderField label="Link opacity" value={style.linkOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ linkOpacity: v })} />
+      <Section key={data ? "links-loaded" : "links-empty"} title="Similarity links" defaultOpen={!!data}>
+        <Subsection title="Metric & filtering" defaultOpen>
+          <p className="scope-note">These controls update the currently displayed links immediately.</p>
+          <label className="field">
+            <span>Metric</span>
+            <select value={activeMetric} onChange={(e) => onMetricChange(e.target.value as MetricKey)}>
+              {metricChoices.map((m) => <option key={m} value={m}>{METRIC_OPTION_LABEL[m]}</option>)}
+            </select>
+          </label>
+          <p className="muted">{METRIC_INFO[activeMetric]}</p>
+          <SliderField
+            label={mr.lower ? `Maximum ${METRIC_LABEL[activeMetric]}` : `Minimum ${METRIC_LABEL[activeMetric]}`}
+            value={threshold}
+            min={mr.lo}
+            max={mr.hi}
+            step={mr.step}
+            onChange={(v) => setStyle({ linkThreshold: v })}
+          />
+          <p className="muted">{mr.lower ? "Links above this value are hidden." : "Links below this value are hidden."}</p>
+          {spanned && (
+            <>
+              <SliderField label="Minimum matching region (aa)" value={minFragment} min={0} max={fragMax} step={1} onChange={(v) => setStyle({ minFragmentAa: v })} />
+              <p className="muted">Hides local-alignment links whose matching region is shorter than this length.</p>
+            </>
+          )}
+        </Subsection>
+        <Subsection title="Link appearance">
+          <CheckField label="Show links" checked={style.showLinks} onChange={(v) => setStyle({ showLinks: v })} />
+          <CheckField label="Use gene colours" checked={style.colourLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ colourLinks: v })} />
+          <CheckField label="Draw straight links" checked={style.straightLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ straightLinks: v })} />
+          <CheckField label={`Show ${METRIC_LABEL[activeMetric]} values`} checked={style.showLinkLabels} disabled={!style.showLinks} onChange={(v) => setStyle({ showLinkLabels: v })} />
+          <CheckField label="Use aligned region only" checked={style.anchorLinksToAligned} disabled={!style.showLinks} onChange={(v) => setStyle({ anchorLinksToAligned: v })} />
+          <SliderField label="Opacity" value={style.linkOpacity} min={0} max={1} step={0.05} disabled={!style.showLinks} onChange={(v) => setStyle({ linkOpacity: v })} />
+          <p className="muted">“Use aligned region only” narrows local-alignment ribbons to the part of each gene that actually matched.</p>
+        </Subsection>
       </Section>
 
-      <Section title="Genes">
-        <p className="style-group">CDS</p>
-        <SelectField label="Shape" value={style.geneShape} options={GENE_SHAPES} onChange={(v) => setStyle({ geneShape: v })} />
-        <SliderField label="CDS height" value={style.trackHeight} min={4} max={48} onChange={(v) => setStyle({ trackHeight: v })} />
-        <SliderField label="Tip length" value={style.tipLength} min={0} max={48} onChange={(v) => setStyle({ tipLength: v })} />
-        <SliderField label="Stroke width" value={style.geneStrokeWidth} min={0} max={4} step={0.1} onChange={(v) => setStyle({ geneStrokeWidth: v })} />
-        <ColourField label="Stroke colour" value={style.geneStroke} onChange={(v) => setStyle({ geneStroke: v })} />
-        <p className="style-group">Backbone</p>
-        <ColourField label="Backbone colour" value={style.backboneColour} onChange={(v) => setStyle({ backboneColour: v })} />
-        <SliderField label="Backbone width" value={style.backboneWidth} min={0} max={8} step={0.5} onChange={(v) => setStyle({ backboneWidth: v })} />
-        <SliderField label="Backbone opacity" value={style.backboneOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ backboneOpacity: v })} />
-        <p className="style-group">Labels</p>
-        <CheckField label="Show cluster names" checked={style.showClusterNames} onChange={(v) => setStyle({ showClusterNames: v })} />
-        <SliderField label="Name font size" value={style.clusterFontSize} min={6} max={28} disabled={!style.showClusterNames} onChange={(v) => setStyle({ clusterFontSize: v })} />
-        <SelectField
-          label="Name position"
-          value={style.clusterLabelPlacement}
-          disabled={!style.showClusterNames}
-          options={[
-            { value: "above", label: "Above sequence" },
-            { value: "beside", label: "Beside sequence" },
-          ]}
-          onChange={(v) => setStyle({ clusterLabelPlacement: v })}
-        />
-        <SelectField
-          label="Name side"
-          value={style.clusterLabelSide}
-          disabled={!style.showClusterNames}
-          options={[
-            { value: "left", label: "Left" },
-            { value: "right", label: "Right" },
-          ]}
-          onChange={(v) => setStyle({ clusterLabelSide: v })}
-        />
-        <CheckField
-          label="Pin names to canvas edge"
-          // "Beside" is inherently pinned — an unpinned beside-name collides with the
-          // neighbouring cluster — so the toggle reads as on and locked in that mode.
-          checked={style.clusterLabelPinned || style.clusterLabelPlacement === "beside"}
-          disabled={!style.showClusterNames || style.clusterLabelPlacement === "beside"}
-          onChange={(v) => setStyle({ clusterLabelPinned: v })}
-        />
-        <p className="muted">
-          Pinned names stay stationary against the chosen edge while you pan and zoom, instead of moving
-          with their sequence. <b>Beside</b> is always pinned. Where a row holds several clusters, their
-          names merge into one label you can rename independently — the original names come back when the
-          row is split. An exported SVG has no viewport, so there pinned names line up in a column against
-          the figure's edge.
-        </p>
-
-        <p className="style-group">CDS labels</p>
-        <SelectField
-          label="Show CDS labels"
-          value={style.showGeneLabels}
-          options={[
-            { value: "auto", label: "Auto (on zoom-in)" },
-            { value: "always", label: "Always" },
-            { value: "never", label: "Never" },
-          ]}
-          onChange={(v) => setStyle({ showGeneLabels: v })}
-        />
-        <SelectField
-          label="Label field"
-          value={style.geneLabelField}
-          disabled={style.showGeneLabels === "never"}
-          options={[
-            { value: "", label: "Auto (gene → locus_tag → protein_id)" },
-            ...fields.map((f) => ({ value: f, label: f })),
-          ]}
-          onChange={(v) => setStyle({ geneLabelField: v })}
-        />
-        <SelectField
-          label="Label scope"
-          value={style.geneLabelScope}
-          disabled={style.showGeneLabels === "never"}
-          options={[
-            { value: "all", label: "All genes" },
-            { value: "custom", label: "Custom groups only" },
-          ]}
-          onChange={(v) => setStyle({ geneLabelScope: v })}
-        />
-        <SelectField
-          label="Label position"
-          value={style.geneLabelPosition}
-          disabled={style.showGeneLabels === "never"}
-          options={[
-            { value: "above", label: "Above the gene" },
-            { value: "on", label: "On the gene" },
-          ]}
-          onChange={(v) => setStyle({ geneLabelPosition: v })}
-        />
-        <SelectField
-          label="Label rotation"
-          value={String(style.geneLabelRotation)}
-          disabled={style.showGeneLabels === "never"}
-          options={[
-            { value: "0", label: "Horizontal" },
-            { value: "45", label: "Diagonal (45°)" },
-            { value: "90", label: "Vertical (90°)" },
-          ]}
-          onChange={(v) => setStyle({ geneLabelRotation: Number(v) })}
-        />
-        <SliderField
-          label="Label font size"
-          value={style.geneLabelFontSize}
-          min={6}
-          max={20}
-          disabled={style.showGeneLabels === "never"}
-          onChange={(v) => setStyle({ geneLabelFontSize: v })}
-        />
-        <p className="muted">
-          Labels are horizontal and adaptive: each sits above its gene, truncates to fit, and is dropped
-          when it would overlap another. <b>Auto</b> reveals them only once a gene is wide enough on screen,
-          so they appear as you zoom in. <b>Custom groups only</b> labels just the genes you've grouped.
-        </p>
-      </Section>
-
-      <Section key={data ? "colour-data" : "colour-empty"} title="Colour" defaultOpen={!!data}>
+      <Section key={data ? "layout-loaded" : "layout-empty"} title="Sequences & layout" defaultOpen={!!data}>
         {data ? (
           <>
+            <Subsection title="Row arrangement" defaultOpen>
+              <p className="muted">Drag a sequence's ⠿ handle sideways to reposition it, or vertically to move it into another row. Use ⇄ on the canvas to reverse its direction.</p>
+              <SliderField label="Scale (px/kb)" value={style.pxPerKb} min={5} max={500} step={5} onChange={(v) => setStyle({ pxPerKb: v })} />
+              <SliderField label="Row spacing" value={style.clusterSpacing} min={10} max={200} onChange={(v) => setStyle({ clusterSpacing: v })} />
+              <CheckField label="Prevent sequence overlap" checked={style.preventOverlap} onChange={(v) => setStyle({ preventOverlap: v })} />
+              <button className="btn btn-block" onClick={clearClusterOffsets} disabled={!hasOffsets}>Reset sequence positions</button>
+            </Subsection>
+
+            <Subsection title="Circular sequences" defaultOpen={circularCount > 0}>
+              <p className="muted">Mark biologically circular sequences, then shift their displayed origin one CDS at a time to align them with related sequences. This does not turn the figure into a circular plot.</p>
+              <div className="btn-row">
+                <button className="btn" onClick={() => setAllClustersCircular(true)} disabled={circularCount === data.clusters.length}>Mark all circular</button>
+                <button className="btn" onClick={() => setAllClustersCircular(false)} disabled={circularCount === 0}>Mark all linear</button>
+              </div>
+              {data.clusters.length > 8 && (
+                <label className="field sequence-search">
+                  <span>Find a sequence</span>
+                  <input type="search" value={sequenceFilter} placeholder="Type a name…" onChange={(e) => setSequenceFilter(e.target.value)} />
+                </label>
+              )}
+              <div className="circular-list">
+                {visibleClusters.map((c) => {
+                  const on = !!circularClusters[c.uid];
+                  const rotation = clusterRotation[c.uid] ?? 0;
+                  return (
+                    <div className="circular-row" key={c.uid}>
+                      <label className="circular-toggle" title={on ? "Treat as a linear sequence" : "Treat as a circular sequence"}>
+                        <input type="checkbox" checked={on} onChange={() => toggleClusterCircular(c.uid)} />
+                        <span className="circular-name">{c.name}</span>
+                      </label>
+                      {on && (
+                        <span className="rotate-steppers" aria-label={`Origin rotation for ${c.name}`}>
+                          <button className="rotate-btn" title="Shift origin back by one CDS" onClick={() => rotateCluster(c.uid, -1)}>−1</button>
+                          <span className="rotate-count" title="Current rotation">{rotation > 0 ? `+${rotation}` : rotation}</span>
+                          <button className="rotate-btn" title="Shift origin forward by one CDS" onClick={() => rotateCluster(c.uid, 1)}>+1</button>
+                          <button className="rotate-reset" title="Restore this sequence's original origin" disabled={rotation === 0} onClick={() => rotateCluster(c.uid, -rotation)}>Reset</button>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {!visibleClusters.length && <p className="muted">No sequence names match this search.</p>}
+              </div>
+              <button className="btn btn-block" onClick={resetAllClusterRotations} disabled={!hasRotations}>Reset all sequence origins</button>
+            </Subsection>
+          </>
+        ) : <p className="muted">Load data to arrange sequences and configure circular origins.</p>}
+      </Section>
+
+      <Section key={data ? "colour-data" : "colour-empty"} title="Colours & legend" defaultOpen={!!data}>
+        {data ? (
+          <>
+            <Subsection title="Colour mapping" defaultOpen>
+              <p className="muted">Choose what gene colours represent, then select a palette or edit individual colours.</p>
             <label className="field-inline">
               <span>Colour by</span>
               <div className="segmented">
@@ -711,77 +647,86 @@ export default function LeftPanel() {
                     </p>
                   )}
                 </div>
-                <div className="btn-row">
-                  <button className="btn" onClick={exportColourCSV}>Export CSV</button>
-                  <label className="btn">
-                    Import CSV
-                    <input type="file" accept=".csv" hidden onChange={importColourCSV} />
-                  </label>
-                  <button className="btn" onClick={clearOverrides}>Reset</button>
-                </div>
-                <p className="muted">
-                  <b>Export CSV</b> saves the current label→colour mapping so you can tweak it in a spreadsheet or
-                  reuse the exact colours across figures. <b>Import CSV</b> reads a <code>label,colour</code> file and
-                  applies matching rows as overrides. <b>Reset</b> clears all manual overrides, restoring the palette.
-                </p>
               </>
             )}
+            </Subsection>
+            {colourBy !== "custom" && (
+              <Subsection title="Colour map">
+                <p className="muted">Save the current label-to-colour mapping for reuse, or import a <code>label,colour</code> CSV to apply matching overrides.</p>
+                <div className="btn-row">
+                  <button className="btn" onClick={exportColourCSV}>Export CSV</button>
+                  <label className="btn">Import CSV<input type="file" accept=".csv" hidden onChange={importColourCSV} /></label>
+                </div>
+                <button className="btn btn-block" onClick={clearOverrides}>Reset colour overrides</button>
+              </Subsection>
+            )}
+            <Subsection title="Figure legend">
+              <CheckField label="Show colour legend" checked={style.showLegend} onChange={(v) => setStyle({ showLegend: v })} />
+              <SliderField label="Maximum entries (0 = all)" value={style.maxLegendEntries} min={0} max={20} disabled={!style.showLegend} onChange={(v) => setStyle({ maxLegendEntries: v })} />
+              <SliderField label="Text size" value={style.legendFontSize} min={6} max={32} disabled={!style.showLegend} onChange={(v) => setStyle({ legendFontSize: v })} />
+              <SliderField label="Entry spacing" value={style.legendSpacing} min={4} max={60} disabled={!style.showLegend} onChange={(v) => setStyle({ legendSpacing: v })} />
+              <p className="muted">The legend reflects the active colour mapping. Extra entries are combined into “Other” when a maximum is set.</p>
+            </Subsection>
           </>
         ) : (
           <p className="muted">Genes are coloured by homology group once data loads.</p>
         )}
       </Section>
 
-      <Section title="Arrangement" defaultOpen={!!data}>
-        {data ? (
-          <>
-            <SelectField
-              label="Layout"
-              value={style.layoutMode}
-              options={[
-                { value: "linear", label: "Linear (tracks)" },
-                { value: "circular", label: "Circular (rings)" },
-              ]}
-              onChange={(v) => setStyle({ layoutMode: v })}
-            />
-            <p className="muted">
-              {style.layoutMode === "circular"
-                ? "Lanes become concentric rings; base-pairs map to angle. Drag a cluster's ↻ handle to rotate it around the circle; ⇄ still reverses direction. Drag-to-reorder is available in linear mode."
-                : "Drag the ⠿ handle to move a cluster — sideways to slide it within its row, or up/down to move it to another row."}
-            </p>
-            <SliderField label="Scale (px/kb)" value={style.pxPerKb} min={5} max={500} step={5} onChange={(v) => setStyle({ pxPerKb: v })} />
-            <SliderField label="Cluster spacing" value={style.clusterSpacing} min={10} max={200} onChange={(v) => setStyle({ clusterSpacing: v })} />
-            <CheckField label="Prevent overlap" checked={style.preventOverlap} onChange={(v) => setStyle({ preventOverlap: v })} />
-            <button className="btn btn-block" onClick={clearClusterOffsets} disabled={!hasOffsets}>
-              Reset horizontal positions
-            </button>
-          </>
-        ) : (
-          <p className="muted">Load data to arrange clusters into rows.</p>
-        )}
-      </Section>
-
-      <Section title="Figure">
-        <p className="style-group">Scale bar</p>
-        <CheckField label="Show scale bar" checked={style.showScaleBar} onChange={(v) => setStyle({ showScaleBar: v })} />
-        <SliderField label="Bar length (kb, 0 = auto)" value={style.scaleBarKb} min={0} max={50} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarKb: v })} />
-        <SliderField label="Bar thickness" value={style.scaleBarThickness} min={0.5} max={8} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarThickness: v })} />
-        <SliderField label="Label size" value={style.scaleFontSize} min={6} max={32} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleFontSize: v })} />
-        <p className="style-group">Colour legend</p>
-        <CheckField label="Show colour legend" checked={style.showLegend} onChange={(v) => setStyle({ showLegend: v })} />
-        <SliderField label="Max colours (0 = all)" value={style.maxLegendEntries} min={0} max={20} disabled={!style.showLegend} onChange={(v) => setStyle({ maxLegendEntries: v })} />
-        <SliderField label="Text size" value={style.legendFontSize} min={6} max={32} disabled={!style.showLegend} onChange={(v) => setStyle({ legendFontSize: v })} />
-        <SliderField label="Entry spacing" value={style.legendSpacing} min={4} max={60} disabled={!style.showLegend} onChange={(v) => setStyle({ legendSpacing: v })} />
-        <p className="style-group">Canvas</p>
-        <ColourField label="Background" value={style.background} onChange={(v) => setStyle({ background: v })} />
-        <button className="btn btn-block" onClick={resetStyle}>Reset style</button>
+      <Section title="Figure appearance">
+        <Subsection title="Genes" defaultOpen>
+          <SelectField label="Shape" value={style.geneShape} options={GENE_SHAPES} onChange={(v) => setStyle({ geneShape: v })} />
+          <SliderField label="Gene height" value={style.trackHeight} min={4} max={48} onChange={(v) => setStyle({ trackHeight: v })} />
+          <SliderField label="Arrow-tip length" value={style.tipLength} min={0} max={48} onChange={(v) => setStyle({ tipLength: v })} />
+          <SliderField label="Outline width" value={style.geneStrokeWidth} min={0} max={4} step={0.1} onChange={(v) => setStyle({ geneStrokeWidth: v })} />
+          <ColourField label="Outline colour" value={style.geneStroke} onChange={(v) => setStyle({ geneStroke: v })} />
+        </Subsection>
+        <Subsection title="Sequence backbone">
+          <ColourField label="Colour" value={style.backboneColour} onChange={(v) => setStyle({ backboneColour: v })} />
+          <SliderField label="Width" value={style.backboneWidth} min={0} max={8} step={0.5} onChange={(v) => setStyle({ backboneWidth: v })} />
+          <SliderField label="Opacity" value={style.backboneOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ backboneOpacity: v })} />
+          <p className="muted">The backbone marks the sequence extent behind its genes.</p>
+        </Subsection>
+        <Subsection title="Sequence names">
+          <CheckField label="Show sequence names" checked={style.showClusterNames} onChange={(v) => setStyle({ showClusterNames: v })} />
+          <SliderField label="Text size" value={style.clusterFontSize} min={6} max={28} disabled={!style.showClusterNames} onChange={(v) => setStyle({ clusterFontSize: v })} />
+          <SelectField label="Position" value={style.clusterLabelPlacement} disabled={!style.showClusterNames} options={[{ value: "above", label: "Above sequence" }, { value: "beside", label: "Beside sequence" }]} onChange={(v) => setStyle({ clusterLabelPlacement: v })} />
+          <SelectField label="Side" value={style.clusterLabelSide} disabled={!style.showClusterNames} options={[{ value: "left", label: "Left" }, { value: "right", label: "Right" }]} onChange={(v) => setStyle({ clusterLabelSide: v })} />
+          <CheckField
+            label="Pin names to canvas edge"
+            checked={style.clusterLabelPinned || style.clusterLabelPlacement === "beside"}
+            disabled={!style.showClusterNames || style.clusterLabelPlacement === "beside"}
+            onChange={(v) => setStyle({ clusterLabelPinned: v })}
+          />
+          <p className="muted">Pinned names remain at the chosen canvas edge while you pan. Names placed beside a sequence are always pinned.</p>
+        </Subsection>
+        <Subsection title="Gene labels">
+          <SelectField label="Show labels" value={style.showGeneLabels} options={[{ value: "auto", label: "Auto (when zoomed in)" }, { value: "always", label: "Always" }, { value: "never", label: "Never" }]} onChange={(v) => setStyle({ showGeneLabels: v })} />
+          <SelectField label="Label field" value={style.geneLabelField} disabled={style.showGeneLabels === "never"} options={[{ value: "", label: "Auto (gene → locus tag → protein ID)" }, ...fields.map((f) => ({ value: f, label: f }))]} onChange={(v) => setStyle({ geneLabelField: v })} />
+          <SelectField label="Scope" value={style.geneLabelScope} disabled={style.showGeneLabels === "never"} options={[{ value: "all", label: "All genes" }, { value: "custom", label: "Custom groups only" }]} onChange={(v) => setStyle({ geneLabelScope: v })} />
+          <SelectField label="Position" value={style.geneLabelPosition} disabled={style.showGeneLabels === "never"} options={[{ value: "above", label: "Above the gene" }, { value: "on", label: "On the gene" }]} onChange={(v) => setStyle({ geneLabelPosition: v })} />
+          <SelectField label="Rotation" value={String(style.geneLabelRotation)} disabled={style.showGeneLabels === "never"} options={[{ value: "0", label: "Horizontal" }, { value: "45", label: "Diagonal (45°)" }, { value: "90", label: "Vertical (90°)" }]} onChange={(v) => setStyle({ geneLabelRotation: Number(v) })} />
+          <SliderField label="Text size" value={style.geneLabelFontSize} min={6} max={20} disabled={style.showGeneLabels === "never"} onChange={(v) => setStyle({ geneLabelFontSize: v })} />
+          <p className="muted">Auto labels appear as you zoom in. Overlapping labels are omitted to keep the figure readable.</p>
+        </Subsection>
+        <Subsection title="Scale bar & canvas">
+          <CheckField label="Show scale bar" checked={style.showScaleBar} onChange={(v) => setStyle({ showScaleBar: v })} />
+          <SliderField label="Length (kb, 0 = automatic)" value={style.scaleBarKb} min={0} max={50} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarKb: v })} />
+          <SliderField label="Bar thickness" value={style.scaleBarThickness} min={0.5} max={8} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarThickness: v })} />
+          <SliderField label="Scale text size" value={style.scaleFontSize} min={6} max={32} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleFontSize: v })} />
+          <ColourField label="Background" value={style.background} onChange={(v) => setStyle({ background: v })} />
+          <button className="btn btn-block" onClick={resetStyle}>Reset all appearance settings</button>
+        </Subsection>
       </Section>
 
       <Section title="Export">
+        <p className="muted">Export the finished figure for publication, or download the underlying similarity results for further analysis.</p>
+        <p className="export-group-label">Figure</p>
         <div className="btn-row">
-          <button className="btn" onClick={() => exportSVG(useStore.getState())} disabled={!data}>SVG</button>
-          <button className="btn" onClick={() => exportPNG(useStore.getState())} disabled={!data}>PNG</button>
+          <button className="btn" onClick={() => exportSVG(useStore.getState())} disabled={!data}>Export SVG</button>
+          <button className="btn" onClick={() => exportPNG(useStore.getState())} disabled={!data}>Export PNG</button>
         </div>
+        <p className="export-group-label">Similarity data</p>
         <div className="btn-row">
           <button className="btn" onClick={() => exportAlignmentTableCSV(useStore.getState())} disabled={!data}>
             Alignment CSV
