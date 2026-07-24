@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { useStore } from "../state/store";
-import { loadExampleSession, runUploadJob } from "../api";
-
-const INPUT_RE = /\.(gbk|gb|genbank|gbf|gbff|gff|gff3|gtf|fa|fna|fasta|fas|faa)$/i;
+import { loadExampleSession } from "../api";
+import { useUpload } from "../state/useUpload";
 
 // Gene arrow slots shared by both lanes. The bottom lane reuses the same
 // x-slots in a shuffled order so a couple of ribbons cross — a tiny, honest
@@ -113,21 +112,19 @@ function Spinner() {
 }
 
 export default function CanvasWelcome() {
-  const setData = useStore((s) => s.setData);
   const loadSession = useStore((s) => s.loadSession);
   const setJobStatus = useStore((s) => s.setJobStatus);
   const jobStatus = useStore((s) => s.jobStatus);
-  const engine = useStore((s) => s.engine);
-  const mode = useStore((s) => s.mode);
-  const identityCutoff = useStore((s) => s.identityCutoff);
-  const evalueCutoff = useStore((s) => s.evalueCutoff);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [loading, setLoading] = useState(false);
+  // Shared with the left panel: choosing files stages them; Run starts the job.
+  const { staged, stageFiles, runStaged, clearStaged, loading } = useUpload();
+  const [exampleLoading, setExampleLoading] = useState(false);
   const [drag, setDrag] = useState(false);
+  const busy = loading || exampleLoading;
 
   const runExample = async () => {
-    setLoading(true);
+    setExampleLoading(true);
     try {
       loadSession(await loadExampleSession(setJobStatus));
       setJobStatus("idle");
@@ -135,49 +132,31 @@ export default function CanvasWelcome() {
       setJobStatus("failed");
       console.error(e);
     } finally {
-      setLoading(false);
+      setExampleLoading(false);
     }
   };
 
-  const onFiles = async (fileList: FileList | null) => {
-    if (!fileList) return;
-    const files = [...fileList].filter((f) => INPUT_RE.test(f.name));
-    if (!files.length) {
-      setJobStatus("no supported files");
-      return;
-    }
-    setLoading(true);
-    try {
-      setData(await runUploadJob(files, setJobStatus, { engine, mode, identity_cutoff: identityCutoff, evalue_cutoff: evalueCutoff }));
-    } catch (e) {
-      setJobStatus("failed");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const failed = !loading && (jobStatus === "failed" || jobStatus === "no supported files");
+  const failed = !busy && (jobStatus === "failed" || jobStatus === "no supported files");
   const statusLabel = STATUS_COPY[jobStatus] ?? "Working…";
 
   return (
     <div
-      className={"welcome" + (drag ? " drag" : "") + (loading ? " busy" : "")}
+      className={"welcome" + (drag ? " drag" : "") + (busy ? " busy" : "")}
       onDragOver={(e) => {
         e.preventDefault();
-        if (!loading) setDrag(true);
+        if (!busy) setDrag(true);
       }}
       onDragLeave={() => setDrag(false)}
       onDrop={(e) => {
         e.preventDefault();
         setDrag(false);
-        if (!loading) onFiles(e.dataTransfer.files);
+        if (!busy) stageFiles(e.dataTransfer.files);
       }}
     >
       <div className="welcome-card">
         <HeroGlyph />
 
-        {loading ? (
+        {busy ? (
           <div className="welcome-loading">
             <div className="welcome-status">
               <Spinner />
@@ -188,6 +167,38 @@ export default function CanvasWelcome() {
               take a moment on real data.
             </p>
           </div>
+        ) : staged.length > 0 ? (
+          <>
+            <h1 className="welcome-title">{staged.length} file{staged.length === 1 ? "" : "s"} ready to align</h1>
+            <p className="welcome-sub">
+              Choose an alignment method and thresholds in the panel on the left, then run.
+            </p>
+
+            <ul className="welcome-staged">
+              {staged.map((f) => <li key={f.name}>{f.name}</li>)}
+            </ul>
+
+            {failed && (
+              <div className="welcome-alert" role="alert">
+                {jobStatus === "no supported files"
+                  ? "Those files aren’t supported. Try GenBank (.gbk/.gb) or GFF3/GTF with FASTA."
+                  : "Something went wrong running that job. Check the backend is running, then try again."}
+              </div>
+            )}
+
+            <div className="welcome-actions">
+              <button className="btn btn-primary btn-lg" onClick={runStaged}>
+                Run alignment on {staged.length} file{staged.length === 1 ? "" : "s"}
+              </button>
+              <button className="btn btn-lg" onClick={() => fileRef.current?.click()}>
+                Add files
+              </button>
+            </div>
+
+            <p className="welcome-hint">
+              <button className="link-btn" onClick={clearStaged}>Clear staged files</button>
+            </p>
+          </>
         ) : (
           <>
             <h1 className="welcome-title">Compare gene clusters, beautifully.</h1>
@@ -225,7 +236,7 @@ export default function CanvasWelcome() {
           accept=".gbk,.gb,.genbank,.gbf,.gbff,.gff,.gff3,.gtf,.fa,.fna,.fasta,.fas,.faa"
           multiple
           hidden
-          onChange={(e) => onFiles(e.target.files)}
+          onChange={(e) => { stageFiles(e.target.files); e.target.value = ""; }}
         />
       </div>
 

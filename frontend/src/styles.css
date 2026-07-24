@@ -356,6 +356,66 @@ body {
   flex-direction: column;
   gap: 11px;
 }
+/* Flat (no-submenu) group: same stacked layout as a subsection body, without the
+   collapsible header — used so the alignment method/engine stays always visible. */
+.flat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.flat-divider {
+  height: 1px;
+  margin: 3px 0;
+  background: var(--border);
+}
+
+/* ---- Upload flow (Data & alignment) ----------------------------------- */
+.upload-flow {
+  gap: 9px;
+}
+.dropzone-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.dropzone-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+.dropzone.drag .dropzone-title,
+.dropzone.drag .dropzone-sub {
+  color: var(--accent-strong);
+}
+.upload-actions {
+  display: flex;
+  gap: 6px;
+}
+.upload-actions > .btn {
+  flex: 1;
+}
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+/* A stacked field with tighter spacing than the default .field. */
+.compact-field {
+  gap: 4px;
+}
+.field-hint {
+  margin: -2px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.upload-thresholds {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.upload-note {
+  margin-top: 1px;
+  text-align: center;
+}
 .scope-note {
   margin: 0;
   padding: 8px 9px;
@@ -683,6 +743,26 @@ body {
   font-size: 12px;
   color: var(--muted);
 }
+.welcome-staged {
+  list-style: none;
+  margin: 0 auto 22px;
+  padding: 10px 14px;
+  max-width: 400px;
+  text-align: left;
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  max-height: 160px;
+  overflow-y: auto;
+}
+.welcome-staged li {
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .welcome-alert {
   margin: 0 auto 20px;
   max-width: 400px;
@@ -878,7 +958,11 @@ body {
 .gene-tooltip {
   position: absolute;
   pointer-events: none;
-  max-width: 260px;
+  max-width: 320px;
+  /* A densely annotated CDS can carry dozens of qualifiers; cap the tooltip so it
+     can't run off screen. The inspector is the uncapped view. */
+  max-height: 45vh;
+  overflow: hidden;
   background: #202329;
   color: #f1f3f5;
   border-radius: var(--r-md);
@@ -901,6 +985,255 @@ body {
 }
 .tt-key {
   color: #9aa0a6;
+}
+
+/* ---- Gene inspector ---------------------------------------------------- */
+/* Docked inside the canvas as an overlay rather than a layout column, so opening
+   it never resizes the canvas and shifts the figure underneath. */
+.gene-inspector {
+  position: absolute;
+  z-index: 8;
+  top: 14px;
+  right: 14px;
+  width: 320px;
+  max-width: calc(100% - 28px);
+  max-height: calc(100% - 28px);
+  display: flex;
+  flex-direction: column;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.gi-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 10px 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-header-bg);
+}
+.gi-title-wrap {
+  min-width: 0;
+  flex: 1;
+}
+.gi-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 640;
+  overflow-wrap: anywhere;
+}
+.gi-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.gi-body {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  padding: 12px 14px 14px;
+}
+.gi-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.gi-facts dt {
+  color: var(--muted);
+}
+.gi-facts dd {
+  margin: 0;
+  color: var(--text-2);
+}
+.gi-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.gi-swatch {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border-radius: 3px;
+  border: 1px solid rgba(20, 23, 28, 0.16);
+}
+.gi-count {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.gi-section {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+.gi-section h3 {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.gi-fields {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+/* Values wrap in full — truncating them here is the problem this panel exists to
+   solve. */
+.gi-field dt {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.gi-field dd {
+  margin: 1px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.gi-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gi-link-row {
+  display: block;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  padding: 6px 7px;
+  margin: 0 -7px;
+  width: calc(100% + 14px);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.1s var(--ease);
+}
+.gi-link-row:hover:not(:disabled) {
+  background: var(--panel-header-bg);
+}
+.gi-link-row:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.gi-link-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.gi-link-cluster {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.gi-link-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 3px;
+}
+.gi-metric {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.gi-metric.active {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.gi-seq {
+  margin: 0 0 8px;
+  max-height: 132px;
+  overflow-y: auto;
+  padding: 8px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel-header-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* ---- Canvas shortcut help ---------------------------------------------- */
+.canvas-help {
+  position: relative;
+}
+/* Revealed on hover / keyboard focus rather than on click — the shortcut list is
+   reference material, not an action. */
+.canvas-help-menu {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 8px);
+  right: -5px;
+  width: 268px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.12s var(--ease), transform 0.12s var(--ease), visibility 0.12s;
+}
+.canvas-help:hover .canvas-help-menu,
+.canvas-help:focus-within .canvas-help-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.canvas-help-menu p {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.canvas-help-menu p:not(:first-child) {
+  margin-top: 11px;
+}
+.canvas-help-menu dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 0;
+  font-size: 11.5px;
+}
+.canvas-help-menu dt {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.canvas-help-menu dd {
+  margin: 0;
+  color: var(--text-2);
 }
 
 /* ---- Legend ------------------------------------------------------------ */
@@ -1080,10 +1413,13 @@ label.btn {
 
 /* ---- Dropzone ---------------------------------------------------------- */
 .dropzone {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--r-lg);
-  padding: 18px 12px;
+  padding: 14px 12px;
   text-align: center;
   font-size: 12px;
   line-height: 1.5;
@@ -1102,6 +1438,54 @@ label.btn {
   border-style: solid;
   background: var(--accent-weak);
   color: var(--accent-strong);
+}
+
+.staged {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--raised);
+  padding: 8px 10px;
+}
+.staged-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.staged-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.staged-list li {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.link-btn:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 /* ---- Style panel ------------------------------------------------------- */

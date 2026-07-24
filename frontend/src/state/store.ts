@@ -163,6 +163,7 @@ function sessionToState(session: Session) {
     identityCutoff: session.view.identityCutoff ?? 0.3,
     evalueCutoff: session.view.evalueCutoff ?? 1e-3,
     jobStatus: "idle",
+    staged: [],
   };
 }
 
@@ -170,8 +171,17 @@ interface AppState extends SessionView {
   data: FigureData | null;
   panelCollapsed: boolean;
   jobStatus: string;
+  // Gene open in the inspector. Deliberately outside SessionView: selecting a
+  // protein is navigation, not a figure edit, so it stays out of undo history,
+  // the saved session and the autosave.
+  selectedGene: string | null;
+  // Files chosen but not yet aligned. Transient (never persisted); the upload
+  // hook stages into it and the explicit "Run" button consumes it. Shared so the
+  // left panel and the welcome screen see one staging queue.
+  staged: File[];
 
   setData: (d: FigureData | null) => void;
+  setStaged: (files: File[]) => void;
   moveClusterTo: (uid: string, target: MoveTarget) => void;
   setClusterOffset: (uid: string, offset: number) => void;
   /** Mark/unmark a cluster as a circular sequence (enables origin rotation). */
@@ -196,6 +206,8 @@ interface AppState extends SessionView {
   setEvalueCutoff: (v: number) => void;
   togglePanel: () => void;
   setJobStatus: (s: string) => void;
+  /** Open the inspector on a gene (null closes it). */
+  selectGene: (uid: string | null) => void;
 
   setColourBy: (c: ColourBy) => void;
   setPaletteName: (p: string) => void;
@@ -286,6 +298,8 @@ export const useStore = create<AppState>((set, get) => {
   evalueCutoff: initialView.evalueCutoff ?? 1e-3,
   panelCollapsed: false,
   jobStatus: "idle",
+  selectedGene: null,
+  staged: [],
   past: [],
   future: [],
 
@@ -304,9 +318,13 @@ export const useStore = create<AppState>((set, get) => {
       // Row names key off cluster uids, which are fresh for each dataset.
       rowNames: {},
       activeMetric: clampMetric(s.activeMetric, data),
+      // The inspector's target is a gene uid from the outgoing dataset.
+      selectedGene: null,
       past: [],
       future: [],
     })),
+
+  setStaged: (staged) => set({ staged }),
 
   // moveClusterTo / setClusterOffset / setLaneArrangement are the cluster-drag
   // path and deliberately do NOT record history themselves: CanvasView calls
@@ -427,6 +445,7 @@ export const useStore = create<AppState>((set, get) => {
   setEvalueCutoff: hist("evalue", (evalueCutoff) => set({ evalueCutoff })),
   togglePanel: () => set((s) => ({ panelCollapsed: !s.panelCollapsed })),
   setJobStatus: (jobStatus) => set({ jobStatus }),
+  selectGene: (selectedGene) => set({ selectedGene }),
 
   setColourBy: hist("colourBy", (colourBy) => set({ colourBy })),
   setPaletteName: hist("palette", (paletteName) => set({ paletteName })),
@@ -491,9 +510,9 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], past: [], future: [] }),
 
-  loadSession: (session) => set({ ...sessionToState(session), past: [], future: [] }),
+  loadSession: (session) => set({ ...sessionToState(session), selectedGene: null, past: [], future: [] }),
 
   getSession: () => snapshotOf(get()),
 

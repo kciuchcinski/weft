@@ -11,8 +11,9 @@
     {
       "name": "backend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd backend && pixi run uvicorn app.main:app --port 8000"],
-      "port": 8000
+      "runtimeArgs": ["-c", "cd backend && pixi run --frozen python -m uvicorn app.main:app --port 8000"],
+      "port": 8000,
+      "autoPort": false
     }
   ]
 }

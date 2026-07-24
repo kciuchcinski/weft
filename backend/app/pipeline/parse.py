@@ -23,23 +23,53 @@ LABEL_QUALIFIERS = ("protein_id", "locus_tag", "gene", "ID", "product", "label",
 NON_GENE_TYPES = frozenset({"source", "gene"})
 
 
+# Qualifiers holding raw sequence rather than annotation. They are never a useful
+# label or tooltip row — /seq in particular is a multi-hundred-character nucleotide
+# blob that some annotation pipelines write per CDS — and carrying them would bloat
+# the figure JSON for every gene. The protein sequence is kept separately on
+# Gene.translation; the nucleotide sequence is recoverable from the record.
+SEQUENCE_QUALIFIERS = frozenset({"translation", "seq"})
+
+
 def _flatten_qualifiers(qualifiers: dict) -> dict[str, str]:
-    """Keep all qualifiers (except translation) as flat strings for later label switching."""
+    """Keep all annotation qualifiers as flat strings for later label switching.
+
+    A qualifier may legitimately repeat within one feature — domain annotators emit
+    several /note or /db_xref lines per CDS (PFAM, ECOD, …). Keeping only the first
+    silently discarded the rest, so every value is joined instead.
+    """
     out: dict[str, str] = {}
     for key, value in qualifiers.items():
-        if key == "translation":
+        if key in SEQUENCE_QUALIFIERS:
             continue
         if isinstance(value, (list, tuple)):
-            out[key] = str(value[0]) if value else ""
+            out[key] = "; ".join(str(v) for v in value)
         else:
             out[key] = str(value)
     return out
 
 
+def _normalise_key(key: str) -> str:
+    """Fold a qualifier key to letters and digits only, lowercased.
+
+    Annotation pipelines are inconsistent about case and separators — a file may
+    write /proteinID, /protein_id or /ProteinId for the same thing. Comparing on
+    the folded form means one preference list covers all of them; without it a
+    file whose only identifier is /proteinID falls through to the uuid fallback
+    and every gene renders with a meaningless hex label.
+    """
+    return "".join(c for c in key if c.isalnum()).lower()
+
+
 def _pick_label(names: dict[str, str], fallback: str) -> str:
+    by_norm: dict[str, str] = {}
+    for key, value in names.items():
+        # First writer wins, so an exact-cased key isn't shadowed by a later variant.
+        by_norm.setdefault(_normalise_key(key), value)
     for key in LABEL_QUALIFIERS:
-        if names.get(key):
-            return names[key]
+        value = by_norm.get(_normalise_key(key))
+        if value:
+            return value
     return fallback
 
 

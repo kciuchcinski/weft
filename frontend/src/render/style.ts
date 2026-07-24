@@ -42,6 +42,10 @@ export interface StyleConfig {
   geneLabelPosition: GeneLabelPosition;
   /** Label rotation in degrees (0 = horizontal). */
   geneLabelRotation: number;
+  /** Cap the qualifiers listed in the hover tooltip; 0 = show every one. Purely a
+   * screen-space concern (the inspector always shows all), so it never reaches
+   * LayoutConfig. */
+  maxTooltipFields: number;
   // Links
   showLinks: boolean;
   straightLinks: boolean;
@@ -99,6 +103,7 @@ export const DEFAULT_STYLE: StyleConfig = {
   geneLabelFontSize: 11,
   geneLabelPosition: "above",
   geneLabelRotation: 0,
+  maxTooltipFields: 0,
   showLinks: true,
   straightLinks: false,
   colourLinks: true,

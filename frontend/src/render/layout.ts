@@ -41,6 +41,66 @@ export function resolveGeneLabel(gene: Gene, field: string): string {
   return gene.names.gene || gene.names.locus_tag || gene.names.protein_id || gene.label || "";
 }
 
+// Qualifier keys that answer "what does this protein do", in the order a reader
+// wants them. Matched as a case-insensitive *prefix*, because domain annotators
+// number their hits: PFAM1, PFAM2, ECOD1, PHROGS1 all rank under their family.
+// Everything unlisted still shows — it just sorts afterwards, so a capped tooltip
+// spends its budget on function rather than on bookkeeping like transl_table.
+const QUALIFIER_PRIORITY = [
+  "product",
+  "function",
+  "gene",
+  "note",
+  "pfam",
+  "ecod",
+  "cog",
+  "kegg",
+  "tigrfam",
+  "interpro",
+  "phrog",
+  "alan",
+  "ec_number",
+  "go",
+  "db_xref",
+  "locus_tag",
+  "protein",
+];
+
+// Per-hit statistics that accompany a domain call (PFAM1_bits, ECOD1_evalue…).
+// They belong with their hit but below every actual annotation, so a reader sees
+// what was found before how well it scored.
+const STAT_SUFFIX = /_(bits|evalue|e_value|score|function_sig|sig|coverage|pident)$/i;
+
+/**
+ * A gene's qualifiers ordered for display: functional annotation first (see
+ * QUALIFIER_PRIORITY), then hit statistics, then everything else alphabetically.
+ * Empty hits — annotators write "-" for "nothing found" — sort last so they never
+ * crowd out real content, but are still listed. `max` caps the list; 0 means all.
+ *
+ * Shared by the hover tooltip and the gene inspector so both present the same
+ * fields in the same order.
+ */
+export function qualifierEntries(gene: Gene, max = 0): [string, string][] {
+  const rank = (key: string): number => {
+    const k = key.toLowerCase();
+    const i = QUALIFIER_PRIORITY.findIndex((p) => k.startsWith(p));
+    const base = i < 0 ? QUALIFIER_PRIORITY.length : i;
+    // Demote statistics a whole band below the annotations they describe.
+    return STAT_SUFFIX.test(k) ? base + QUALIFIER_PRIORITY.length + 1 : base;
+  };
+  // "-" is the no-hit placeholder used by PFAM/ECOD/PHROGS annotation tables.
+  const empty = (v: string) => v.trim() === "-";
+  const entries = Object.entries(gene.names).filter(([, v]) => v !== "" && v != null);
+  return entries
+    .sort(
+      (a, b) =>
+        Number(empty(a[1])) - Number(empty(b[1])) ||
+        rank(a[0]) - rank(b[0]) ||
+        a[0].localeCompare(b[0]),
+    )
+    .slice(0, max > 0 ? max : entries.length);
+}
+
 /** Gap between a pinned name column and the figure's edge, in SVG export. */
 const LABEL_PIN_GAP = 12;
 

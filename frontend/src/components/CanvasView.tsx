@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours } from "../render/palette";
-import { buildScene, formatMetric, type Scene } from "../render/layout";
+import { buildScene, formatMetric, qualifierEntries, type Scene } from "../render/layout";
 import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
 import { draw } from "../render/draw";
 import { ribbonPath } from "../render/geometry";
 import CanvasWelcome from "./CanvasWelcome";
+import GeneInspector from "./GeneInspector";
 import type { Gene, Link, MetricKey } from "../types";
 
 // Display names for link metrics in the ribbon hover tooltip.
@@ -222,13 +223,17 @@ export default function CanvasView() {
   const [draggingUid, setDraggingUid] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
+  // Panning the view by dragging empty canvas. `moved` records whether the
+  // gesture travelled far enough to count as a pan rather than a click — the
+  // click/dblclick handlers check it so a drag never also selects a gene or
+  // toggles custom-group membership.
+  const panDrag = useRef({ active: false, startX: 0, startY: 0, panX: 0, panY: 0, moved: false });
+  const PAN_SLOP = 4; // px of travel before a press becomes a pan
+
   // Horizontal component of a cluster drag: maps cursor X to a within-row offset.
   const hDragStartX = useRef(0); // screen x where the drag began
   const hDragStartOffset = useRef(0); // cluster offset (world px) at drag start
   const hDraggingRef = useRef(false);
-  // Skip the next auto-refit (used when committing a slide, so the view doesn't
-  // recenter just because lanes/offsets changed while positions stayed put).
-  const skipNextFit = useRef(false);
 
   const syncCtls = () => {
     const s = sceneRef.current;
@@ -296,6 +301,23 @@ export default function CanvasView() {
     syncCtls();
   };
 
+  // Zoom by `factor`, keeping the world point under (cx, cy) pinned there. The
+  // wheel passes the cursor so zoom follows what you're pointing at; the +/−
+  // buttons pass the viewport centre.
+  const zoomAt = (factor: number, cx: number, cy: number) => {
+    const wx = (cx - pan.current.x) / zoom.current;
+    const wy = (cy - pan.current.y) / zoom.current;
+    zoom.current = Math.min(8, Math.max(0.05, zoom.current * factor));
+    pan.current = { x: cx - wx * zoom.current, y: cy - wy * zoom.current };
+    render();
+  };
+
+  // Slide the view by a screen-space delta.
+  const panBy = (dx: number, dy: number) => {
+    pan.current = { x: pan.current.x + dx, y: pan.current.y + dy };
+    render();
+  };
+
   // Fit + center the whole figure. The figure itself is stationary; only zoom changes it.
   const fit = () => {
     const wrap = wrapRef.current;
@@ -329,17 +351,25 @@ export default function CanvasView() {
     render();
   };
 
-  // Refit when the scene is rebuilt (data / lanes / layout-affecting change), deferred a frame.
-  // While sliding a cluster horizontally we redraw in place instead, so the view
-  // doesn't recenter on every offset change.
+  // Auto-fit ONLY when a genuinely new figure is loaded — i.e. the set of clusters
+  // changes (upload, example, session open). Every other scene rebuild — a style
+  // tweak, colour change, reverse, align, rename, or drag — keeps the current
+  // zoom/pan and just redraws, so tuning the figure never yanks the view back to
+  // fit. Recenter on demand with the fit button or the 0 key.
+  //
+  // Keyed on the sorted cluster uids: new uploads mint fresh uuids, while in-place
+  // edits keep theirs, which is exactly the distinction we want.
+  const figureKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (hDraggingRef.current || skipNextFit.current) {
-      skipNextFit.current = false;
-      render();
-      return;
+    const key = data ? data.clusters.map((c) => c.uid).sort().join("|") : null;
+    const isNewFigure = key !== figureKeyRef.current;
+    figureKeyRef.current = key;
+    // A brand-new figure fits (deferred a frame); anything else redraws in place.
+    if (isNewFigure && !hDraggingRef.current) {
+      const id = requestAnimationFrame(() => fit());
+      return () => cancelAnimationFrame(id);
     }
-    const id = requestAnimationFrame(() => fit());
-    return () => cancelAnimationFrame(id);
+    render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
@@ -429,7 +459,6 @@ export default function CanvasView() {
     setEditing(null);
     const name = cur.value.trim();
     if (name) {
-      skipNextFit.current = true; // keep the current zoom/pan; renaming isn't a layout change
       // A merged row gets its own name, stored against the row rather than any one
       // cluster — so the members' original names survive and return on a split.
       if (cur.kind === "row") useStore.getState().setRowName(cur.id, name);
@@ -442,21 +471,17 @@ export default function CanvasView() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const zoomAtCenter = (factor: number) => {
-      const wrap = wrapRef.current;
-      if (!wrap) return;
-      const cx = wrap.clientWidth / 2;
-      const cy = wrap.clientHeight / 2;
-      const wx = (cx - pan.current.x) / zoom.current;
-      const wy = (cy - pan.current.y) / zoom.current;
-      zoom.current = Math.min(8, Math.max(0.05, zoom.current * factor));
-      pan.current = { x: cx - wx * zoom.current, y: cy - wy * zoom.current };
-      render();
-    };
-
+    // Map convention (Figma / Google Maps): scrolling pans, ⌘/Ctrl + scroll zooms
+    // toward the cursor. Browsers synthesise a ctrlKey wheel event for a trackpad
+    // pinch, so pinch-to-zoom works without a separate gesture handler.
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      zoomAtCenter(Math.exp(-e.deltaY * 0.0015));
+      const rect = canvas.getBoundingClientRect();
+      if (e.ctrlKey || e.metaKey) {
+        zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+      } else {
+        panBy(-e.deltaX, -e.deltaY);
+      }
     };
 
     // Gene under a world point (axis-aligned rectangle test).
@@ -470,10 +495,40 @@ export default function CanvasView() {
       return hit ? hit.uid : null;
     };
 
+    // Press on the canvas begins a view pan. Cluster drags start from their own
+    // handle (an HTML button above the canvas), so reaching here means the press
+    // was on the figure itself — which pans, exactly like dragging a map.
+    const onDown = (e: MouseEvent) => {
+      if (e.button !== 0 || dragUid.current != null) return;
+      panDrag.current = {
+        active: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        panX: pan.current.x,
+        panY: pan.current.y,
+        moved: false,
+      };
+      canvas.style.cursor = "grabbing";
+    };
+
     const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
+
+      if (panDrag.current.active) {
+        const dx = e.clientX - panDrag.current.startX;
+        const dy = e.clientY - panDrag.current.startY;
+        if (!panDrag.current.moved && Math.hypot(dx, dy) > PAN_SLOP) panDrag.current.moved = true;
+        if (panDrag.current.moved) {
+          pan.current = { x: panDrag.current.panX + dx, y: panDrag.current.panY + dy };
+          // A moving view invalidates any tooltip anchored to the old position.
+          setHover(null);
+          setHoverLink(null);
+          render();
+        }
+        return;
+      }
 
       // Moving a cluster from its handle: horizontal movement slides it within its
       // row; dragging over another row (or a gap) switches to a re-home, previewed
@@ -532,10 +587,17 @@ export default function CanvasView() {
       }
       setHover(null);
       setHoverLink(null);
-      canvas.style.cursor = "default";
+      // Bare canvas is draggable, so advertise it.
+      canvas.style.cursor = "grab";
     };
 
     const onUp = () => {
+      if (panDrag.current.active) {
+        panDrag.current.active = false;
+        canvas.style.cursor = "grab";
+        // `moved` survives until the click event that follows this mouseup has
+        // been handled, so a pan can't double as a click. onClick clears it.
+      }
       if (dragUid.current != null) {
         const uid = dragUid.current;
         const target = pendingTarget.current;
@@ -550,10 +612,8 @@ export default function CanvasView() {
           // Re-homed to another row / new row (drops any within-row offset).
           useStore.getState().moveClusterTo(uid, target);
         } else {
-          // Stayed in its row → persist the slid position (and any reorder by X),
-          // keeping the current view instead of refitting.
+          // Stayed in its row → persist the slid position (and any reorder by X).
           if (cfgRef.current.preventOverlap) commitSlide(uid);
-          skipNextFit.current = true;
         }
       }
     };
@@ -562,18 +622,44 @@ export default function CanvasView() {
       setHoverLink(null);
     };
 
-    // In "custom" colour mode, a single click on a gene toggles its membership
-    // in the active custom group (no-op in other modes / with no active group).
+    // Left-click never *opens* the inspector — that's right-click (see
+    // onContextMenu), so a double-click meant to align homologs doesn't flash the
+    // panel open on its leading click. Bare-canvas click still dismisses an open
+    // inspector (click-away to close). In "custom" colour mode with an active
+    // group, click stays the gene-assignment gesture the tooltip advertises.
     const onClick = (e: MouseEvent) => {
+      // The click that ends a pan gesture is not a selection.
+      if (panDrag.current.moved) {
+        panDrag.current.moved = false;
+        return;
+      }
       const st = useStore.getState();
-      if (st.colourBy !== "custom" || !st.activeCustomGroup) return;
       const s = sceneRef.current;
       if (!s) return;
       const rect = canvas.getBoundingClientRect();
       const wx = (e.clientX - rect.left - pan.current.x) / zoom.current;
       const wy = (e.clientY - rect.top - pan.current.y) / zoom.current;
       const uid = geneAt(wx, wy);
-      if (uid) st.toggleGeneInCustomGroup(uid);
+      if (st.colourBy === "custom" && st.activeCustomGroup) {
+        if (uid) st.toggleGeneInCustomGroup(uid);
+        return;
+      }
+      // Only a click on empty canvas closes an open inspector; a click on a gene
+      // leaves it as-is.
+      if (!uid) st.selectGene(null);
+    };
+
+    // Right-click always inspects, in every colour mode — the one gesture that
+    // never competes with custom-group assignment. Suppresses the browser menu
+    // only when it actually hits a gene, so the page menu still works elsewhere.
+    const onContextMenu = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const wx = (e.clientX - rect.left - pan.current.x) / zoom.current;
+      const wy = (e.clientY - rect.top - pan.current.y) / zoom.current;
+      const uid = geneAt(wx, wy);
+      if (!uid) return;
+      e.preventDefault();
+      useStore.getState().selectGene(uid);
     };
 
     // Double-clicking a gene aligns every cluster's homolog of that gene to the
@@ -607,18 +693,23 @@ export default function CanvasView() {
     };
 
     canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("mousedown", onDown);
+    // Move/up live on the window so a drag that leaves the canvas keeps tracking.
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     canvas.addEventListener("mouseleave", onLeave);
     canvas.addEventListener("click", onClick);
+    canvas.addEventListener("contextmenu", onContextMenu);
     canvas.addEventListener("dblclick", onDblClick);
-    canvas.style.cursor = "default";
+    canvas.style.cursor = "grab";
     return () => {
       canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("mousedown", onDown);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       canvas.removeEventListener("mouseleave", onLeave);
       canvas.removeEventListener("click", onClick);
+      canvas.removeEventListener("contextmenu", onContextMenu);
       canvas.removeEventListener("dblclick", onDblClick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -627,14 +718,38 @@ export default function CanvasView() {
   const zoomBy = (factor: number) => {
     const wrap = wrapRef.current;
     if (!wrap) return;
-    const cx = wrap.clientWidth / 2;
-    const cy = wrap.clientHeight / 2;
-    const wx = (cx - pan.current.x) / zoom.current;
-    const wy = (cy - pan.current.y) / zoom.current;
-    zoom.current = Math.min(8, Math.max(0.05, zoom.current * factor));
-    pan.current = { x: cx - wx * zoom.current, y: cy - wy * zoom.current };
-    render();
+    zoomAt(factor, wrap.clientWidth / 2, wrap.clientHeight / 2);
   };
+
+  // Keyboard navigation: arrows pan, +/− zoom, 0 refits, Escape closes the
+  // inspector. Arrows follow scroll convention (↓ moves the view down, so the
+  // figure travels up), matching the two-finger scroll pan.
+  useEffect(() => {
+    const PAN_STEP = 60;
+    const onKey = (e: KeyboardEvent) => {
+      // Leave modifier chords to their owners (⌘Z undo lives in TopBar), and
+      // never steal keys from the inline rename editor or panel inputs.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const step = PAN_STEP * (e.shiftKey ? 4 : 1);
+      switch (e.key) {
+        case "ArrowLeft": panBy(step, 0); break;
+        case "ArrowRight": panBy(-step, 0); break;
+        case "ArrowUp": panBy(0, step); break;
+        case "ArrowDown": panBy(0, -step); break;
+        case "+": case "=": zoomBy(1.2); break;
+        case "-": case "_": zoomBy(1 / 1.2); break;
+        case "0": fit(); break;
+        case "Escape": useStore.getState().selectGene(null); break;
+        default: return;
+      }
+      e.preventDefault(); // arrows and +/− would otherwise scroll or zoom the page
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startDrag = (uid: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -760,13 +875,12 @@ export default function CanvasView() {
           <div className="tt-row">
             {hover.gene.start.toLocaleString()}–{hover.gene.end.toLocaleString()} bp ({hover.gene.strand < 0 ? "−" : "+"})
           </div>
-          {Object.entries(hover.gene.names)
-            .slice(0, 4)
-            .map(([k, v]) => (
-              <div className="tt-row" key={k}>
-                <span className="tt-key">{k}</span> {v}
-              </div>
-            ))}
+          {qualifierEntries(hover.gene, style.maxTooltipFields).map(([k, v]) => (
+            <div className="tt-row" key={k}>
+              <span className="tt-key">{k}</span> {v}
+            </div>
+          ))}
+          <div className="tt-row tt-hint">Right-click for full details</div>
           {colourBy === "custom" && (
             <div className="tt-row tt-hint">
               {activeGroupLabel
@@ -805,11 +919,41 @@ export default function CanvasView() {
           </div>
         );
       })()}
+      {data && <GeneInspector />}
+
       {data && (
         <div className="canvas-controls">
-          <button className="icon-btn" title="Zoom out" onClick={() => zoomBy(1 / 1.2)}>−</button>
-          <button className="icon-btn" title="Fit to view" onClick={fit}>⤢</button>
-          <button className="icon-btn" title="Zoom in" onClick={() => zoomBy(1.2)}>+</button>
+          {/* Opens on hover (and on keyboard focus), so the controls are one
+              pointer-rest away rather than needing a click to discover. */}
+          <div className="canvas-help">
+            <button className="icon-btn" aria-label="Controls and shortcuts">ⓘ</button>
+            <div className="canvas-help-menu" role="tooltip">
+              <p>Moving around</p>
+              <dl>
+                <dt>Drag</dt><dd>Move the figure</dd>
+                <dt>Scroll</dt><dd>Move up / down / sideways</dd>
+                <dt>⌘ + scroll</dt><dd>Zoom at the pointer</dd>
+                <dt>Arrows</dt><dd>Move — hold ⇧ for bigger steps</dd>
+                <dt>+ / −</dt><dd>Zoom in / out</dd>
+                <dt>0</dt><dd>Fit the whole figure</dd>
+              </dl>
+              <p>Genes</p>
+              <dl>
+                <dt>Hover</dt><dd>Quick annotation summary</dd>
+                <dt>Right-click</dt><dd>Full protein details</dd>
+                <dt>Double-click</dt><dd>Align homologs across rows</dd>
+              </dl>
+              <p>Sequences</p>
+              <dl>
+                <dt>Drag ⠿</dt><dd>Slide along its row, or move to another</dd>
+                <dt>Double-click name</dt><dd>Rename it</dd>
+                <dt>⌘Z</dt><dd>Undo</dd>
+              </dl>
+            </div>
+          </div>
+          <button className="icon-btn" title="Zoom out (−)" onClick={() => zoomBy(1 / 1.2)}>−</button>
+          <button className="icon-btn" title="Fit to view (0)" onClick={fit}>⤢</button>
+          <button className="icon-btn" title="Zoom in (+)" onClick={() => zoomBy(1.2)}>+</button>
         </div>
       )}
     </div>

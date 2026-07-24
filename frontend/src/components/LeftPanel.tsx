@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useStore } from "../state/store";
-import { fetchCapabilities, loadExampleSession, runUploadJob } from "../api";
+import { fetchCapabilities, loadExampleSession } from "../api";
+import { useUpload } from "../state/useUpload";
 import { availableFields, computeColours, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
   availableMetrics,
@@ -84,8 +85,6 @@ function metricRange(metric: MetricKey, data: FigureData | null) {
   const showAll = lower ? hi : lo;
   return { lo, hi, step, lower, showAll };
 }
-
-const INPUT_RE = /\.(gbk|gb|genbank|gbf|gbff|gff|gff3|gtf|fa|fna|fasta|fas|faa)$/i;
 
 function Section({
   title,
@@ -266,7 +265,6 @@ function CustomColourEditor() {
 
 export default function LeftPanel() {
   const data = useStore((s) => s.data);
-  const setData = useStore((s) => s.setData);
   const loadSession = useStore((s) => s.loadSession);
   const setJobStatus = useStore((s) => s.setJobStatus);
   const activeMetric = useStore((s) => s.activeMetric);
@@ -303,9 +301,12 @@ export default function LeftPanel() {
   const rotateCluster = useStore((s) => s.rotateCluster);
   const resetAllClusterRotations = useStore((s) => s.resetAllClusterRotations);
 
-  const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
   const [sequenceFilter, setSequenceFilter] = useState("");
+  // Shared upload flow: selection stages files; the explicit "Run" button below
+  // the alignment settings starts the job, so method/thresholds can be set first.
+  const { staged, stageFiles, runStaged, clearStaged, loading } = useUpload();
+  const [exampleLoading, setExampleLoading] = useState(false);
   // Engines this deployment can run. The hosted beta ships parasail only; DIAMOND
   // appears only where the binary is present (local dev / a conda-based image).
   const [engines, setEngines] = useState<string[]>(["parasail"]);
@@ -374,8 +375,9 @@ export default function LeftPanel() {
   const circularCount = data?.clusters.filter((c) => circularClusters[c.uid]).length ?? 0;
   const hasRotations = Object.values(clusterRotation).some((v) => v !== 0);
 
+  // loadSession clears the staged queue, so the example replaces any pending files.
   const loadExample = async () => {
-    setLoading(true);
+    setExampleLoading(true);
     try {
       loadSession(await loadExampleSession(setJobStatus));
       setJobStatus("idle");
@@ -383,25 +385,7 @@ export default function LeftPanel() {
       setJobStatus("failed");
       console.error(e);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const onFiles = async (fileList: FileList | null) => {
-    if (!fileList) return;
-    const files = [...fileList].filter((f) => INPUT_RE.test(f.name));
-    if (!files.length) {
-      setJobStatus("no supported files");
-      return;
-    }
-    setLoading(true);
-    try {
-      setData(await runUploadJob(files, setJobStatus, { engine, mode, identity_cutoff: identityCutoff, evalue_cutoff: evalueCutoff }));
-    } catch (e) {
-      setJobStatus("failed");
-      console.error(e);
-    } finally {
-      setLoading(false);
+      setExampleLoading(false);
     }
   };
 
@@ -425,47 +409,73 @@ export default function LeftPanel() {
     e.target.value = "";
   };
 
+  // One-line description of the selected method, shown under the picker.
+  const methodHint =
+    engine === "parasail"
+      ? mode === "local"
+        ? "Exact pairwise — finds shared sub-regions (domains)."
+        : "Exact pairwise — whole-protein comparison."
+      : "Fast heuristic search — best for large datasets.";
+
+  const runLabel = loading
+    ? "Running…"
+    : staged.length === 0
+      ? "Add files to run"
+      : `Run alignment on ${staged.length} file${staged.length === 1 ? "" : "s"}`;
+
   return (
     <aside className="left-panel">
       <Section key={data ? "data-loaded" : "data-empty"} title="Data & alignment" defaultOpen={!data}>
-        <Subsection title="Input" defaultOpen>
-          {data ? (
-            <p className="muted">{data.clusters.length} sequences · {geneCount} genes · {data.links.length} similarity links loaded.</p>
-          ) : (
-            <p className="muted">Add GenBank or GFF3/GTF+FASTA files, or start with the bundled example.</p>
-          )}
+        <div className="flat-group upload-flow">
+          {/* 1 — Input */}
           <label
             className={"dropzone" + (drag ? " drag" : "")}
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
             onDragLeave={() => setDrag(false)}
-            onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); stageFiles(e.dataTransfer.files); }}
           >
-            {loading ? "Running…" : "Drop input files here, or click to choose"}
-            <input type="file" accept=".gbk,.gb,.genbank,.gbf,.gbff,.gff,.gff3,.gtf,.fa,.fna,.fasta,.fas,.faa" multiple hidden onChange={(e) => onFiles(e.target.files)} />
+            <span className="dropzone-title">Drop files to align</span>
+            <span className="dropzone-sub">GenBank or GFF3/GTF + FASTA — or click to browse</span>
+            <input type="file" accept=".gbk,.gb,.genbank,.gbf,.gbff,.gff,.gff3,.gtf,.fa,.fna,.fasta,.fas,.faa" multiple hidden onChange={(e) => { stageFiles(e.target.files); e.target.value = ""; }} />
           </label>
-          <label className="field">
-            <span>Upload a folder</span>
-            <input
-              type="file"
-              multiple
-              // @ts-expect-error non-standard attribute supported by Chromium-based browsers
-              webkitdirectory=""
-              onChange={(e) => onFiles(e.target.files)}
-            />
-          </label>
-          <button className="btn btn-block" onClick={loadExample} disabled={loading}>{loading ? "Loading…" : "Load example dataset"}</button>
-          <p className="muted privacy-note">Files are processed on the server and deleted shortly after the job runs. This is a beta, so avoid sensitive unpublished data.</p>
-        </Subsection>
+          <div className="upload-actions">
+            <label className="btn btn-sm">
+              Folder…
+              <input
+                type="file"
+                multiple
+                hidden
+                // @ts-expect-error non-standard attribute supported by Chromium-based browsers
+                webkitdirectory=""
+                onChange={(e) => { stageFiles(e.target.files); e.target.value = ""; }}
+              />
+            </label>
+            <button className="btn btn-sm" onClick={loadExample} disabled={loading || exampleLoading}>
+              {exampleLoading ? "Loading…" : "Example"}
+            </button>
+          </div>
 
-        <Subsection title="Alignment for new uploads" defaultOpen={!data}>
-          <p className="scope-note">These settings apply when you upload new files. They do not recompute the figure already on screen.</p>
-          <label className="field">
-            <span>Method</span>
+          {staged.length > 0 && (
+            <div className="staged">
+              <div className="staged-head">
+                <span>{staged.length} file{staged.length === 1 ? "" : "s"} staged</span>
+                <button className="link-btn" onClick={clearStaged} disabled={loading}>Clear</button>
+              </div>
+              <ul className="staged-list">
+                {staged.map((f) => <li key={f.name}>{f.name}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* 2 — Method */}
+          <div className="flat-divider" />
+          <label className="field compact-field">
+            <span>Alignment method</span>
             <select
-              value={engine === "parasail" ? `parasail-${mode}` : "diamond"}
+              value={engine === "parasail" ? `parasail-${mode}` : engine}
               onChange={(e) => {
                 const v = e.target.value;
-                if (v === "diamond") setEngine("diamond");
+                if (v === "diamond") setEngine(v);
                 else {
                   setEngine("parasail");
                   setMode(v === "parasail-local" ? "local" : "global");
@@ -474,26 +484,37 @@ export default function LeftPanel() {
             >
               <option value="parasail-global">Global — compare whole proteins</option>
               <option value="parasail-local">Local — find matching regions</option>
-              {engines.includes("diamond") && <option value="diamond">DIAMOND — fast for large datasets</option>}
+              <option value="diamond" disabled={!engines.includes("diamond")}>
+                DIAMOND — fast for large datasets{engines.includes("diamond") ? "" : " (unavailable on this server)"}
+              </option>
             </select>
           </label>
-          <SliderField label="Minimum identity" value={identityCutoff} min={0} max={1} step={0.05} onChange={setIdentityCutoff} />
-          {engine === "diamond" && (
-            <label className="field">
-              <span>Maximum E-value</span>
-              <select value={String(evalueCutoff)} onChange={(e) => setEvalueCutoff(Number(e.target.value))}>
-                {[1e-1, 1e-2, 1e-3, 1e-5, 1e-10].map((v) => <option key={v} value={String(v)}>{v.toExponential(0)}</option>)}
-              </select>
-            </label>
+          <p className="field-hint">{methodHint}</p>
+
+          <div className="upload-thresholds">
+            <SliderField label="Min. identity" value={identityCutoff} min={0} max={1} step={0.05} onChange={setIdentityCutoff} />
+            {engine === "diamond" && (
+              <label className="field-inline">
+                <span>Max E-value</span>
+                <select value={String(evalueCutoff)} onChange={(e) => setEvalueCutoff(Number(e.target.value))}>
+                  {[1e-1, 1e-2, 1e-3, 1e-5, 1e-10].map((v) => <option key={v} value={String(v)}>{v.toExponential(0)}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+
+          {/* 3 — Run */}
+          <button
+            className="btn btn-primary btn-block"
+            onClick={runStaged}
+            disabled={loading || staged.length === 0}
+          >
+            {runLabel}
+          </button>
+          {data && !staged.length && (
+            <p className="field-hint upload-note">Showing a {data.clusters.length}-sequence figure · {data.links.length} links. Add files to run a new one.</p>
           )}
-          <p className="muted">
-            {engine === "parasail"
-              ? mode === "local"
-                ? "Local alignment finds shared regions such as individual domains. It is exact, but best suited to smaller datasets."
-                : "Global alignment compares each protein across its full length. It is exact, but slower than DIAMOND."
-              : "DIAMOND performs a fast all-vs-all protein search and is recommended for large datasets."}
-          </p>
-        </Subsection>
+        </div>
       </Section>
 
       <Section key={data ? "links-loaded" : "links-empty"} title="Similarity links" defaultOpen={!!data}>
@@ -662,7 +683,7 @@ export default function LeftPanel() {
             )}
             <Subsection title="Figure legend">
               <CheckField label="Show colour legend" checked={style.showLegend} onChange={(v) => setStyle({ showLegend: v })} />
-              <SliderField label="Maximum entries (0 = all)" value={style.maxLegendEntries} min={0} max={20} disabled={!style.showLegend} onChange={(v) => setStyle({ maxLegendEntries: v })} />
+              <SliderField label="Maximum entries (0 = all)" value={style.maxLegendEntries} min={0} max={40} disabled={!style.showLegend} onChange={(v) => setStyle({ maxLegendEntries: v })} />
               <SliderField label="Text size" value={style.legendFontSize} min={6} max={32} disabled={!style.showLegend} onChange={(v) => setStyle({ legendFontSize: v })} />
               <SliderField label="Entry spacing" value={style.legendSpacing} min={4} max={60} disabled={!style.showLegend} onChange={(v) => setStyle({ legendSpacing: v })} />
               <p className="muted">The legend reflects the active colour mapping. Extra entries are combined into “Other” when a maximum is set.</p>
@@ -708,6 +729,10 @@ export default function LeftPanel() {
           <SelectField label="Rotation" value={String(style.geneLabelRotation)} disabled={style.showGeneLabels === "never"} options={[{ value: "0", label: "Horizontal" }, { value: "45", label: "Diagonal (45°)" }, { value: "90", label: "Vertical (90°)" }]} onChange={(v) => setStyle({ geneLabelRotation: Number(v) })} />
           <SliderField label="Text size" value={style.geneLabelFontSize} min={6} max={20} disabled={style.showGeneLabels === "never"} onChange={(v) => setStyle({ geneLabelFontSize: v })} />
           <p className="muted">Auto labels appear as you zoom in. Overlapping labels are omitted to keep the figure readable.</p>
+        </Subsection>
+        <Subsection title="Gene tooltip">
+          <SliderField label="Maximum annotations (0 = all)" value={style.maxTooltipFields} min={0} max={24} onChange={(v) => setStyle({ maxTooltipFields: v })} />
+          <p className="muted">Annotations shown when hovering a gene, functional fields first (product, function, PFAM, ECOD…). Click a gene to open the full record regardless of this limit.</p>
         </Subsection>
         <Subsection title="Scale bar & canvas">
           <CheckField label="Show scale bar" checked={style.showScaleBar} onChange={(v) => setStyle({ showScaleBar: v })} />
