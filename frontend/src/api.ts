@@ -23,13 +23,29 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 export interface Capabilities {
   engines: string[];
   defaultEngine: string;
+  version: string | null; // backend version, if reported
 }
 
-/** Ask the backend which engines are available so the UI can hide ones it can't run. */
-export async function fetchCapabilities(): Promise<Capabilities> {
+let capabilities: Promise<Capabilities> | null = null;
+
+/** Ask the backend which engines are available so the UI can hide ones it can't run.
+ * Memoized so every caller shares one /api/health request; a failure is not cached. */
+export function fetchCapabilities(): Promise<Capabilities> {
+  capabilities ??= loadCapabilities().catch((err) => {
+    capabilities = null;
+    throw err;
+  });
+  return capabilities;
+}
+
+async function loadCapabilities(): Promise<Capabilities> {
   const h = await getJSON("/api/health");
   const engines: string[] = Array.isArray(h.engines) && h.engines.length ? h.engines : ["parasail"];
-  return { engines, defaultEngine: h.default_engine ?? engines[0] ?? "parasail" };
+  return {
+    engines,
+    defaultEngine: h.default_engine ?? engines[0] ?? "parasail",
+    version: typeof h.version === "string" ? h.version : null,
+  };
 }
 
 type OnStatus = (status: string) => void;

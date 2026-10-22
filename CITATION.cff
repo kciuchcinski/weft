@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use Weft in your research, please cite it using the metadata below."
+type: software
+title: Weft
+abstract: >-
+  Weft is a web application for comparing gene clusters. It aligns all proteins
+  encoded in a set of annotated nucleotide records against each other and draws
+  the result as an interactive multi-row gene map, with cross-record similarity
+  shown as ribbons between genes.
+authors:
+  - given-names: Karol
+    family-names: Ciuchciński
+    orcid: "https://orcid.org/0000-0003-0982-1377"
+version: 1.0.0-rc1
+license: MIT
+repository-code: "https://github.com/kciuchcinski/weft"
+keywords:
+  - comparative genomics
+  - gene clusters
+  - synteny
+  - protein alignment
+  - visualization
