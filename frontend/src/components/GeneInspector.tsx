@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../state/store";
-import { computeColours } from "../render/palette";
+import { computeColours, hiddenGeneUids } from "../render/palette";
 import { formatMetric, metricLowerIsBetter, qualifierEntries } from "../render/layout";
 import type { Cluster, Gene, Locus, MetricKey } from "../types";
 
@@ -46,6 +46,7 @@ export default function GeneInspector() {
   const colourField = useStore((s) => s.colourField);
   const customGroups = useStore((s) => s.customGroups);
   const maxLegendEntries = useStore((s) => s.style.maxLegendEntries);
+  const hiddenClusters = useStore((s) => s.hiddenClusters);
 
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -64,9 +65,9 @@ export default function GeneInspector() {
   const colours = useMemo(
     () =>
       data
-        ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, maxLegendEntries)
+        ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, maxLegendEntries, hiddenGeneUids(data, hiddenClusters))
         : null,
-    [data, colourBy, paletteName, overrides, colourField, customGroups, maxLegendEntries],
+    [data, colourBy, paletteName, overrides, colourField, customGroups, maxLegendEntries, hiddenClusters],
   );
 
   const entry = selectedGene ? index.get(selectedGene) : null;

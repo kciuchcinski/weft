@@ -50,7 +50,8 @@ export interface ColourResult {
 interface Bucket {
   id: string;
   label: string;
-  colour: string;
+  /** Fixed colour (manual override or custom group); null takes the next palette slot. */
+  colour: string | null;
   geneUids: string[];
 }
 
@@ -62,11 +63,15 @@ interface Bucket {
  * annotations (e.g. hundreds of distinct products) from producing a legend with
  * more entries than colours in the palette.
  *
- * Genes in `hiddenGenes` still get their colour (so hiding a sequence never
- * recolours the rest) but are left out of legend counts and ranking, and a bucket
- * with no visible genes gets no legend row.
+ * Palette colours are handed out in original bucket order. Uncapped, every bucket
+ * takes its own slot (so hiding a sequence never recolours the rest); capped, only
+ * the kept buckets take slots, so a value ranked 11th by first appearance but kept
+ * by the cap doesn't wrap onto the 1st value's colour.
+ *
+ * Genes in `hiddenGenes` still get a colour but are left out of legend counts and
+ * ranking, and a bucket with no visible genes gets no legend row.
  */
-function finalizeColours(buckets: Bucket[], maxEntries: number, hiddenGenes?: Set<string>): ColourResult {
+function finalizeColours(buckets: Bucket[], palette: string[], maxEntries: number, hiddenGenes?: Set<string>): ColourResult {
   const shownCount = (b: Bucket) =>
     hiddenGenes?.size ? b.geneUids.reduce((n, uid) => n + (hiddenGenes.has(uid) ? 0 : 1), 0) : b.geneUids.length;
   const counts = new Map(buckets.map((b) => [b.id, shownCount(b)]));
@@ -82,13 +87,19 @@ function finalizeColours(buckets: Bucket[], maxEntries: number, hiddenGenes?: Se
   const items: LegendItem[] = [];
   let otherCount = 0;
   let otherGroups = 0;
-  // Iterate in original order: preserves palette stability and "last write wins"
+  let slot = 0;
+  // Iterate in original order: keeps palette order stable and "last write wins"
   // for genes shared by more than one bucket (overlapping custom groups).
   for (const b of buckets) {
     const count = counts.get(b.id)!;
     // Buckets with only hidden genes don't compete for the legend cap.
     const kept = !keep || keep.has(b.id) || count === 0;
-    const colour = kept ? b.colour : UNGROUPED;
+    // Overridden buckets still take a slot, so overriding one never shifts the rest.
+    // Under the cap, hidden-only buckets don't, or they'd crowd out visible ones.
+    const takesSlot = !keep || (keep.has(b.id) && count > 0);
+    const auto = palette[slot % palette.length];
+    if (takesSlot) slot += 1;
+    const colour = kept ? b.colour ?? auto : UNGROUPED;
     b.geneUids.forEach((uid) => gene.set(uid, colour));
     if (count === 0) continue;
     if (kept) {
@@ -152,10 +163,10 @@ export function computeColours(
   const buckets: Bucket[] = [];
 
   if (colourBy === "cluster") {
-    data.clusters.forEach((c, i) => {
+    data.clusters.forEach((c) => {
       const geneUids: string[] = [];
       c.loci.forEach((l) => l.genes.forEach((g) => geneUids.push(g.uid)));
-      buckets.push({ id: c.uid, label: c.name, colour: overrides[c.uid] ?? palette[i % palette.length], geneUids });
+      buckets.push({ id: c.uid, label: c.name, colour: overrides[c.uid] ?? null, geneUids });
     });
   } else if (colourBy === "field") {
     // Bucket genes by the chosen qualifier value; genes lacking the field stay
@@ -171,10 +182,10 @@ export function computeColours(
       if (!uids) { uids = []; uidsByValue.set(value, uids); order.push(value); }
       uids.push(g.uid);
     })));
-    order.forEach((value, i) => buckets.push({
+    order.forEach((value) => buckets.push({
       id: fieldOverrideKey(field, value),
       label: value,
-      colour: overrides[fieldOverrideKey(field, value)] ?? palette[i % palette.length],
+      colour: overrides[fieldOverrideKey(field, value)] ?? null,
       geneUids: uidsByValue.get(value)!,
     }));
   } else if (colourBy === "custom") {
@@ -182,13 +193,13 @@ export function computeColours(
       id: grp.id, label: grp.label, colour: grp.colour, geneUids: grp.genes,
     }));
   } else {
-    data.groups.forEach((grp, i) => buckets.push({
+    data.groups.forEach((grp) => buckets.push({
       id: grp.uid,
       label: grp.label,
-      colour: overrides[grp.uid] ?? palette[i % palette.length],
+      colour: overrides[grp.uid] ?? null,
       geneUids: grp.genes,
     }));
   }
 
-  return finalizeColours(buckets, maxEntries, hiddenGenes);
+  return finalizeColours(buckets, palette, maxEntries, hiddenGenes);
 }
