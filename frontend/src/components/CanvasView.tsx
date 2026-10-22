@@ -365,7 +365,9 @@ export default function CanvasView() {
     const isNewFigure = key !== figureKeyRef.current;
     figureKeyRef.current = key;
     // A brand-new figure fits (deferred a frame); anything else redraws in place.
-    if (isNewFigure && !hDraggingRef.current) {
+    // Clearing the data (New) has no scene to fit, so it must take the render()
+    // path, which wipes the canvas — fit() would bail out and leave the old figure.
+    if (isNewFigure && scene && !hDraggingRef.current) {
       const id = requestAnimationFrame(() => fit());
       return () => cancelAnimationFrame(id);
     }
