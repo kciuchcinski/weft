@@ -307,8 +307,8 @@ export default function LeftPanel() {
   // the alignment settings starts the job, so method/thresholds can be set first.
   const { staged, stageFiles, runStaged, clearStaged, loading } = useUpload();
   const [exampleLoading, setExampleLoading] = useState(false);
-  // Engines this deployment can run. The hosted beta ships parasail only; DIAMOND
-  // appears only where the binary is present (local dev / a conda-based image).
+  // Engines this deployment can run. parasail (the default) is always present;
+  // DIAMOND appears only where its binary is on PATH (pixi env / the Docker image).
   const [engines, setEngines] = useState<string[]>(["parasail"]);
 
   useEffect(() => {
@@ -690,7 +690,7 @@ export default function LeftPanel() {
             </Subsection>
           </>
         ) : (
-          <p className="muted">Genes are coloured by homology group once data loads.</p>
+          <p className="muted">Genes are coloured by similarity group once data loads.</p>
         )}
       </Section>
 

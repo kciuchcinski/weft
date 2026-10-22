@@ -16,7 +16,7 @@ function BrandMark() {
         </linearGradient>
       </defs>
       <rect width="24" height="24" rx="7" fill="url(#synMark)" />
-      {/* connecting ribbon between the two homologous genes */}
+      {/* connecting ribbon between the two similar genes */}
       <path d="M8 9.4 L14.6 9.4 L13.4 14.6 L6.8 14.6 Z" fill="#fff" fillOpacity="0.22" />
       {/* top row */}
       <path d="M5 8 h4.6 l1.6 1.5 -1.6 1.5 H5 Z" fill="#fff" fillOpacity="0.95" />

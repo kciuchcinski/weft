@@ -104,7 +104,7 @@ def parse_genbank(path: str, as_separate_clusters: bool = False) -> list[Cluster
     for record in SeqIO.parse(str(path), "genbank"):
         cds = [f for f in record.features if f.type == "CDS"]
         if cds:
-            # Standard case: CDS features are the genes, translated for homology.
+            # Standard case: CDS features are the genes, translated for alignment.
             genes = [_gene_from_feature(f, record) for f in cds]
         else:
             # Annotation-only records (e.g. RGI/antiSMASH ARG/BGC feature tracks with

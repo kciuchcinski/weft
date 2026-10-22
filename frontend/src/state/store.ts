@@ -399,7 +399,7 @@ export const useStore = create<AppState>((set, get) => {
       return { lanes, clusterOffsets: { ...s.clusterOffsets, ...offsets } };
     }),
 
-  // Align every cluster's homolog of the double-clicked gene to that gene's
+  // Align every cluster's match for the double-clicked gene to that gene's
   // world X, as a single offsets update (one undo-able/persisted change). We
   // rebuild the current scene from the same inputs CanvasView uses so offsets
   // are computed against live geometry (existing offsets + overlap resolution).

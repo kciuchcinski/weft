@@ -30,7 +30,7 @@ function wrapFasta(seq: string, width = 60): string {
 /**
  * Everything Weft knows about one protein: its position, every annotation
  * qualifier (never truncated — the hover tooltip is the abridged view), the
- * homology group it landed in, its similarity links, and its translation.
+ * similarity group it landed in, its similarity links, and its translation.
  *
  * Rendered as an overlay docked inside the canvas rather than as a third layout
  * column, so opening it doesn't resize the canvas and shift the figure.
@@ -71,7 +71,7 @@ export default function GeneInspector() {
 
   const entry = selectedGene ? index.get(selectedGene) : null;
 
-  // Homologs of the selected protein, best match first under the active metric.
+  // Similar proteins (linked to the selected one), best match first under the active metric.
   const partners = useMemo(() => {
     if (!data || !entry) return [];
     const uid = entry.gene.uid;
@@ -137,7 +137,7 @@ export default function GeneInspector() {
           </dd>
           {group && (
             <>
-              <dt>Homology group</dt>
+              <dt>Similarity group</dt>
               <dd className="gi-group">
                 <span className="gi-swatch" style={{ background: colours?.gene.get(gene.uid) ?? "#cbd0d6" }} />
                 {group.label}

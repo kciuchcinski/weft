@@ -282,7 +282,7 @@ export interface LinkRibbon {
   mx: number; my: number;
   /** Formatted active-metric value, present only when link labels are enabled. */
   label?: string;
-  /** The source homology link, for hover tooltips (connected genes + metrics). */
+  /** The source similarity link, for hover tooltips (connected genes + metrics). */
   link: Link;
 }
 
@@ -886,28 +886,28 @@ export function buildScene(
 }
 
 /**
- * Compute per-cluster horizontal offsets that align every cluster's homolog of
+ * Compute per-cluster horizontal offsets that align every cluster's match for
  * `geneUid` to the same world X as the clicked gene ("centering").
  *
- * Homology heuristic: prefer the explicit homology group that contains the
+ * Matching heuristic: prefer the explicit similarity group that contains the
  * clicked gene (robust regardless of the active colour mode, since groups are
- * the canonical notion of homology). If the gene belongs to no group, fall back
- * to the homology `links` touching it (the other endpoints are its homologs).
+ * the canonical notion of a match). If the gene belongs to no group, fall back
+ * to the similarity `links` touching it (the other endpoints are its matches).
  *
- * Representative choice when a cluster has several homologs: pick the gene with
- * the strongest homology link to the clicked gene (by the active metric); break
+ * Representative choice when a cluster has several matches: pick the gene with
+ * the strongest similarity link to the clicked gene (by the active metric); break
  * ties — and handle the no-link case — by proximity to the anchor so the cluster
  * moves the least.
  *
  * Overlap note: offsets are derived from the CURRENT scene geometry (positions
  * already include existing offsets AND any preventOverlap resolution), and the
- * returned offset is `existingOffset + (anchorX - homologCenterX)`. For the
+ * returned offset is `existingOffset + (anchorX - matchCenterX)`. For the
  * common single-cluster-per-lane case, overlap resolution is a no-op, so the
- * homolog lands exactly on the anchor after re-render. In multi-cluster lanes
+ * match lands exactly on the anchor after re-render. In multi-cluster lanes
  * overlap resolution may nudge clusters, so alignment there is best-effort.
  *
  * Returns the SAME `currentOffsets` reference (a no-op) when the gene isn't in
- * the scene or has no homologs in other clusters.
+ * the scene or has no matches in other clusters.
  */
 export function computeCenteringOffsets(
   scene: Scene,
@@ -922,40 +922,40 @@ export function computeCenteringOffsets(
   const anchorX = (anchor.x0 + anchor.x1) / 2;
   const anchorClusterUid = data.clusters[anchor.cluster]?.uid;
 
-  // Homology set: explicit group first, else links touching the clicked gene.
-  let homologUids: Set<string>;
+  // Match set: explicit group first, else links touching the clicked gene.
+  let matchUids: Set<string>;
   const group = data.groups.find((g) => g.genes.includes(geneUid));
   if (group) {
-    homologUids = new Set(group.genes);
+    matchUids = new Set(group.genes);
   } else {
-    homologUids = new Set<string>();
+    matchUids = new Set<string>();
     for (const link of data.links) {
-      if (link.query === geneUid) homologUids.add(link.target);
-      else if (link.target === geneUid) homologUids.add(link.query);
+      if (link.query === geneUid) matchUids.add(link.target);
+      else if (link.target === geneUid) matchUids.add(link.query);
     }
   }
-  homologUids.delete(geneUid);
-  if (homologUids.size === 0) return currentOffsets;
+  matchUids.delete(geneUid);
+  if (matchUids.size === 0) return currentOffsets;
 
-  // Strength of the direct homology link from the clicked gene to each homolog,
+  // Strength of the direct similarity link from the clicked gene to each match,
   // by the active metric, used to pick a per-cluster representative.
   const linkStrength = new Map<string, number>();
   for (const link of data.links) {
     let other: string | null = null;
     if (link.query === geneUid) other = link.target;
     else if (link.target === geneUid) other = link.query;
-    if (other && homologUids.has(other)) {
+    if (other && matchUids.has(other)) {
       const v = link.metrics[metric];
       const s = typeof v === "number" ? v : 0;
       linkStrength.set(other, Math.max(linkStrength.get(other) ?? 0, s));
     }
   }
 
-  // Bucket candidate homolog shapes by cluster (offsets are per-cluster). Skip
+  // Bucket candidate match shapes by cluster (offsets are per-cluster). Skip
   // the clicked gene's own cluster: it is the anchor and stays put.
   const byCluster = new Map<string, GeneShape[]>();
   for (const g of scene.genes) {
-    if (!homologUids.has(g.uid)) continue;
+    if (!matchUids.has(g.uid)) continue;
     const uid = data.clusters[g.cluster]?.uid;
     if (!uid || uid === anchorClusterUid) continue;
     const arr = byCluster.get(uid);
@@ -979,8 +979,8 @@ export function computeCenteringOffsets(
         bestDist = dist;
       }
     }
-    const homologCenterX = (best.x0 + best.x1) / 2;
-    next[uid] = (currentOffsets[uid] ?? 0) + (anchorX - homologCenterX);
+    const matchCenterX = (best.x0 + best.x1) / 2;
+    next[uid] = (currentOffsets[uid] ?? 0) + (anchorX - matchCenterX);
   }
   return next;
 }

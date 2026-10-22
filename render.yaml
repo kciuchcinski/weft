@@ -32,4 +32,4 @@ services:
         value: "1800" # auto-delete uploads after 30 min
       # Fallback when the client's chosen engine isn't available in this image.
       - key: DEFAULT_ENGINE
-        value: "diamond"
+        value: "parasail"

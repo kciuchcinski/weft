@@ -623,7 +623,7 @@ export default function CanvasView() {
     };
 
     // Left-click never *opens* the inspector — that's right-click (see
-    // onContextMenu), so a double-click meant to align homologs doesn't flash the
+    // onContextMenu), so a double-click meant to align matching genes doesn't flash the
     // panel open on its leading click. Bare-canvas click still dismisses an open
     // inspector (click-away to close). In "custom" colour mode with an active
     // group, click stays the gene-assignment gesture the tooltip advertises.
@@ -662,7 +662,7 @@ export default function CanvasView() {
       useStore.getState().selectGene(uid);
     };
 
-    // Double-clicking a gene aligns every cluster's homolog of that gene to the
+    // Double-clicking a gene aligns every cluster's match for that gene to the
     // clicked gene's world X. Hit-test uses the same world-coord transform as hover.
     const onDblClick = (e: MouseEvent) => {
       const s = sceneRef.current;
@@ -685,7 +685,7 @@ export default function CanvasView() {
         }
       }
 
-      // Otherwise, double-clicking a gene aligns every cluster's homolog of it.
+      // Otherwise, double-clicking a gene aligns every cluster's match for it.
       const wx = (mx - pan.current.x) / zoom.current;
       const wy = (my - pan.current.y) / zoom.current;
       const uid = geneAt(wx, wy);
@@ -941,7 +941,7 @@ export default function CanvasView() {
               <dl>
                 <dt>Hover</dt><dd>Quick annotation summary</dd>
                 <dt>Right-click</dt><dd>Full protein details</dd>
-                <dt>Double-click</dt><dd>Align homologs across rows</dd>
+                <dt>Double-click</dt><dd>Align matching genes across rows</dd>
               </dl>
               <p>Sequences</p>
               <dl>

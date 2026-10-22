@@ -19,7 +19,7 @@ async function postJSON(path: string, body: unknown): Promise<any> {
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-/** Engines this deployment can actually run (DIAMOND is absent from the hosted beta). */
+/** Engines this deployment can actually run (parasail always; DIAMOND only where its binary is present). */
 export interface Capabilities {
   engines: string[];
   defaultEngine: string;

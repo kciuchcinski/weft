@@ -73,7 +73,7 @@ export function genePoints(
     : [[x1, y - th], [x0 + tip, y - th], [x0, y], [x0 + tip, y + th], [x1, y + th]];
 }
 
-/** SVG path data for a homology-link ribbon (usable as Path2D in canvas too). */
+/** SVG path data for a similarity-link ribbon (usable as Path2D in canvas too). */
 export function ribbonPath(l: LinkRibbon, straight = false): string {
   if (straight) {
     return `M${l.ax0},${l.ay} L${l.bx0},${l.by} L${l.bx1},${l.by} L${l.ax1},${l.ay} Z`;

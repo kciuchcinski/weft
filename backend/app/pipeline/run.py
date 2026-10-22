@@ -26,7 +26,7 @@ def enforce_limits(clusters: list[Cluster]) -> None:
     """Reject oversized input before the expensive alignment step runs.
 
     Guards are conservative for an open, hosted beta where uploads are
-    uncontrolled and the shipped engine (parasail) is exact O(N²) pairwise.
+    uncontrolled and the default engine (parasail) is exact O(N²) pairwise.
     """
     if len(clusters) > settings.max_clusters:
         raise InputTooLarge(
@@ -55,7 +55,7 @@ def enforce_limits(clusters: list[Cluster]) -> None:
 
 def run_pipeline(
     paths: list[str],
-    engine: str = "diamond",
+    engine: str = "parasail",
     mode: str = "global",
     identity_cutoff: float = 0.3,
     evalue_cutoff: float = 1e-3,
@@ -81,7 +81,7 @@ def run_pipeline(
         progress=progress,
     )
 
-    report(0.75, "Building homology groups")
+    report(0.75, "Building similarity groups")
     groups = build_groups(links, threshold=identity_cutoff)
 
     report(0.90, "Ordering clusters")

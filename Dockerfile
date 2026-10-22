@@ -2,7 +2,7 @@
 # Stage 1 builds the client. Stage 2 is a pixi/conda runtime that serves both the
 # /api and the built client from one origin, and carries the DIAMOND binary from
 # bioconda. DIAMOND matters here: free hosts give a fraction of a CPU, and the
-# parasail fallback is exact O(N²) pairwise. The engine is gated at runtime (see
+# default parasail engine is exact O(N²) pairwise. The engine is gated at runtime (see
 # /api/health), so the app still works anywhere the binary is absent.
 
 # ---- Stage 1: build the frontend ----

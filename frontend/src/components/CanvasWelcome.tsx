@@ -48,7 +48,7 @@ function ribbonPath(top: readonly [number, number], bot: readonly [number, numbe
 }
 
 // A living version of the brand glyph: two aligned rows of gene arrows joined
-// by homology ribbons, drawn in with a gentle stagger. This is exactly the kind
+// by similarity ribbons, drawn in with a gentle stagger. This is exactly the kind
 // of figure the app produces, so the empty state previews the payoff.
 function HeroGlyph() {
   return (
@@ -163,7 +163,7 @@ export default function CanvasWelcome() {
               <span>{statusLabel}</span>
             </div>
             <p className="welcome-sub">
-              Parsing input, running all-vs-all alignment, and grouping homologs. Hang tight — this can
+              Parsing input, running all-vs-all alignment, and grouping similar genes. Hang tight — this can
               take a moment on real data.
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function CanvasWelcome() {
           <>
             <h1 className="welcome-title">Compare gene clusters, beautifully.</h1>
             <p className="welcome-sub">
-              Drop in GenBank or GFF3/GTF&nbsp;+&nbsp;FASTA files to line up homologous genes across
+              Drop in GenBank or GFF3/GTF&nbsp;+&nbsp;FASTA files to line up similar genes across
               clusters — then refine the figure and export it publication-ready.
             </p>
 

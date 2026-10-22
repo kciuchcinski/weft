@@ -3,7 +3,7 @@
 Defaults suit local dev; every field can be overridden by an environment variable
 so the same image is safe to run as an open, hosted beta (see ``render.yaml`` /
 the Deploy section of the README). Beta caps are deliberately conservative because
-the hosted image ships parasail (exact, O(N²) pairwise) rather than DIAMOND.
+the default engine, parasail, is exact O(N²) pairwise.
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ class Settings:
     static_dir: Path = field(default_factory=lambda: _env_path("STATIC_DIR", REPO_ROOT / "frontend" / "dist"))
 
     # Resource guards. Conservative for an open beta on a small instance; raise
-    # via env on a bigger box or when DIAMOND is re-enabled.
+    # via env on a bigger box or with DEFAULT_ENGINE=diamond.
     max_clusters: int = field(default_factory=lambda: _env_int("MAX_CLUSTERS", 100))
     max_total_genes: int = field(default_factory=lambda: _env_int("MAX_TOTAL_GENES", 6_000))
     max_sequence_length: int = field(default_factory=lambda: _env_int("MAX_SEQUENCE_LENGTH", 20_000))

@@ -113,7 +113,7 @@ export function availableFields(data: FigureData): string[] {
 /**
  * Resolve colours for the active target, applying the chosen palette and any
  * manual per-item overrides. Targets:
- *  - "group"   → one colour per homology group (keyed by group uid)
+ *  - "group"   → one colour per similarity group (keyed by group uid)
  *  - "cluster" → one colour per cluster (keyed by cluster uid)
  *  - "field"   → one colour per distinct value of `colourField` in gene.names
  *  - "custom"  → user-defined groups, each carrying its own colour

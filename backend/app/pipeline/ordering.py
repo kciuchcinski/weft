@@ -28,12 +28,12 @@ def _group_sequence(cluster: Cluster, gene_group: dict[str, int]) -> list[int]:
 
 
 def _synteny(seq_a: list[int], seq_b: list[int], weight: float) -> float:
-    """S = shared homology groups + weight * shared (unordered) adjacent group pairs."""
-    homology = len(set(seq_a) & set(seq_b))
+    """S = shared similarity groups + weight * shared (unordered) adjacent group pairs."""
+    shared = len(set(seq_a) & set(seq_b))
     adj_a = {frozenset((seq_a[i], seq_a[i + 1])) for i in range(len(seq_a) - 1)}
     adj_b = {frozenset((seq_b[i], seq_b[i + 1])) for i in range(len(seq_b) - 1)}
     contiguity = len(adj_a & adj_b)
-    return homology + weight * contiguity
+    return shared + weight * contiguity
 
 
 def order_clusters(

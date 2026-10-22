@@ -1,10 +1,11 @@
 """Similarity engines. Each returns cross-cluster links with a full metric bundle (SPEC §2).
 
-- ``diamond``  — fast DIAMOND all-vs-all blastp (default); whole-gene links.
-- ``parasail`` — exact pairwise alignment (clinker-style). ``mode="global"`` gives one
-  identity/similarity per pair (Needleman–Wunsch); ``mode="local"`` (Smith–Waterman)
-  emits one link per shared sub-region (HSP) carrying its aligned span, so partial
-  similarity — e.g. 100 % identity over half the protein — renders as a narrowed ribbon.
+- ``parasail`` — exact pairwise alignment (clinker-style); the default engine.
+  ``mode="global"`` gives one identity/similarity per pair (Needleman–Wunsch);
+  ``mode="local"`` (Smith–Waterman) emits one link per shared sub-region (HSP)
+  carrying its aligned span, so partial similarity — e.g. 100 % identity over half
+  the protein — renders as a narrowed ribbon.
+- ``diamond``  — fast DIAMOND all-vs-all blastp; whole-gene links. Needs the binary on PATH.
 """
 
 from __future__ import annotations
@@ -279,7 +280,7 @@ def _run_parasail(genes, gene_cluster, identity_cutoff, mode, progress: Progress
 
 def compute_links(
     clusters: list[Cluster],
-    engine: str = "diamond",
+    engine: str = "parasail",
     identity_cutoff: float = 0.3,
     evalue_cutoff: float = 1e-3,
     sensitivity: str = "fast",
