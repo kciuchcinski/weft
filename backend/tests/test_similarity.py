@@ -1,6 +1,9 @@
+import random
 import unittest
+from pathlib import Path
 
 from app.core.models import Cluster, Gene, Locus
+from app.pipeline.run import run_pipeline
 from app.pipeline.similarity import compute_links
 
 try:
@@ -24,6 +27,13 @@ _FLANK_B = "GGGGGGGGGGGGGGGG"
 _SEQ_A = _FLANK_A + _CORE + _FLANK_A
 _SEQ_B = _FLANK_B + _CORE + _FLANK_B
 
+_AMINO = "ACDEFGHIKLMNPQRSTVWY"
+_TEST_DATA = Path(__file__).resolve().parents[2] / "test_data"
+
+
+def _random_protein(rng: random.Random, length: int) -> str:
+    return "".join(rng.choice(_AMINO) for _ in range(length))
+
 
 @unittest.skipUnless(HAVE_PARASAIL, "parasail not installed")
 class ParasailEngineTests(unittest.TestCase):
@@ -45,6 +55,28 @@ class ParasailEngineTests(unittest.TestCase):
             self.assertLess(end, 0.9)
             self.assertAlmostEqual(start, 0.24, delta=0.06)
             self.assertAlmostEqual(end, 0.76, delta=0.06)
+
+    def test_local_mode_ignores_unrelated_proteins(self) -> None:
+        # Unrelated proteins share only short chance matches, which aren't significant.
+        # (This seed gives a 30%+-identity SW hit with E ≈ 0.02 that used to pass.)
+        rng = random.Random(0)
+        clusters = [
+            _cluster("c1", "gA", _random_protein(rng, 300)),
+            _cluster("c2", "gB", _random_protein(rng, 300)),
+        ]
+        links = compute_links(clusters, engine="parasail", mode="local", identity_cutoff=0.3)
+        self.assertEqual(links, [])
+
+    @unittest.skipUnless(_TEST_DATA.is_dir(), "test_data not present")
+    def test_local_mode_groups_match_global_on_test_data(self) -> None:
+        # Local mode may add a few partial links but must not chain chance matches
+        # into extra merges: grouping should match global mode.
+        paths = sorted(str(p) for p in _TEST_DATA.glob("*.gbk"))
+        global_fd = run_pipeline(paths, engine="parasail", mode="global")
+        local_fd = run_pipeline(paths, engine="parasail", mode="local")
+        self.assertEqual(len(local_fd.groups), len(global_fd.groups))
+        self.assertGreaterEqual(len(local_fd.links), len(global_fd.links))
+        self.assertLessEqual(len(local_fd.links), len(global_fd.links) + 10)
 
     def test_global_mode_spans_full_length(self) -> None:
         clusters = [_cluster("c1", "gA", _SEQ_A), _cluster("c2", "gB", _SEQ_B)]

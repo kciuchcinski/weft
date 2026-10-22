@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import math
 import shutil
 import subprocess
 import tempfile
@@ -32,6 +33,11 @@ Progress = Optional[Callable[[float, str], None]]
 # penalties are positive magnitudes).
 _GAP_OPEN = 11
 _GAP_EXTEND = 1
+# Karlin–Altschul parameters for the scoring system above (BLOSUM62, gap open 11 /
+# extend 1; NCBI gapped values). Local mode turns raw SW scores into E-values with
+# them, so short chance matches between unrelated proteins are dropped.
+_KA_LAMBDA = 0.267
+_KA_K = 0.041
 # Guardrails: exact O(n²·L²) alignment is far more expensive than DIAMOND, so cap
 # the work and steer large inputs back to DIAMOND rather than hang.
 _MAX_PARASAIL_SEQS = 800  # unique protein sequences (after dedup)
@@ -157,13 +163,20 @@ def _aln_metrics(res, qlen: int, rlen: int):
     return identity, similarity, coverage, span
 
 
-def _local_hsps(seq_a: str, seq_b: str, identity_cutoff: float):
-    """Non-overlapping high-identity sub-regions (HSPs) between two proteins.
+def _evalue(score: int, qlen: int, rlen: int) -> float:
+    """Karlin–Altschul E-value of a raw local alignment score: K·m·n·e^(−λS)."""
+    return _KA_K * qlen * rlen * math.exp(-_KA_LAMBDA * score)
+
+
+def _local_hsps(seq_a: str, seq_b: str, identity_cutoff: float, evalue_cutoff: float):
+    """Non-overlapping significant sub-regions (HSPs) between two proteins.
 
     Repeated Smith–Waterman with masking: align, record the region, mask the
     matched query residues (with '*', which scores strongly negative against every
     residue in BLOSUM62) so the next pass finds a different region. Bounded by
-    _MAX_HSPS. Returns a list of (identity, similarity, coverage, span) tuples.
+    _MAX_HSPS. Regions must pass both the identity and E-value cutoffs; the
+    E-value uses the full protein lengths. Returns a list of
+    (identity, similarity, coverage, span) tuples.
     """
     qlen, rlen = len(seq_a), len(seq_b)
     query = seq_a
@@ -178,16 +191,21 @@ def _local_hsps(seq_a: str, seq_b: str, identity_cutoff: float):
         identity, similarity, coverage, span = m
         cig = res.get_cigar()
         qb, qe = cig.beg_query, res.end_query
-        # Stop at the first region that's too short or below the identity cutoff:
-        # remaining regions can only score lower, so nothing better follows.
-        if qe - qb + 1 < _MIN_HSP_AA or identity < identity_cutoff:
+        # Stop at the first region that's too short, below the identity cutoff or
+        # not significant: remaining regions can only score lower, so nothing
+        # better follows.
+        if (
+            qe - qb + 1 < _MIN_HSP_AA
+            or identity < identity_cutoff
+            or _evalue(res.score, qlen, rlen) > evalue_cutoff
+        ):
             break
         hsps.append((identity, similarity, coverage, span))
         query = query[:qb] + ("*" * (qe - qb + 1)) + query[qe + 1:]
     return hsps
 
 
-def _run_parasail(genes, gene_cluster, identity_cutoff, mode, progress: Progress) -> list[Link]:
+def _run_parasail(genes, gene_cluster, identity_cutoff, evalue_cutoff, mode, progress: Progress) -> list[Link]:
     if parasail is None:
         raise RuntimeError(
             "parasail not installed. Run through the pixi env (e.g. `pixi run dev`) "
@@ -257,7 +275,7 @@ def _run_parasail(genes, gene_cluster, identity_cutoff, mode, progress: Progress
                 m = _aln_metrics(res, len(reps[i]), len(reps[j]))
                 results = [m] if m and m[0] >= identity_cutoff else []
             else:
-                results = _local_hsps(reps[i], reps[j], identity_cutoff)
+                results = _local_hsps(reps[i], reps[j], identity_cutoff, evalue_cutoff)
             if not results:
                 continue
             for ua in uids_i:
@@ -298,5 +316,5 @@ def compute_links(
             )
         return _run_diamond(genes, gene_cluster, identity_cutoff, evalue_cutoff, sensitivity)
     if engine == "parasail":
-        return _run_parasail(genes, gene_cluster, identity_cutoff, mode, progress)
+        return _run_parasail(genes, gene_cluster, identity_cutoff, evalue_cutoff, mode, progress)
     raise ValueError(f"Unknown engine '{engine}' (expected one of {ENGINES})")
