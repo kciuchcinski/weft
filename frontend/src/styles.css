@@ -142,6 +142,15 @@ body {
 }
 .topbar-export summary {
   list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.export-caret {
+  transition: transform 0.15s var(--ease);
+}
+.topbar-export[open] .export-caret {
+  transform: rotate(180deg);
 }
 .topbar-export summary::-webkit-details-marker {
   display: none;
@@ -258,6 +267,9 @@ body {
   border-right: 1px solid var(--border);
   background: var(--panel-bg);
   overflow-y: auto;
+  /* Reserve the scrollbar's width up front so opening a section that makes the
+     panel scroll doesn't narrow (and rewrap) everything. */
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
@@ -300,13 +312,21 @@ body {
 .section.open .section-header {
   color: var(--text);
 }
+/* One glyph, rotated when open: swapping ▸/▾ characters can change the line
+   box height and nudge everything below. */
 .chevron {
   color: var(--muted);
   font-size: 10px;
   width: 12px;
+  height: 12px;
+  line-height: 1;
   display: inline-flex;
+  align-items: center;
   justify-content: center;
-  transition: color 0.12s var(--ease);
+  transition: color 0.12s var(--ease), transform 0.15s var(--ease);
+}
+.section.open > .section-header .chevron {
+  transform: rotate(90deg);
 }
 .section-header:hover .chevron {
   color: var(--text-2);
@@ -346,9 +366,17 @@ body {
 }
 .subsection-chevron {
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 400;
+  font-size: 9px;
+  width: 12px;
+  height: 12px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s var(--ease);
+}
+.subsection.open > .subsection-header .subsection-chevron {
+  transform: rotate(90deg);
 }
 .subsection-body {
   padding: 11px 10px 12px;
@@ -552,6 +580,15 @@ body {
   color: var(--accent-strong);
   box-shadow: var(--shadow-xs);
 }
+/* Full-width variant: segments share the row equally instead of sizing to text. */
+.segmented-fill {
+  display: flex;
+  width: 100%;
+}
+.segmented-fill .seg {
+  flex: 1;
+  padding: 5px 6px;
+}
 
 /* ---- Buttons ----------------------------------------------------------- */
 .btn {
@@ -605,6 +642,22 @@ body {
   padding: 9px 18px;
   font-size: 13.5px;
   border-radius: var(--r-lg);
+}
+/* Square icon-only button (undo/redo). */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
+}
+.btn-icon svg {
+  display: block;
+}
+/* Undo/redo sit together as one pair, slightly apart from the text actions. */
+.history-btns {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 6px;
 }
 .icon-btn {
   border: 1px solid transparent;

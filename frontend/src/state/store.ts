@@ -380,8 +380,15 @@ export const useStore = create<AppState>((set, get) => {
 
   // Rotate a circular cluster's origin by whole-CDS steps (buildScene wraps genes at
   // gene boundaries, so a step moves the first CDS to the end / vice versa).
+  // Wrapped to (−n, n) for an n-gene cluster: a full turn is a no-op, so +n reads
+  // as 0 rather than counting up forever. The sign is kept so −1 stays −1.
   rotateCluster: hist((uid) => `rotate:${uid}`, (uid, delta) =>
-    set((s) => ({ clusterRotation: { ...s.clusterRotation, [uid]: (s.clusterRotation[uid] ?? 0) + delta } }))),
+    set((s) => {
+      const cluster = s.data?.clusters.find((c) => c.uid === uid);
+      const n = cluster ? cluster.loci.reduce((m, l) => m + l.genes.length, 0) : 0;
+      const next = (s.clusterRotation[uid] ?? 0) + delta;
+      return { clusterRotation: { ...s.clusterRotation, [uid]: n > 0 ? next % n || 0 : next } };
+    })),
 
   resetAllClusterRotations: hist("rotate:all", () => set({ clusterRotation: {} })),
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "../state/store";
 import { fetchCapabilities, loadExampleSession } from "../api";
 import { useUpload } from "../state/useUpload";
@@ -86,6 +86,38 @@ function metricRange(metric: MetricKey, data: FigureData | null) {
   return { lo, hi, step, lower, showAll };
 }
 
+// Bottom padding on the scroll container that is only as tall as needed to keep
+// the current scroll position valid. Collapsing a section near the bottom would
+// otherwise clamp scrollTop and shove the whole menu down; the padding holds the
+// clicked header still, then melts away as the user scrolls back up.
+function fitScrollPad(scroller: HTMLElement, holdScrollTop: number) {
+  const pad = parseFloat(scroller.style.paddingBottom) || 0;
+  const content = scroller.scrollHeight - pad;
+  const needed = Math.max(0, holdScrollTop + scroller.clientHeight - content);
+  if (needed !== pad) scroller.style.paddingBottom = needed ? `${needed}px` : "";
+}
+
+// Open/closed state for a collapsible header that stays put under the cursor
+// when toggled. Only content below the header changes, so restoring the old
+// scrollTop (after padding for it) keeps the header exactly where it was.
+function usePinnedToggle(defaultOpen?: boolean) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const headerRef = useRef<HTMLButtonElement>(null);
+  const held = useRef<number | null>(null);
+  const toggle = () => {
+    held.current = headerRef.current?.closest<HTMLElement>(".left-panel")?.scrollTop ?? null;
+    setOpen((o) => !o);
+  };
+  useLayoutEffect(() => {
+    const scroller = headerRef.current?.closest<HTMLElement>(".left-panel");
+    if (held.current === null || !scroller) return;
+    fitScrollPad(scroller, held.current);
+    scroller.scrollTop = held.current;
+    held.current = null;
+  }, [open]);
+  return { open, toggle, headerRef };
+}
+
 function Section({
   title,
   defaultOpen,
@@ -95,11 +127,11 @@ function Section({
   defaultOpen?: boolean;
   children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(!!defaultOpen);
+  const { open, toggle, headerRef } = usePinnedToggle(defaultOpen);
   return (
     <div className={"section" + (open ? " open" : "")}>
-      <button className="section-header" onClick={() => setOpen((o) => !o)}>
-        <span className="chevron">{open ? "▾" : "▸"}</span>
+      <button ref={headerRef} className="section-header" onClick={toggle} aria-expanded={open}>
+        <span className="chevron" aria-hidden="true">▸</span>
         {title}
       </button>
       {open && <div className="section-body">{children ?? <p className="muted">Controls coming soon.</p>}</div>}
@@ -116,12 +148,12 @@ function Subsection({
   defaultOpen?: boolean;
   children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(!!defaultOpen);
+  const { open, toggle, headerRef } = usePinnedToggle(defaultOpen);
   return (
     <div className={"subsection" + (open ? " open" : "")}>
-      <button className="subsection-header" onClick={() => setOpen((o) => !o)}>
+      <button ref={headerRef} className="subsection-header" onClick={toggle} aria-expanded={open}>
         <span>{title}</span>
-        <span className="subsection-chevron">{open ? "−" : "+"}</span>
+        <span className="subsection-chevron" aria-hidden="true">▸</span>
       </button>
       {open && <div className="subsection-body">{children}</div>}
     </div>
@@ -424,7 +456,7 @@ export default function LeftPanel() {
       : `Run alignment on ${staged.length} file${staged.length === 1 ? "" : "s"}`;
 
   return (
-    <aside className="left-panel">
+    <aside className="left-panel" onScroll={(e) => fitScrollPad(e.currentTarget, e.currentTarget.scrollTop)}>
       <Section key={data ? "data-loaded" : "data-empty"} title="Data & alignment" defaultOpen={!data}>
         <div className="flat-group upload-flow">
           {/* 1 — Input */}
@@ -611,16 +643,19 @@ export default function LeftPanel() {
           <>
             <Subsection title="Colour mapping" defaultOpen>
               <p className="muted">Choose what gene colours represent, then select a palette or edit individual colours.</p>
-            <label className="field-inline">
+            {/* Stacked, not inline: four segments don't fit beside a label at panel
+                width. A div, not a <label>, so clicking the caption doesn't press
+                the first segment. */}
+            <div className="field" role="group" aria-label="Colour by">
               <span>Colour by</span>
-              <div className="segmented">
+              <div className="segmented segmented-fill">
                 {(["group", "cluster", "field", "custom"] as ColourBy[]).map((c) => (
                   <button key={c} className={"seg" + (colourBy === c ? " active" : "")} onClick={() => onColourByChange(c)}>
                     {c}
                   </button>
                 ))}
               </div>
-            </label>
+            </div>
 
             {colourBy === "field" && (
               <label className="field">

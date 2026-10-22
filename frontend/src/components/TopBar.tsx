@@ -28,7 +28,28 @@ function BrandMark() {
   );
 }
 
-// Minimal top bar: brand + New/Load/Save/Export + job status.
+// Curved-arrow undo/redo icons (stroke-only, inherit the button's text colour).
+function UndoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m15 14 5-5-5-5" />
+      <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+    </svg>
+  );
+}
+
+// Top bar: brand + undo/redo + session (New/Open/Save) + figure/data Export + job status.
+// Save/Open round-trip the editable session (.json); Export writes the figure or
+// similarity data out to other formats — the usual native-file vs export split.
 export default function TopBar() {
   const jobStatus = useStore((s) => s.jobStatus);
   const togglePanel = useStore((s) => s.togglePanel);
@@ -106,13 +127,20 @@ export default function TopBar() {
         )}
       </div>
       <div className="topbar-actions">
-        <button className="btn" onClick={() => useStore.getState().undo()} disabled={!canUndo} title="Undo (⌘Z)">↶</button>
-        <button className="btn" onClick={() => useStore.getState().redo()} disabled={!canRedo} title="Redo (⇧⌘Z)">↷</button>
-        <button className="btn" onClick={onNew}>New</button>
-        <button className="btn" onClick={() => fileRef.current?.click()}>Load</button>
-        <button className="btn" onClick={onSave} disabled={!hasData}>Save</button>
+        <span className="history-btns">
+          <button className="btn btn-icon" onClick={() => useStore.getState().undo()} disabled={!canUndo} title="Undo (⌘Z)" aria-label="Undo"><UndoIcon /></button>
+          <button className="btn btn-icon" onClick={() => useStore.getState().redo()} disabled={!canRedo} title="Redo (⇧⌘Z)" aria-label="Redo"><RedoIcon /></button>
+        </span>
+        <button className="btn" onClick={onNew} title="Clear the canvas and start over">New</button>
+        <button className="btn" onClick={() => fileRef.current?.click()} title="Open a saved Weft session (.json)">Open session</button>
+        <button className="btn" onClick={onSave} disabled={!hasData} title="Save the editable session (.json) to reopen later">Save session</button>
         <details className="topbar-export">
-          <summary className={"btn btn-primary" + (!hasData ? " is-disabled" : "")} onClick={(e) => { if (!hasData) e.preventDefault(); }}>Export</summary>
+          <summary className={"btn btn-primary" + (!hasData ? " is-disabled" : "")} onClick={(e) => { if (!hasData) e.preventDefault(); }} title="Export the figure (SVG/PNG) or similarity data (CSV)">
+            Export
+            <svg className="export-caret" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3 4.5 3 3 3-3" />
+            </svg>
+          </summary>
           {hasData && (
             <div className="topbar-export-menu">
               <p>Figure</p>
