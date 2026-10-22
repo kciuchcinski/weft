@@ -1,104 +1,147 @@
 # Weft
 
-Browser-based **gene cluster comparison figures**. A new, standalone app (not a fork of clinker):
-a FastAPI backend does parsing + alignment; a canvas-first React client renders and refines the figure.
+Weft is a web application for comparing gene clusters. It aligns all proteins encoded in a
+set of annotated nucleotide records against each other and draws the result as a multi-row
+gene map. Cross-record similarity is shown as ribbons between the genes. The figure can be
+edited interactively and exported as vector or raster graphics, with the underlying
+similarity data exported as tables.
 
-See **[SPEC.md](SPEC.md)** for the full functional specification and MVP build order.
+![Five bacteriophage records compared in Weft; ribbons connect similar proteins, genes are coloured by functional annotation](docs/screenshot.png)
 
-## Status
+## Method
 
-Working end to end on real data. The **backend pipeline** (GenBank/GFF parse → DIAMOND **or**
-parasail all-vs-all → homology grouping → synteny ordering → figure JSON) is implemented and
-exposed as an async job API. The **canvas renderer and full control panel are built** — upload,
-metric selection + live thresholds, colour system, arrangement, styling, and SVG/PNG/CSV export,
-with session save/load and localStorage autosave.
+### Input
 
-**Alignment engines.** DIAMOND is fast; parasail is an exact O(N²) pairwise aligner and is
-therefore CPU-bound. **Both ship in the image** (DIAMOND from bioconda via pixi) and DIAMOND is
-the default — it's what makes a fraction-of-a-CPU free host usable. The engine is **gated at
-runtime**: `/api/health` advertises what this deployment can actually run, and the client hides,
-and falls back from, any engine whose binary is absent. A parasail-only build therefore still
-works with no code change.
-
-## Layout
-
-```
-backend/    FastAPI app (parse → similarity → grouping → ordering → figure JSON)
-frontend/   React + TypeScript + Vite, canvas-first UI
-SPEC.md     Functional specification
-```
-
-## Run (dev)
-
-Backend (managed with [pixi](https://pixi.sh) — contains Python deps **and** the DIAMOND binary):
-
-```bash
-cd backend
-pixi install                 # solves a project-local env incl. DIAMOND (from bioconda)
-pixi run dev                 # http://localhost:8000  (interactive docs at /docs)
-pixi run example             # run the pipeline on ../test_data → sample_data.json
-```
-
-> DIAMOND is pulled from bioconda **into the pixi env** — no system install required. `pixi run example`
-> also writes `frontend/public/sample_data.json` for the renderer to consume.
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev     # http://localhost:5173  (proxies /api to the backend)
-```
-
-## Deploy (hosted beta)
-
-The whole app ships as **one Docker image**: stage 1 builds the client, stage 2 is a pixi/conda
-runtime (carrying the DIAMOND binary) that serves both `/api` and the built client from a single
-origin — so there's no CORS to configure.
-
-```bash
-docker build -t weft .
-docker run -p 8000:8000 weft          # → http://localhost:8000
-```
-
-The runtime stage is pinned to `linux/amd64`, because `pixi.lock` only solves for
-`linux-64` (bioconda ships no DIAMOND for `linux-aarch64`) and that's what Render runs.
-So a plain `docker build` produces the right image everywhere — but on an Apple Silicon
-machine that stage is emulated and the build takes a few minutes. The frontend stage
-builds natively (`$BUILDPLATFORM`), since its output is just JS/CSS.
-
-**Render's free plan** is the recommended zero-cost host: no credit card, Docker supported.
-[`render.yaml`](render.yaml) declares the web service and its `/api/health` check — push the
-repo, point Render at the blueprint, and it builds and serves on HTTPS. Fly.io works
-equivalently from the same Dockerfile.
-
-Free-plan realities worth knowing: roughly **0.1 CPU / 512 MB**, spin-down after 15 minutes idle
-(~1 min cold start), and 750 instance-hours a month. Alignment is CPU-bound, which is why
-DIAMOND ships and `MAX_CONCURRENT_JOBS` is 1. WebSockets aren't available on free — fine, the
-client polls `/api/jobs/{id}`. The job store is in-process, so in-flight jobs don't survive a
-spin-down; acceptable for a beta.
-
-> Hugging Face Spaces was the original target, but HF moved the **Docker SDK to paid** in 2026,
-> so its free tier no longer fits a FastAPI + React app.
-
-**Configuration** is entirely via environment variables (defaults in
-[`backend/app/config.py`](backend/app/config.py)). For an **open public beta** the important
-guards are:
-
-| Env var | Default | Purpose |
+| Format | Extensions | Notes |
 |---|---|---|
-| `MAX_TOTAL_GENES` | `6000` | Reject oversized inputs before alignment runs |
-| `MAX_CLUSTERS` | `100` | Cap input clusters |
-| `MAX_SEQUENCE_LENGTH` | `20000` | Cap per-protein length |
-| `MAX_CONCURRENT_JOBS` | `2` | Bound parallel alignment jobs |
-| `JOB_TIMEOUT_SECONDS` | `300` | Fail a job that runs too long |
-| `MAX_UPLOAD_BYTES` | `52428800` | Reject uploads over 50 MB |
-| `SCRATCH_TTL_SECONDS` | `1800` | Auto-delete uploaded files after N seconds |
+| GenBank | `.gbk` `.gb` `.genbank` `.gbf` `.gbff` | One file = one cluster. A multi-record file becomes one cluster with several loci. |
+| GFF3 / GTF + FASTA | `.gff` `.gff3` `.gtf` + `.fa` `.fna` `.fasta` `.fas` `.faa` | Annotation and sequence files are paired by basename (e.g. `phage1.gff3` + `phage1.fna`). |
 
-Because the job store is in-process, run **one uvicorn worker** (the image already does);
-`MAX_CONCURRENT_JOBS` handles parallelism within it. Jobs are lost on restart — acceptable for a
-beta. Uploaded sequences are auto-deleted on the `SCRATCH_TTL_SECONDS` schedule.
+Genes are taken from CDS features. Records with no CDS features are drawn but not aligned.
 
-[`backend/requirements.txt`](backend/requirements.txt) is a pip-only mirror of the conda deps
-**minus DIAMOND**; CI uses it to run the tests without conda (the DIAMOND tests self-skip when
-the binary is absent).
+### Protein comparison
+
+Every protein is compared with every protein from the other clusters. Three methods are
+available:
+
+| Method | Algorithm | Output per protein pair |
+|---|---|---|
+| Global (default) | Needleman–Wunsch, parasail; BLOSUM62, gap open 11, extend 1 | One alignment |
+| Local | Smith–Waterman, parasail; same scoring | Up to 5 non-overlapping regions. After each alignment the matched query residues are masked and the search is repeated; regions shorter than 5 aa are discarded. |
+| DIAMOND | DIAMOND blastp, all-vs-all | Best hit by bitscore; E-value cutoff 10⁻³ |
+
+Metrics stored for each link:
+
+- **Identity:** identical positions / alignment length (gaps included)
+- **Similarity:** positive-scoring positions / alignment length
+- **Coverage:** the smaller of the two aligned fractions (query span / query length, subject span / subject length)
+- **Bitscore and E-value:** DIAMOND only
+
+In local mode, each ribbon spans only the aligned region of each protein.
+
+### Similarity groups
+
+Genes are joined into a group when links above a chosen threshold, on a chosen metric,
+connect them, either directly or through intermediate genes. Formally, the groups are the
+connected components of the thresholded gene graph (single linkage); singletons are left
+ungrouped. The groups are used for colouring and ordering. They are not homology or
+orthology assignments, and they change with the threshold.
+
+### Cluster order
+
+The initial row order comes from pairwise synteny scores between clusters:
+
+S = (number of shared similarity groups) + 0.5 × (number of shared unordered pairs of adjacent groups)
+
+Scores are converted to distances (max(S) − S) and clustered hierarchically (SciPy, Ward
+linkage by default). The leaf order becomes the row order. With two or fewer clusters, or
+when no groups are shared, the input order is kept.
+
+## Interface
+
+After alignment, the figure is edited client-side; changing the layout does not trigger a
+new alignment. Supported operations:
+
+- Change the link metric (identity, similarity, coverage; bitscore and E-value with DIAMOND)
+  and threshold. Similarity groups are recomputed in the browser.
+- Reorder clusters, move them within or between rows, and reverse their orientation.
+- Align homologous genes across rows on a selected gene.
+- Mark records as circular and shift the displayed origin one CDS at a time.
+- Colour genes by similarity group, by cluster, by any feature qualifier (e.g. `product`,
+  `function`), or by user-defined groups.
+- Inspect a gene: its qualifiers, similarity group, links with metric values, and protein
+  sequence.
+
+Canvas controls:
+
+| Input | Action |
+|---|---|
+| Scroll / drag background / arrow keys | Pan |
+| ⌘/Ctrl + scroll, pinch, `+` `−` | Zoom |
+| `0` | Fit to window |
+| Hover gene | Annotation summary |
+| Right-click gene | Gene inspector |
+| Double-click gene | Align matching genes across rows |
+| Drag ⠿ handle | Move cluster within or between rows |
+| ⌘Z / ⇧⌘Z (Ctrl on Windows/Linux) | Undo / redo |
+
+## Output
+
+| Export | Format | Content |
+|---|---|---|
+| Figure | SVG, PNG | Current view; PNG at a selectable scale |
+| Link table | CSV | One row per link, with all metrics |
+| Cluster matrix | CSV | Number of links between each pair of clusters |
+| Session | JSON | Input-derived data, links, layout, colours and style; can be reopened in Weft |
+
+The session is also autosaved to the browser's local storage. Up to 50 undo steps are kept.
+
+## Installation
+
+Docker:
+
+```bash
+git clone https://github.com/kciuchcinski/weft.git
+cd weft
+docker build -t weft .
+docker run -p 8000:8000 weft     # http://localhost:8000
+```
+
+The image contains parasail and DIAMOND. It targets `linux/amd64`, so an Apple Silicon build should be possible, but it runs under emulation and may take several minutes to start.
+
+To build from source (requires pixi and Node.js 20), see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Limits
+
+Default per-job limits, configurable through environment variables (see
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#configuration)):
+
+| Parameter | Default |
+|---|---|
+| Clusters | 100 |
+| Genes, total | 6,000 |
+| Protein length | 20,000 aa |
+| Upload size | 50 MB |
+| Parasail: unique proteins | 800 |
+| Parasail: protein length | 5,000 aa |
+
+Exact pairwise alignment scales quadratically with the number of proteins. Use DIAMOND for
+larger inputs.
+
+## Data handling
+
+Uploaded files are deleted from the server 30 minutes after upload. Figure state is stored
+only in the user's browser and in session files the user saves.
+
+## Citation
+
+No publication yet. Until there is one, please cite the repository:
+<https://github.com/kciuchcinski/weft>.
+
+## Issues
+
+Bug reports and feature requests: [GitHub Issues](https://github.com/kciuchcinski/weft/issues).
+
+## License
+
+[MIT](LICENSE) © 2026 Karol Ciuchciński
