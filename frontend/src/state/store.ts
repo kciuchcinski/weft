@@ -237,6 +237,8 @@ interface AppState extends SessionView {
   clearClusterOffsets: () => void;
   toggleClusterReversed: (uid: string) => void;
   renameCluster: (uid: string, name: string) => void;
+  /** Rename a similarity group (one of data.groups). */
+  renameGroup: (uid: string, label: string) => void;
   /** Name a merged row (see SessionView.rowNames). Empty clears the override. */
   setRowName: (key: string, name: string) => void;
   setActiveMetric: (m: MetricKey) => void;
@@ -509,6 +511,13 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.data) return {};
       const clusters = s.data.clusters.map((c) => (c.uid === uid ? { ...c, name } : c));
       return { data: { ...s.data, clusters } };
+    })),
+
+  renameGroup: hist((uid) => `renameSimGroup:${uid}`, (uid, label) =>
+    set((s) => {
+      if (!s.data) return {};
+      const groups = s.data.groups.map((g) => (g.uid === uid ? { ...g, label } : g));
+      return { data: { ...s.data, groups } };
     })),
 
   setRowName: hist((key) => `rowname:${key}`, (key, name) =>

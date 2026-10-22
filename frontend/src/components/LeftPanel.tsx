@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { useStore } from "../state/store";
 import { fetchCapabilities, loadExampleSession } from "../api";
 import { GENBANK_RE, useUpload } from "../state/useUpload";
-import { availableFields, computeColours, hiddenGeneUids, PALETTE_NAMES, type ColourBy } from "../render/palette";
+import { availableFields, computeColours, hiddenGeneUids, OTHER_ID, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
   availableMetrics,
   geneAaLengths,
@@ -342,6 +342,7 @@ export default function LeftPanel() {
   const setOverride = useStore((s) => s.setOverride);
   const setOverrides = useStore((s) => s.setOverrides);
   const clearOverrides = useStore((s) => s.clearOverrides);
+  const renameGroup = useStore((s) => s.renameGroup);
   const colourField = useStore((s) => s.colourField);
   const setColourField = useStore((s) => s.setColourField);
   const customGroups = useStore((s) => s.customGroups);
@@ -768,7 +769,18 @@ export default function LeftPanel() {
                         title="Override colour"
                         onChange={(e) => setOverride(item.id, e.target.value)}
                       />
-                      <span className="legend-label">{item.label}</span>
+                      {/* Similarity-group names are editable; cluster names are
+                          renamed on the figure and field values come from the data. */}
+                      {colourBy === "group" && item.id !== OTHER_ID ? (
+                        <input
+                          className="custom-group-name"
+                          value={item.label}
+                          title="Rename group"
+                          onChange={(e) => renameGroup(item.id, e.target.value)}
+                        />
+                      ) : (
+                        <span className="legend-label">{item.label}</span>
+                      )}
                       <span className="legend-count">{item.count}</span>
                     </div>
                   ))}
