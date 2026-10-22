@@ -61,12 +61,20 @@ interface Bucket {
  * remainder collapse into a single grey "Other" row. This keeps long-tailed
  * annotations (e.g. hundreds of distinct products) from producing a legend with
  * more entries than colours in the palette.
+ *
+ * Genes in `hiddenGenes` still get their colour (so hiding a sequence never
+ * recolours the rest) but are left out of legend counts and ranking, and a bucket
+ * with no visible genes gets no legend row.
  */
-function finalizeColours(buckets: Bucket[], maxEntries: number): ColourResult {
+function finalizeColours(buckets: Bucket[], maxEntries: number, hiddenGenes?: Set<string>): ColourResult {
+  const shownCount = (b: Bucket) =>
+    hiddenGenes?.size ? b.geneUids.reduce((n, uid) => n + (hiddenGenes.has(uid) ? 0 : 1), 0) : b.geneUids.length;
+  const counts = new Map(buckets.map((b) => [b.id, shownCount(b)]));
+  const shown = buckets.filter((b) => counts.get(b.id)! > 0);
   let keep: Set<string> | null = null;
-  if (maxEntries > 0 && buckets.length > maxEntries) {
+  if (maxEntries > 0 && shown.length > maxEntries) {
     // Rank by gene count; sort is stable so ties keep first-appearance order.
-    const ranked = [...buckets].sort((a, b) => b.geneUids.length - a.geneUids.length);
+    const ranked = [...shown].sort((a, b) => counts.get(b.id)! - counts.get(a.id)!);
     keep = new Set(ranked.slice(0, maxEntries).map((b) => b.id));
   }
 
@@ -77,13 +85,16 @@ function finalizeColours(buckets: Bucket[], maxEntries: number): ColourResult {
   // Iterate in original order: preserves palette stability and "last write wins"
   // for genes shared by more than one bucket (overlapping custom groups).
   for (const b of buckets) {
-    const kept = !keep || keep.has(b.id);
+    const count = counts.get(b.id)!;
+    // Buckets with only hidden genes don't compete for the legend cap.
+    const kept = !keep || keep.has(b.id) || count === 0;
     const colour = kept ? b.colour : UNGROUPED;
     b.geneUids.forEach((uid) => gene.set(uid, colour));
+    if (count === 0) continue;
     if (kept) {
-      items.push({ id: b.id, label: b.label, colour, count: b.geneUids.length });
+      items.push({ id: b.id, label: b.label, colour, count });
     } else {
-      otherCount += b.geneUids.length;
+      otherCount += count;
       otherGroups += 1;
     }
   }
@@ -110,6 +121,14 @@ export function availableFields(data: FigureData): string[] {
   return [...keys].sort();
 }
 
+/** Uids of every gene in a hidden cluster, for leaving them out of the legend. */
+export function hiddenGeneUids(data: FigureData, hiddenClusters: Record<string, boolean>): Set<string> {
+  const out = new Set<string>();
+  for (const c of data.clusters)
+    if (hiddenClusters[c.uid]) for (const l of c.loci) for (const g of l.genes) out.add(g.uid);
+  return out;
+}
+
 /**
  * Resolve colours for the active target, applying the chosen palette and any
  * manual per-item overrides. Targets:
@@ -126,6 +145,8 @@ export function computeColours(
   colourField?: string,
   customGroups: CustomGroup[] = [],
   maxEntries = 0,
+  /** Genes on hidden clusters: coloured as usual but not counted in the legend. */
+  hiddenGenes?: Set<string>,
 ): ColourResult {
   const palette = PALETTES[paletteName] ?? PALETTES[DEFAULT_PALETTE];
   const buckets: Bucket[] = [];
@@ -169,5 +190,5 @@ export function computeColours(
     }));
   }
 
-  return finalizeColours(buckets, maxEntries);
+  return finalizeColours(buckets, maxEntries, hiddenGenes);
 }

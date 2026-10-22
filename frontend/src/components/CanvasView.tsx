@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, type MoveTarget } from "../state/store";
-import { computeColours } from "../render/palette";
+import { computeColours, hiddenGeneUids } from "../render/palette";
 import { buildScene, formatMetric, qualifierEntries, type Scene } from "../render/layout";
 import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
@@ -107,6 +107,7 @@ export default function CanvasView() {
   const clusterOffsets = useStore((s) => s.clusterOffsets);
   const circularClusters = useStore((s) => s.circularClusters);
   const clusterRotation = useStore((s) => s.clusterRotation);
+  const hiddenClusters = useStore((s) => s.hiddenClusters);
   const activeMetric = useStore((s) => s.activeMetric);
   const colourBy = useStore((s) => s.colourBy);
   const paletteName = useStore((s) => s.paletteName);
@@ -120,9 +121,9 @@ export default function CanvasView() {
   const colours = useMemo(
     () =>
       data
-        ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries)
+        ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries, hiddenGeneUids(data, hiddenClusters))
         : { gene: new Map<string, string>(), items: [] },
-    [data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries]
+    [data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries, hiddenClusters]
   );
 
   const activeGroupLabel =
@@ -148,12 +149,13 @@ export default function CanvasView() {
             rowNames,
             circularClusters,
             clusterRotation,
+            hiddenClusters,
           )
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
-      circularClusters, clusterRotation,
+      circularClusters, clusterRotation, hiddenClusters,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
       style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,

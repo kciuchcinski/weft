@@ -65,6 +65,8 @@ new alignment. Supported operations:
 - Change the link metric (identity, similarity, coverage; bitscore and E-value with DIAMOND)
   and threshold. Similarity groups are recomputed in the browser.
 - Reorder clusters, move them within or between rows, and reverse their orientation.
+- Hide clusters from the figure and its exports (**Sequences & layout → Visible
+  sequences**), and show them again in their original row.
 - Align homologous genes across rows on a selected gene.
 - Mark records as circular and shift the displayed origin one CDS at a time.
 - Colour genes by similarity group, by cluster, by any feature qualifier (e.g. `product`,

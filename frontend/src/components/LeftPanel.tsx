@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { useStore } from "../state/store";
 import { fetchCapabilities, loadExampleSession } from "../api";
 import { useUpload } from "../state/useUpload";
-import { availableFields, computeColours, PALETTE_NAMES, type ColourBy } from "../render/palette";
+import { availableFields, computeColours, hiddenGeneUids, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
   availableMetrics,
   geneAaLengths,
@@ -332,6 +332,9 @@ export default function LeftPanel() {
   const setAllClustersCircular = useStore((s) => s.setAllClustersCircular);
   const rotateCluster = useStore((s) => s.rotateCluster);
   const resetAllClusterRotations = useStore((s) => s.resetAllClusterRotations);
+  const hiddenClusters = useStore((s) => s.hiddenClusters);
+  const toggleClusterHidden = useStore((s) => s.toggleClusterHidden);
+  const showAllClusters = useStore((s) => s.showAllClusters);
 
   const [drag, setDrag] = useState(false);
   const [sequenceFilter, setSequenceFilter] = useState("");
@@ -357,7 +360,7 @@ export default function LeftPanel() {
   const geneCount = data
     ? data.clusters.reduce((n, c) => n + c.loci.reduce((m, l) => m + l.genes.length, 0), 0)
     : 0;
-  const items = data ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries).items : [];
+  const items = data ? computeColours(data, colourBy, paletteName, overrides, colourField, customGroups, style.maxLegendEntries, hiddenGeneUids(data, hiddenClusters)).items : [];
   const fields = data ? availableFields(data) : [];
 
   // When switching to "field" mode, pick a sensible default qualifier if none is
@@ -403,8 +406,10 @@ export default function LeftPanel() {
     return Math.max(10, Math.ceil(max));
   })();
   const minFragment = Math.min(fragMax, style.minFragmentAa);
-  const visibleClusters = data?.clusters.filter((c) => c.name.toLowerCase().includes(sequenceFilter.trim().toLowerCase())) ?? [];
+  const filteredClusters = data?.clusters.filter((c) => c.name.toLowerCase().includes(sequenceFilter.trim().toLowerCase())) ?? [];
   const circularCount = data?.clusters.filter((c) => circularClusters[c.uid]).length ?? 0;
+  const hiddenCount = data?.clusters.filter((c) => hiddenClusters[c.uid]).length ?? 0;
+  const shownCount = (data?.clusters.length ?? 0) - hiddenCount;
   const hasRotations = Object.values(clusterRotation).some((v) => v !== 0);
 
   // loadSession clears the staged queue, so the example replaces any pending files.
@@ -597,6 +602,33 @@ export default function LeftPanel() {
               <button className="btn btn-block" onClick={clearClusterOffsets} disabled={!hasOffsets}>Reset sequence positions</button>
             </Subsection>
 
+            <Subsection title="Visible sequences" defaultOpen={hiddenCount > 0}>
+              <p className="muted">Untick a sequence to take it off the figure and out of exports. Its alignment is kept, so ticking it again brings it back to its row.</p>
+              <p className="field-hint">Showing {shownCount} of {data.clusters.length} sequences</p>
+              {data.clusters.length > 8 && (
+                <label className="field sequence-search">
+                  <span>Find a sequence</span>
+                  <input type="search" value={sequenceFilter} placeholder="Type a name…" onChange={(e) => setSequenceFilter(e.target.value)} />
+                </label>
+              )}
+              <div className="circular-list">
+                {filteredClusters.map((c) => {
+                  const shown = !hiddenClusters[c.uid];
+                  const last = shown && shownCount === 1;
+                  return (
+                    <div className="circular-row" key={c.uid}>
+                      <label className="circular-toggle" title={last ? "At least one sequence must stay visible" : shown ? "Hide this sequence" : "Show this sequence"}>
+                        <input type="checkbox" checked={shown} disabled={last} onChange={() => toggleClusterHidden(c.uid)} />
+                        <span className="circular-name">{c.name}</span>
+                      </label>
+                    </div>
+                  );
+                })}
+                {!filteredClusters.length && <p className="muted">No sequence names match this search.</p>}
+              </div>
+              <button className="btn btn-block" onClick={showAllClusters} disabled={hiddenCount === 0}>Show all sequences</button>
+            </Subsection>
+
             <Subsection title="Circular sequences" defaultOpen={circularCount > 0}>
               <p className="muted">Mark biologically circular sequences, then shift their displayed origin one CDS at a time to align them with related sequences. This does not turn the figure into a circular plot.</p>
               <div className="btn-row">
@@ -610,7 +642,7 @@ export default function LeftPanel() {
                 </label>
               )}
               <div className="circular-list">
-                {visibleClusters.map((c) => {
+                {filteredClusters.map((c) => {
                   const on = !!circularClusters[c.uid];
                   const rotation = clusterRotation[c.uid] ?? 0;
                   return (
@@ -630,7 +662,7 @@ export default function LeftPanel() {
                     </div>
                   );
                 })}
-                {!visibleClusters.length && <p className="muted">No sequence names match this search.</p>}
+                {!filteredClusters.length && <p className="muted">No sequence names match this search.</p>}
               </div>
               <button className="btn btn-block" onClick={resetAllClusterRotations} disabled={!hasRotations}>Reset all sequence origins</button>
             </Subsection>
