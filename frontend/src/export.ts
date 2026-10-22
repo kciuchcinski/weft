@@ -1,6 +1,6 @@
 import type { FigureData, MetricKey } from "./types";
 import { buildScene } from "./render/layout";
-import { computeColours, type ColourBy, type CustomGroup } from "./render/palette";
+import { computeColours, hiddenGeneUids, type ColourBy, type CustomGroup } from "./render/palette";
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
 import { draw } from "./render/draw";
@@ -23,13 +23,15 @@ export interface FigureState {
   circularClusters: Record<string, boolean>;
   /** Per-cluster origin rotation (whole-CDS steps) for circular clusters. */
   clusterRotation: Record<string, number>;
+  /** Clusters left off the figure; every export omits them. */
+  hiddenClusters: Record<string, boolean>;
   style: StyleConfig;
 }
 
 function sceneFrom(s: FigureState) {
   const cfg = makeConfig(s.style);
-  const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries);
-  const scene = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames, s.circularClusters, s.clusterRotation);
+  const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries, hiddenGeneUids(s.data!, s.hiddenClusters));
+  const scene = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters);
   return { cfg, scene };
 }
 
@@ -71,9 +73,10 @@ export function exportPNG(s: FigureState, scale = 2): void {
 
 export function exportAlignmentTableCSV(s: FigureState): void {
   if (!s.data) return;
+  const hidden = hiddenGeneUids(s.data, s.hiddenClusters);
   const rows = [
     "query,target,identity,similarity,coverage,bitscore,evalue",
-    ...s.data.links.map((l) =>
+    ...s.data.links.filter((l) => !hidden.has(l.query) && !hidden.has(l.target)).map((l) =>
       [
         l.query,
         l.target,
@@ -90,13 +93,15 @@ export function exportAlignmentTableCSV(s: FigureState): void {
 
 export function exportSimilarityMatrixCSV(s: FigureState): void {
   if (!s.data) return;
+  // Hidden clusters are left out, so links touching them fall to the guard below.
+  const clusters = s.data.clusters.filter((c) => !s.hiddenClusters[c.uid]);
   const clusterByGene = new Map<string, string>();
-  for (const c of s.data.clusters) {
+  for (const c of clusters) {
     for (const l of c.loci) {
       for (const g of l.genes) clusterByGene.set(g.uid, c.name);
     }
   }
-  const names = s.data.clusters.map((c) => c.name);
+  const names = clusters.map((c) => c.name);
   const matrix = new Map<string, number>();
   for (const a of names) for (const b of names) matrix.set(`${a}\t${b}`, 0);
   for (const link of s.data.links) {

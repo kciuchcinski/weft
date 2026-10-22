@@ -350,10 +350,14 @@ function formatBp(bp: number): string {
  * Resolve the effective lane layout: an ordered list of rows, each an ordered
  * list of cluster uids. Filters out unknown/duplicate uids and appends any
  * cluster missing from `lanes` as its own row, so the result always covers
- * every cluster exactly once regardless of how stale `lanes` is.
+ * every visible cluster exactly once regardless of how stale `lanes` is.
+ *
+ * Hidden clusters are left out entirely (rows they leave empty disappear), so
+ * lane indices here match what the scene draws. They stay in the stored `lanes`
+ * so they return to their row when shown again; see `visibleLaneIndices`.
  */
-export function effectiveLanes(data: FigureData, lanes?: string[][]): string[][] {
-  const valid = new Set(data.clusters.map((c) => c.uid));
+export function effectiveLanes(data: FigureData, lanes?: string[][], hidden: Record<string, boolean> = {}): string[][] {
+  const valid = new Set(data.clusters.filter((c) => !hidden[c.uid]).map((c) => c.uid));
   const seen = new Set<string>();
   const out: string[][] = [];
   for (const lane of lanes ?? []) {
@@ -362,7 +366,33 @@ export function effectiveLanes(data: FigureData, lanes?: string[][]): string[][]
     if (filtered.length) out.push(filtered);
   }
   for (const c of data.clusters) {
-    if (!seen.has(c.uid)) out.push([c.uid]);
+    if (valid.has(c.uid) && !seen.has(c.uid)) out.push([c.uid]);
+  }
+  return out;
+}
+
+/** Indices into `lanes` of the rows that still have a visible cluster, in order:
+ * entry i is the stored row drawn as lane i when `hidden` clusters are left out. */
+export function visibleLaneIndices(lanes: string[][], hidden: Record<string, boolean>): number[] {
+  const out: number[] = [];
+  lanes.forEach((lane, i) => {
+    if (lane.some((u) => !hidden[u])) out.push(i);
+  });
+  return out;
+}
+
+/** Rebuild a stored row from its new visible order, keeping each hidden cluster
+ * right after the visible one it followed in `stored` (or first in the row). */
+export function restoreHiddenInLane(order: string[], stored: string[], hidden: Record<string, boolean>): string[] {
+  const out = order.slice();
+  let prev: string | null = null;
+  for (const u of stored) {
+    if (!hidden[u]) {
+      if (out.includes(u)) prev = u;
+      continue;
+    }
+    out.splice(prev != null ? out.indexOf(prev) + 1 : 0, 0, u);
+    prev = u;
   }
   return out;
 }
@@ -518,6 +548,8 @@ export function buildScene(
   circularClusters: Record<string, boolean> = {},
   /** Per-cluster origin rotation in whole-CDS steps (only used when circular). */
   clusterRotation: Record<string, number> = {},
+  /** Clusters left off the figure, keyed by uid. */
+  hiddenClusters: Record<string, boolean> = {},
 ): Scene {
   const genes: GeneShape[] = [];
   const loci: LocusLine[] = [];
@@ -618,7 +650,7 @@ export function buildScene(
   // arrows/labels don't visually merge.
   const OVERLAP_GAP = 10;
 
-  const eff = effectiveLanes(data, lanes);
+  const eff = effectiveLanes(data, lanes, hiddenClusters);
   eff.forEach((lane, laneIdx) => {
     const originY = laneIdx * (cfg.trackHeight + cfg.rowGap) + cfg.labelGap + cfg.trackHeight;
 

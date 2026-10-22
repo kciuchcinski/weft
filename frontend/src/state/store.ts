@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { FigureData, MetricKey } from "../types";
 import { DEFAULT_PALETTE, PALETTES, computeColours, type ColourBy, type CustomGroup } from "../render/palette";
 import { DEFAULT_STYLE, makeConfig, type StyleConfig } from "../render/style";
-import { availableMetrics, buildScene, computeCenteringOffsets, effectiveLanes } from "../render/layout";
+import { availableMetrics, buildScene, computeCenteringOffsets, effectiveLanes, restoreHiddenInLane, visibleLaneIndices } from "../render/layout";
 
 /** A drop target for moving a cluster: into an existing lane, or a brand-new lane. */
 export type MoveTarget =
@@ -18,6 +18,9 @@ export interface SessionView {
   /** Per-cluster origin rotation for circular clusters, in whole-CDS steps. Positive
    * moves the origin forward, so the first CDS wraps to the end. */
   clusterRotation: Record<string, number>;
+  /** Clusters left off the figure, keyed by uid. They keep their place in `lanes`
+   * so showing one again returns it to its row. */
+  hiddenClusters: Record<string, boolean>;
   activeMetric: MetricKey;
   colourBy: ColourBy;
   paletteName: string;
@@ -56,6 +59,7 @@ function defaultSessionView(): SessionView {
     clusterOffsets: {},
     circularClusters: {},
     clusterRotation: {},
+    hiddenClusters: {},
     activeMetric: "identity",
     colourBy: "group",
     paletteName: DEFAULT_PALETTE,
@@ -123,6 +127,7 @@ function snapshotOf(s: AppState): Session {
       clusterOffsets: s.clusterOffsets,
       circularClusters: s.circularClusters,
       clusterRotation: s.clusterRotation,
+      hiddenClusters: s.hiddenClusters,
       activeMetric: s.activeMetric,
       colourBy: s.colourBy,
       paletteName: s.paletteName,
@@ -149,6 +154,7 @@ function sessionToState(session: Session) {
     clusterOffsets: session.view.clusterOffsets ?? {},
     circularClusters: session.view.circularClusters ?? {},
     clusterRotation: session.view.clusterRotation ?? {},
+    hiddenClusters: session.view.hiddenClusters ?? {},
     activeMetric: clampMetric(session.view.activeMetric, session.data),
     colourBy: session.view.colourBy,
     paletteName: session.view.paletteName,
@@ -165,6 +171,15 @@ function sessionToState(session: Session) {
     jobStatus: "idle",
     staged: [],
   };
+}
+
+/** The inspector's gene, unless `session` hides the cluster it belongs to (undo or
+ * redo can re-hide a cluster while one of its genes is open). */
+function selectionAfter(selectedGene: string | null, session: Session): string | null {
+  if (!selectedGene || !session.data) return selectedGene;
+  const hidden = session.view.hiddenClusters ?? {};
+  const owner = session.data.clusters.find((c) => c.loci.some((l) => l.genes.some((g) => g.uid === selectedGene)));
+  return owner && hidden[owner.uid] ? null : selectedGene;
 }
 
 interface AppState extends SessionView {
@@ -192,6 +207,10 @@ interface AppState extends SessionView {
   rotateCluster: (uid: string, delta: number) => void;
   /** Restore every circular cluster to its original origin. */
   resetAllClusterRotations: () => void;
+  /** Hide/show a cluster on the figure. The last visible cluster can't be hidden. */
+  toggleClusterHidden: (uid: string) => void;
+  /** Show every hidden cluster again. */
+  showAllClusters: () => void;
   setLaneArrangement: (laneIndex: number, order: string[], offsets: Record<string, number>) => void;
   centerClustersOnGene: (geneUid: string) => void;
   clearClusterOffsets: () => void;
@@ -283,6 +302,7 @@ export const useStore = create<AppState>((set, get) => {
   clusterOffsets: initialView.clusterOffsets ?? {},
   circularClusters: initialView.circularClusters ?? {},
   clusterRotation: initialView.clusterRotation ?? {},
+  hiddenClusters: initialView.hiddenClusters ?? {},
   activeMetric: clampMetric(initialView.activeMetric, persisted?.data ?? null),
   colourBy: initialView.colourBy,
   paletteName: initialView.paletteName,
@@ -313,6 +333,7 @@ export const useStore = create<AppState>((set, get) => {
       clusterOffsets: {},
       circularClusters: {},
       clusterRotation: {},
+      hiddenClusters: {},
       customGroups: [],
       activeCustomGroup: null,
       // Row names key off cluster uids, which are fresh for each dataset.
@@ -329,10 +350,18 @@ export const useStore = create<AppState>((set, get) => {
   // moveClusterTo / setClusterOffset / setLaneArrangement are the cluster-drag
   // path and deliberately do NOT record history themselves: CanvasView calls
   // beginHistoryStep() once at drag start, so the whole gesture is one undo step.
+  //
+  // moveClusterTo and setLaneArrangement edit the stored lanes (hidden clusters
+  // included) but take lane indices and positions as measured on the canvas,
+  // i.e. among visible clusters only.
   moveClusterTo: (uid, target) =>
     set((s) => {
       if (!s.data) return {};
+      const hidden = s.hiddenClusters;
       const lanes = effectiveLanes(s.data, s.lanes).map((l) => l.slice());
+      // Map visible lane indices before removing anything, so they match what the
+      // caller measured.
+      const vis = visibleLaneIndices(lanes, hidden);
       // Remove the cluster from its current lane, leaving a (possibly empty)
       // placeholder so lane indices stay aligned with what the caller measured.
       for (const lane of lanes) {
@@ -343,11 +372,16 @@ export const useStore = create<AppState>((set, get) => {
         }
       }
       if (target.type === "lane") {
-        const lane = lanes[target.lane];
-        if (lane) lane.splice(Math.max(0, Math.min(target.pos, lane.length)), 0, uid);
-        else lanes.push([uid]);
+        const lane = lanes[vis[target.lane] ?? -1];
+        if (lane) {
+          // `pos` counts visible clusters; insert before the pos-th of them.
+          const shown = lane.filter((u) => !hidden[u]);
+          const at = target.pos < shown.length ? lane.indexOf(shown[Math.max(0, target.pos)]) : lane.length;
+          lane.splice(at, 0, uid);
+        } else lanes.push([uid]);
       } else {
-        lanes.splice(Math.max(0, Math.min(target.at, lanes.length)), 0, [uid]);
+        const at = target.at < vis.length ? vis[Math.max(0, target.at)] : lanes.length;
+        lanes.splice(at, 0, [uid]);
       }
       // Moving to another lane/position changes the cluster's base X, so its
       // stored horizontal offset no longer means anything — drop it.
@@ -392,6 +426,23 @@ export const useStore = create<AppState>((set, get) => {
 
   resetAllClusterRotations: hist("rotate:all", () => set({ clusterRotation: {} })),
 
+  toggleClusterHidden: hist((uid) => `hide:${uid}`, (uid) =>
+    set((s) => {
+      if (!s.data) return {};
+      const hide = !s.hiddenClusters[uid];
+      if (hide && s.data.clusters.every((c) => c.uid === uid || s.hiddenClusters[c.uid])) return {};
+      const hiddenClusters = { ...s.hiddenClusters };
+      if (hide) hiddenClusters[uid] = true;
+      else delete hiddenClusters[uid];
+      // Close the inspector if it shows a gene that just left the figure.
+      const cluster = s.data.clusters.find((c) => c.uid === uid);
+      const selectedGone = hide && !!s.selectedGene &&
+        !!cluster?.loci.some((l) => l.genes.some((g) => g.uid === s.selectedGene));
+      return selectedGone ? { hiddenClusters, selectedGene: null } : { hiddenClusters };
+    })),
+
+  showAllClusters: hist("hide:all", () => set({ hiddenClusters: {} })),
+
   // Commit a resolved horizontal arrangement for one lane: reorder its clusters
   // to their final visual left-to-right order and rewrite their offsets so the
   // new sequential base + offset reproduces exactly where they sit now. Keeping
@@ -401,8 +452,9 @@ export const useStore = create<AppState>((set, get) => {
     set((s) => {
       if (!s.data) return {};
       const lanes = effectiveLanes(s.data, s.lanes).map((l) => l.slice());
-      if (laneIndex < 0 || laneIndex >= lanes.length) return {};
-      lanes[laneIndex] = order;
+      const stored = visibleLaneIndices(lanes, s.hiddenClusters)[laneIndex];
+      if (stored == null) return {};
+      lanes[stored] = restoreHiddenInLane(order, lanes[stored], s.hiddenClusters);
       return { lanes, clusterOffsets: { ...s.clusterOffsets, ...offsets } };
     }),
 
@@ -415,7 +467,7 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.data) return {};
       const cfg = makeConfig(s.style);
       const colours = computeColours(s.data, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups);
-      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames, s.circularClusters, s.clusterRotation);
+      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters);
       const clusterOffsets = computeCenteringOffsets(scene, s.data, geneUid, s.clusterOffsets, s.activeMetric);
       return clusterOffsets === s.clusterOffsets ? {} : { clusterOffsets };
     })),
@@ -517,7 +569,7 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], past: [], future: [] }),
 
   loadSession: (session) => set({ ...sessionToState(session), selectedGene: null, past: [], future: [] }),
 
@@ -528,7 +580,7 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.past.length) return {};
       const prev = s.past[s.past.length - 1];
       const current = snapshotOf(s);
-      return { ...sessionToState(prev), past: s.past.slice(0, -1), future: [current, ...s.future].slice(0, HISTORY_LIMIT) };
+      return { ...sessionToState(prev), selectedGene: selectionAfter(s.selectedGene, prev), past: s.past.slice(0, -1), future: [current, ...s.future].slice(0, HISTORY_LIMIT) };
     }),
 
   redo: () =>
@@ -536,7 +588,7 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.future.length) return {};
       const next = s.future[0];
       const current = snapshotOf(s);
-      return { ...sessionToState(next), future: s.future.slice(1), past: [...s.past, current].slice(-HISTORY_LIMIT) };
+      return { ...sessionToState(next), selectedGene: selectionAfter(s.selectedGene, next), future: s.future.slice(1), past: [...s.past, current].slice(-HISTORY_LIMIT) };
     }),
 
   beginHistoryStep: () => {
