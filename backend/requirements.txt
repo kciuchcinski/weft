@@ -1,12 +1,13 @@
 # Pip-only backend deps (parasail engine only; used by CI) — mirrors pixi.toml
 # minus DIAMOND (a bioconda binary, not needed here). parasail ships its native
 # code in the wheel, so this installs with plain pip on a stock python image.
-fastapi
-uvicorn[standard]
-python-multipart
-pydantic>=2
-biopython
-gffutils
-numpy
-scipy
-parasail
+# Versions pinned to match pixi.lock; bump both together.
+fastapi==0.139.0
+uvicorn[standard]==0.52.1
+python-multipart==0.0.32
+pydantic==2.13.4
+biopython==1.87
+gffutils==0.14
+numpy==2.4.6
+scipy==1.17.1
+parasail==1.3.4
