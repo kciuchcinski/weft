@@ -1,4 +1,4 @@
-"""Parse uploads into Cluster objects (SPEC §1). [MVP: GenBank + GFF3/FASTA]"""
+"""Parse uploads (GenBank, or GFF3/GTF + FASTA) into Cluster objects."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gff", ".gff3", ".gtf")
 FASTA_SUFFIXES = (".fa", ".fna", ".fasta", ".fas", ".faa")
 
-# Ordered preference for the gene display label (SPEC §1.3).
+# Ordered preference for the gene display label.
 LABEL_QUALIFIERS = ("protein_id", "locus_tag", "gene", "ID", "product", "label", "name")
 
 # Feature types that describe the record itself or merely duplicate CDS coordinates,
@@ -101,7 +101,10 @@ def parse_genbank(path: str, as_separate_clusters: bool = False) -> list[Cluster
     loci: list[Locus] = []
     description: str | None = None
 
-    for record in SeqIO.parse(str(path), "genbank"):
+    with path.open() as fh:
+        records = list(SeqIO.parse(fh, "genbank"))
+
+    for record in records:
         cds = [f for f in record.features if f.type == "CDS"]
         if cds:
             # Standard case: CDS features are the genes, translated for alignment.
