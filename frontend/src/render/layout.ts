@@ -1,4 +1,4 @@
-import type { Cluster, FigureData, Gene, Link, MetricKey } from "../types";
+import type { FigureData, Gene, Link, MetricKey } from "../types";
 import { UNGROUPED, type LegendItem } from "./palette";
 import { measureLabel } from "./labels";
 
@@ -529,18 +529,6 @@ function passesThreshold(value: number | null | undefined, metric: MetricKey, th
   return metricLowerIsBetter(metric) ? value <= threshold : value >= threshold;
 }
 
-/**
- * Number of origins a circular cluster's rotation cycles through: the record's own
- * origin (step 0), then each CDS start in order. A first CDS that already sits at
- * the origin is not counted twice.
- */
-export function originStopCount(c: Cluster): number {
-  const n = c.loci.reduce((m, l) => m + l.genes.length, 0);
-  if (!n) return 0;
-  const first = c.loci[0].genes[0];
-  return first && first.start <= c.loci[0].start ? n : n + 1;
-}
-
 /** Compute a drawable scene (world coordinates) from figure data + lanes + config + gene colours. */
 export function buildScene(
   data: FigureData,
@@ -610,17 +598,15 @@ export function buildScene(
     }
 
     // Circular origin rotation: cyclically shift the sequence so the chosen origin
-    // sits at x=0. Step 0 keeps the record's own origin; every other step snaps to a
-    // gene's left edge, so no gene ever straddles a moved cut — genes before the
-    // origin wrap intact to the right end.
+    // sits at x=0. Step 0 keeps the record's own origin; step k cuts at gene k's left
+    // edge, so every step wraps whole genes (0..k−1) intact to the right end and no
+    // gene ever straddles a moved cut.
     const isCircular = !!circularClusters[c.uid];
     let R = 0;
     if (isCircular && relGenes.length) {
-      const stops = relGenes.map((rg) => rg.x0);
-      if (originStopCount(c) > stops.length) stops.unshift(0);
-      const m = stops.length;
-      const k = (((clusterRotation[c.uid] ?? 0) % m) + m) % m;
-      R = stops[k];
+      const n = relGenes.length;
+      const k = (((clusterRotation[c.uid] ?? 0) % n) + n) % n;
+      R = k ? relGenes[k].x0 : 0;
     }
     const rotate = (x0: number, x1: number): [number, number] => {
       if (!R) return [x0, x1];

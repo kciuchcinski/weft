@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { FigureData, MetricKey } from "../types";
 import { DEFAULT_PALETTE, PALETTES, computeColours, type ColourBy, type CustomGroup } from "../render/palette";
 import { DEFAULT_STYLE, makeConfig, type StyleConfig } from "../render/style";
-import { availableMetrics, buildScene, computeCenteringOffsets, effectiveLanes, originStopCount, restoreHiddenInLane, visibleLaneIndices } from "../render/layout";
+import { availableMetrics, buildScene, computeCenteringOffsets, effectiveLanes, restoreHiddenInLane, visibleLaneIndices } from "../render/layout";
 
 /** A drop target for moving a cluster: into an existing lane, or a brand-new lane. */
 export type MoveTarget =
@@ -437,12 +437,12 @@ export const useStore = create<AppState>((set, get) => {
 
   // Rotate a circular cluster's origin by whole-CDS steps (buildScene wraps genes at
   // gene boundaries, so a step moves the first CDS to the end / vice versa).
-  // Wrapped to (−n, n) for a cluster with n origin stops: a full turn is a no-op, so
-  // +n reads as 0 rather than counting up forever. The sign is kept so −1 stays −1.
+  // Wrapped to (−n, n) for an n-gene cluster: a full turn is a no-op, so +n reads
+  // as 0 rather than counting up forever. The sign is kept so −1 stays −1.
   rotateCluster: hist((uid) => `rotate:${uid}`, (uid, delta) =>
     set((s) => {
       const cluster = s.data?.clusters.find((c) => c.uid === uid);
-      const n = cluster ? originStopCount(cluster) : 0;
+      const n = cluster ? cluster.loci.reduce((m, l) => m + l.genes.length, 0) : 0;
       const next = (s.clusterRotation[uid] ?? 0) + delta;
       return { clusterRotation: { ...s.clusterRotation, [uid]: n > 0 ? next % n || 0 : next } };
     })),
