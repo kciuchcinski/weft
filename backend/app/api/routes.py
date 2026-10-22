@@ -152,7 +152,11 @@ def parse(req: ParseRequest):
     warnings: list[str] = []
     errors: list[str] = []
     try:
-        clusters = parse_files(paths, as_separate_clusters=req.as_separate_clusters)
+        clusters = parse_files(
+            paths,
+            as_separate_clusters=req.as_separate_clusters,
+            separate_records=req.separate_records,
+        )
     except Exception as exc:  # noqa: BLE001
         errors.append(str(exc))
         clusters = []

@@ -56,6 +56,7 @@ export interface JobParams {
   mode?: string; // "global" | "local" (parasail only)
   identity_cutoff?: number; // minimum identity to keep a link (0–1)
   evalue_cutoff?: number; // maximum E-value to keep a hit (DIAMOND only)
+  separate_records?: string[]; // file names whose records each become their own sequence
 }
 
 /** Drop empty params so the backend applies its own JobRequest defaults. */
@@ -65,6 +66,7 @@ function jobBody(base: Record<string, unknown>, params?: JobParams): Record<stri
   if (params?.mode) body.mode = params.mode;
   if (params?.identity_cutoff != null) body.identity_cutoff = params.identity_cutoff;
   if (params?.evalue_cutoff != null) body.evalue_cutoff = params.evalue_cutoff;
+  if (params?.separate_records?.length) body.separate_records = params.separate_records;
   return body;
 }
 

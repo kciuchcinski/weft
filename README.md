@@ -14,7 +14,7 @@ similarity data exported as tables.
 
 | Format | Extensions | Notes |
 |---|---|---|
-| GenBank | `.gbk` `.gb` `.genbank` `.gbf` `.gbff` | One file = one cluster. A multi-record file becomes one cluster with several loci. |
+| GenBank | `.gbk` `.gb` `.genbank` `.gbf` `.gbff` | One file = one cluster. A multi-record file becomes one cluster with several loci, or, with **Split records** ticked for that file, one sequence per record (e.g. the contigs of a draft assembly), starting together in one row. |
 | GFF3 / GTF + FASTA | `.gff` `.gff3` `.gtf` + `.fa` `.fna` `.fasta` `.fas` `.faa` | Annotation and sequence files are paired by basename (e.g. `phage1.gff3` + `phage1.fna`). |
 
 Genes are taken from CDS features. Records with no CDS features are drawn but not aligned.

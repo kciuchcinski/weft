@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Collection
 from pathlib import Path
 
 from Bio import SeqIO
@@ -136,8 +137,15 @@ def parse_genbank(path: str, as_separate_clusters: bool = False) -> list[Cluster
     metadata = {"description": description} if description else {}
 
     if as_separate_clusters:
+        # source_file ties the split records back together, so the client can start
+        # them in one row and the pipeline can keep them in file order.
         return [
-            Cluster(uid=str(uuid.uuid4()), name=f"{stem} · {locus.name}", loci=[locus], metadata=metadata)
+            Cluster(
+                uid=str(uuid.uuid4()),
+                name=f"{stem} · {locus.name}",
+                loci=[locus],
+                metadata={**metadata, "source_file": path.name},
+            )
             for locus in loci
         ]
     return [Cluster(uid=str(uuid.uuid4()), name=stem, loci=loci, metadata=metadata)]
@@ -236,15 +244,24 @@ def parse_gff_with_fasta(path: str, fasta_path: str) -> list[Cluster]:
     return [Cluster(uid=str(uuid.uuid4()), name=stem, loci=loci, metadata={"source": "gff"})]
 
 
-def parse_files(paths: list[str], as_separate_clusters: bool = False) -> list[Cluster]:
+def parse_files(
+    paths: list[str],
+    as_separate_clusters: bool = False,
+    separate_records: Collection[str] = (),
+) -> list[Cluster]:
+    """Parse every input file. A GenBank file is split into one cluster per record
+    when `as_separate_clusters` is set (all files) or its name is in
+    `separate_records` (per file)."""
     ppaths = [Path(p) for p in paths]
     clusters: list[Cluster] = []
     fasta_by_stem = {p.stem: str(p) for p in ppaths if p.suffix.lower() in FASTA_SUFFIXES}
+    separate = set(separate_records)
 
     for path in ppaths:
         suffix = path.suffix.lower()
         if suffix in GBK_SUFFIXES:
-            clusters.extend(parse_genbank(str(path), as_separate_clusters=as_separate_clusters))
+            split = as_separate_clusters or path.name in separate
+            clusters.extend(parse_genbank(str(path), as_separate_clusters=split))
             continue
         if suffix in GFF_SUFFIXES:
             fasta = fasta_by_stem.get(path.stem)

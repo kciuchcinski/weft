@@ -110,8 +110,24 @@ function loadPersistedSession(): Session | null {
   }
 }
 
-function singletonLanes(data: FigureData | null): string[][] {
-  return data ? data.clusters.map((c) => [c.uid]) : [];
+/** One row per cluster, except that records split from one file (a draft
+ * assembly's contigs) start together in a single row. */
+function initialLanes(data: FigureData | null): string[][] {
+  if (!data) return [];
+  const lanes: string[][] = [];
+  const laneByFile = new Map<string, string[]>();
+  for (const c of data.clusters) {
+    const file = c.metadata?.source_file;
+    const lane = file ? laneByFile.get(file) : undefined;
+    if (lane) {
+      lane.push(c.uid);
+      continue;
+    }
+    const fresh = [c.uid];
+    lanes.push(fresh);
+    if (file) laneByFile.set(file, fresh);
+  }
+  return lanes;
 }
 
 /** A complete, serialisable snapshot of the current session (data + view). All
@@ -150,7 +166,7 @@ function snapshotOf(s: AppState): Session {
 function sessionToState(session: Session) {
   return {
     data: session.data,
-    lanes: session.view.lanes ?? singletonLanes(session.data),
+    lanes: session.view.lanes ?? initialLanes(session.data),
     clusterOffsets: session.view.clusterOffsets ?? {},
     circularClusters: session.view.circularClusters ?? {},
     clusterRotation: session.view.clusterRotation ?? {},
@@ -170,6 +186,7 @@ function sessionToState(session: Session) {
     evalueCutoff: session.view.evalueCutoff ?? 1e-3,
     jobStatus: "idle",
     staged: [],
+    separateRecords: {},
   };
 }
 
@@ -194,9 +211,13 @@ interface AppState extends SessionView {
   // hook stages into it and the explicit "Run" button consumes it. Shared so the
   // left panel and the welcome screen see one staging queue.
   staged: File[];
+  // Staged file names whose records are sent as separate sequences. Transient
+  // like `staged`, which it is cleared with.
+  separateRecords: Record<string, boolean>;
 
   setData: (d: FigureData | null) => void;
   setStaged: (files: File[]) => void;
+  setSeparateRecords: (name: string, on: boolean) => void;
   moveClusterTo: (uid: string, target: MoveTarget) => void;
   setClusterOffset: (uid: string, offset: number) => void;
   /** Mark/unmark a cluster as a circular sequence (enables origin rotation). */
@@ -320,6 +341,7 @@ export const useStore = create<AppState>((set, get) => {
   jobStatus: "idle",
   selectedGene: null,
   staged: [],
+  separateRecords: {},
   past: [],
   future: [],
 
@@ -329,7 +351,7 @@ export const useStore = create<AppState>((set, get) => {
   setData: (data) =>
     set((s) => ({
       data,
-      lanes: singletonLanes(data),
+      lanes: initialLanes(data),
       clusterOffsets: {},
       circularClusters: {},
       clusterRotation: {},
@@ -346,6 +368,7 @@ export const useStore = create<AppState>((set, get) => {
     })),
 
   setStaged: (staged) => set({ staged }),
+  setSeparateRecords: (name, on) => set((s) => ({ separateRecords: { ...s.separateRecords, [name]: on } })),
 
   // moveClusterTo / setClusterOffset / setLaneArrangement are the cluster-drag
   // path and deliberately do NOT record history themselves: CanvasView calls
@@ -569,7 +592,7 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], separateRecords: {}, past: [], future: [] }),
 
   loadSession: (session) => set({ ...sessionToState(session), selectedGene: null, past: [], future: [] }),
 

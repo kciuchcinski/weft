@@ -5,6 +5,9 @@ import { useStore } from "./store";
 /** Accepted input extensions (GenBank, GFF/GTF, FASTA). */
 export const INPUT_RE = /\.(gbk|gb|genbank|gbf|gbff|gff|gff3|gtf|fa|fna|fasta|fas|faa)$/i;
 
+/** GenBank inputs: the files whose records can be split into separate sequences. */
+export const GENBANK_RE = /\.(gbk|gb|genbank|gbf|gbff)$/i;
+
 /**
  * Shared upload flow for the left panel and the welcome screen: choosing files
  * *stages* them (into the store, so both surfaces see one queue) and an explicit
@@ -35,14 +38,14 @@ export function useUpload() {
   };
 
   const clearStaged = () => {
-    setStaged([]);
+    useStore.setState({ staged: [], separateRecords: {} });
     setJobStatus("idle");
   };
 
   const runStaged = async () => {
     const files = useStore.getState().staged;
     if (!files.length || loading) return;
-    const { engine, mode, identityCutoff, evalueCutoff } = useStore.getState();
+    const { engine, mode, identityCutoff, evalueCutoff, separateRecords } = useStore.getState();
     setLoading(true);
     try {
       setData(
@@ -51,6 +54,7 @@ export function useUpload() {
           mode,
           identity_cutoff: identityCutoff,
           evalue_cutoff: evalueCutoff,
+          separate_records: files.filter((f) => separateRecords[f.name]).map((f) => f.name),
         }),
       );
     } catch (e) {

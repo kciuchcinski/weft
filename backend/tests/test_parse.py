@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from app.pipeline.parse import parse_files
+from app.pipeline.run import _keep_files_together
 
 # A CDS whose domain annotations arrive as repeated /note and /db_xref lines, the
 # shape produced by PFAM/ECOD annotation pipelines.
@@ -64,6 +65,33 @@ class ParseGenbankTests(unittest.TestCase):
         # ones in the tooltip.
         self.assertNotIn("seq", gene.names)
         self.assertIn("product", gene.names)
+
+
+class SeparateRecordsTests(unittest.TestCase):
+    def _write_two_record_files(self, root: Path) -> list[str]:
+        two = MULTI_VALUE_GBK + MULTI_VALUE_GBK.replace("demo", "demo2")
+        paths = [root / "draft.gbk", root / "genome.gbk"]
+        for p in paths:
+            p.write_text(two)
+        return [str(p) for p in paths]
+
+    def test_only_named_files_are_split(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            clusters = parse_files(self._write_two_record_files(Path(td)), separate_records=["draft.gbk"])
+
+        # draft.gbk: one cluster per record, tagged with its file; genome.gbk stays one
+        # cluster holding both records as loci.
+        self.assertEqual([c.name for c in clusters], ["draft · demo", "draft · demo2", "genome"])
+        self.assertEqual([len(c.loci) for c in clusters], [1, 1, 2])
+        self.assertEqual(clusters[0].metadata["source_file"], "draft.gbk")
+        self.assertNotIn("source_file", clusters[2].metadata)
+
+    def test_split_records_stay_together_in_file_order(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            clusters = parse_files(self._write_two_record_files(Path(td)), separate_records=["draft.gbk"])
+        a, b, genome = clusters
+        # Synteny ordering placed the second contig first and the genome between them.
+        self.assertEqual(_keep_files_together([b, genome, a], clusters), [a, b, genome])
 
 
 class ParseGffTests(unittest.TestCase):

@@ -107,6 +107,7 @@ class JobStore:
                 mode=job.request.mode,
                 identity_cutoff=job.request.identity_cutoff,
                 evalue_cutoff=job.request.evalue_cutoff,
+                separate_records=job.request.separate_records,
                 progress=progress,
             )
             if job.cancel_requested:

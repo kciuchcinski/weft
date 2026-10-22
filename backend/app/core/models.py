@@ -81,12 +81,16 @@ class JobRequest(BaseModel):
     scope: str = "all-vs-all"  # all-vs-all | adjacent
     identity_cutoff: float = 0.3
     evalue_cutoff: float = 1e-3
+    # Uploaded file names whose records each become their own cluster (e.g. the
+    # contigs of a draft assembly) instead of loci of one cluster.
+    separate_records: list[str] = []
 
 
 class ParseRequest(BaseModel):
     upload_token: Optional[str] = None
     example: Optional[str] = None
     as_separate_clusters: bool = False
+    separate_records: list[str] = []
 
 
 class ParseReport(BaseModel):

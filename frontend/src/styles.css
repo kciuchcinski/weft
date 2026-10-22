@@ -1575,6 +1575,28 @@ label.btn {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.staged-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.staged-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.split-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-2);
+}
+.split-toggle input {
+  margin: 0;
+}
 .link-btn {
   border: none;
   background: none;

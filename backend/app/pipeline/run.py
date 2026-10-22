@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from typing import Callable, Optional
 
 from app.config import settings
@@ -53,6 +54,25 @@ def enforce_limits(clusters: list[Cluster]) -> None:
         )
 
 
+def _keep_files_together(ordered: list[Cluster], parsed: list[Cluster]) -> list[Cluster]:
+    """Gather the records of each split file at its first member's position, in file
+    order. Synteny ordering would otherwise scatter a draft assembly's contigs."""
+    by_file: dict[str, list[Cluster]] = {}
+    for c in parsed:
+        if "source_file" in c.metadata:
+            by_file.setdefault(c.metadata["source_file"], []).append(c)
+    out: list[Cluster] = []
+    emitted: set[str] = set()
+    for c in ordered:
+        source = c.metadata.get("source_file")
+        if source is None:
+            out.append(c)
+        elif source not in emitted:
+            emitted.add(source)
+            out.extend(by_file[source])
+    return out
+
+
 def run_pipeline(
     paths: list[str],
     engine: str = "parasail",
@@ -60,6 +80,7 @@ def run_pipeline(
     identity_cutoff: float = 0.3,
     evalue_cutoff: float = 1e-3,
     as_separate_clusters: bool = False,
+    separate_records: Collection[str] = (),
     progress: Progress = None,
 ) -> FigureData:
     def report(fraction: float, message: str) -> None:
@@ -67,7 +88,9 @@ def run_pipeline(
             progress(fraction, message)
 
     report(0.05, "Parsing input files")
-    clusters = parse_files(paths, as_separate_clusters=as_separate_clusters)
+    clusters = parse_files(
+        paths, as_separate_clusters=as_separate_clusters, separate_records=separate_records
+    )
     enforce_limits(clusters)
 
     gene_count = sum(len(locus.genes) for c in clusters for locus in c.loci)
@@ -86,7 +109,7 @@ def run_pipeline(
 
     report(0.90, "Ordering clusters")
     order = order_clusters(clusters, links, groups)
-    ordered = [clusters[i] for i in order]
+    ordered = _keep_files_together([clusters[i] for i in order], clusters)
 
     report(1.0, "Done")
     return FigureData(

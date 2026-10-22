@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "../state/store";
 import { fetchCapabilities, loadExampleSession } from "../api";
-import { useUpload } from "../state/useUpload";
+import { GENBANK_RE, useUpload } from "../state/useUpload";
 import { availableFields, computeColours, hiddenGeneUids, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
   availableMetrics,
@@ -366,6 +366,8 @@ export default function LeftPanel() {
   // Shared upload flow: selection stages files; the explicit "Run" button below
   // the alignment settings starts the job, so method/thresholds can be set first.
   const { staged, stageFiles, runStaged, clearStaged, loading } = useUpload();
+  const separateRecords = useStore((s) => s.separateRecords);
+  const setSeparateRecords = useStore((s) => s.setSeparateRecords);
   const [exampleLoading, setExampleLoading] = useState(false);
   // Engines this deployment can run. parasail (the default) is always present;
   // DIAMOND appears only where its binary is on PATH (pixi env / the Docker image).
@@ -524,7 +526,25 @@ export default function LeftPanel() {
                 <button className="link-btn" onClick={clearStaged} disabled={loading}>Clear</button>
               </div>
               <ul className="staged-list">
-                {staged.map((f) => <li key={f.name}>{f.name}</li>)}
+                {staged.map((f) => (
+                  <li key={f.name} className="staged-file">
+                    <span className="staged-name">{f.name}</span>
+                    {GENBANK_RE.test(f.name) && (
+                      <label
+                        className="split-toggle"
+                        title="Make each record (e.g. each contig of a draft assembly) its own sequence, so it can be moved and flipped on its own. Off: the file is one sequence."
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!separateRecords[f.name]}
+                          disabled={loading}
+                          onChange={(e) => setSeparateRecords(f.name, e.target.checked)}
+                        />
+                        Split records
+                      </label>
+                    )}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
