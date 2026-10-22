@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours, hiddenGeneUids } from "../render/palette";
 import { buildScene, formatMetric, qualifierEntries, type Scene } from "../render/layout";
@@ -96,6 +96,33 @@ function sameCtls(a: ClusterCtl[], b: ClusterCtl[]): boolean {
     }
   }
   return true;
+}
+
+// Hover tooltip anchored just below-right of the cursor, flipped to the cursor's
+// left / above when that would run past the canvas edge. Positioned in a layout
+// effect (after measuring, before paint) so it never flashes at the clipped spot.
+const TIP_OFFSET = 14;
+const TIP_MARGIN = 8;
+function FloatingTip({ sx, sy, children }: { sx: number; sy: number; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const box = el?.offsetParent as HTMLElement | null;
+    if (!el || !box) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    let left = sx + TIP_OFFSET;
+    if (left + w > box.clientWidth - TIP_MARGIN) left = sx - TIP_OFFSET - w;
+    let top = sy + TIP_OFFSET;
+    if (top + h > box.clientHeight - TIP_MARGIN) top = sy - TIP_OFFSET - h;
+    el.style.left = `${Math.max(TIP_MARGIN, left)}px`;
+    el.style.top = `${Math.max(TIP_MARGIN, top)}px`;
+  });
+  return (
+    <div ref={ref} className="gene-tooltip" style={{ left: sx + TIP_OFFSET, top: sy + TIP_OFFSET }}>
+      {children}
+    </div>
+  );
 }
 
 export default function CanvasView() {
@@ -846,7 +873,7 @@ export default function CanvasView() {
               </button>
               <button
                 className={"row-reverse" + (c.reversed ? " active" : "")}
-                title={c.reversed ? "Restore original direction" : "Reverse cluster direction"}
+                title={c.reversed ? "Restore original direction" : "Reverse sequence direction"}
                 onClick={() => useStore.getState().toggleClusterReversed(c.uid)}
               >
                 ⇄
@@ -874,7 +901,7 @@ export default function CanvasView() {
       )}
 
       {hover && (
-        <div className="gene-tooltip" style={{ left: hover.sx + 14, top: hover.sy + 14 }}>
+        <FloatingTip sx={hover.sx} sy={hover.sy}>
           <div className="tt-title">{hover.gene.label}</div>
           <div className="tt-row">
             {hover.gene.start.toLocaleString()}–{hover.gene.end.toLocaleString()} bp ({hover.gene.strand < 0 ? "−" : "+"})
@@ -894,7 +921,7 @@ export default function CanvasView() {
                 : "Select a custom group to assign genes"}
             </div>
           )}
-        </div>
+        </FloatingTip>
       )}
       {hoverLink && (() => {
         const l = hoverLink.link;
@@ -906,7 +933,7 @@ export default function CanvasView() {
           .sort((a, b) => (a === activeMetric ? -1 : b === activeMetric ? 1 : 0));
         const partial = l.query_start != null && l.query_end != null;
         return (
-          <div className="gene-tooltip" style={{ left: hoverLink.sx + 14, top: hoverLink.sy + 14 }}>
+          <FloatingTip sx={hoverLink.sx} sy={hoverLink.sy}>
             <div className="tt-title">
               {(q?.label ?? l.query)} ↔ {(t?.label ?? l.target)}
             </div>
@@ -920,7 +947,7 @@ export default function CanvasView() {
                 aligned {Math.round((l.query_start as number) * 100)}–{Math.round((l.query_end as number) * 100)}% of query
               </div>
             )}
-          </div>
+          </FloatingTip>
         );
       })()}
       {data && <GeneInspector />}

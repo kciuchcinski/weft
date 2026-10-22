@@ -116,7 +116,7 @@ export default function TopBar() {
         {hasData && (
           <span className="topbar-info">
             <span className="topbar-info-sep">·</span>
-            {clusterCount} {clusterCount === 1 ? "cluster" : "clusters"} · {geneCount} genes
+            {clusterCount} {clusterCount === 1 ? "sequence" : "sequences"} · {geneCount} genes
             {alignLabel && (
               <>
                 <span className="topbar-info-sep">·</span>

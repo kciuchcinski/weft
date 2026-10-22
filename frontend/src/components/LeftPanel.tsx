@@ -11,7 +11,6 @@ import {
   metricLowerIsBetter,
   type GeneShapeKind,
 } from "../render/layout";
-import { exportAlignmentTableCSV, exportPNG, exportSimilarityMatrixCSV, exportSVG } from "../export";
 import { download } from "../download";
 import type { FigureData, MetricKey } from "../types";
 
@@ -31,6 +30,10 @@ const METRIC_INFO: Record<MetricKey, string> = {
   evalue: "Expected number of hits this strong by chance. Lower (nearer 0) = more significant.",
   jaccard: "Jaccard index of shared content (0–1). Higher = more similar.",
 };
+
+// Segment captions for "Colour by". The "cluster" mode colours each row, which the
+// UI calls a sequence everywhere else.
+const COLOUR_BY_LABEL: Record<ColourBy, string> = { group: "Group", cluster: "Sequence", field: "Field", custom: "Custom" };
 
 const METRIC_LABEL: Record<MetricKey, string> = {
   identity: "identity",
@@ -295,6 +298,28 @@ function CustomColourEditor() {
   );
 }
 
+// A plasmid-map ring with a dot marking the origin: the per-sequence "circular"
+// toggle. Deliberately not an arrow, so it can't be mistaken for the reset-origin
+// icon beside it.
+function CircularIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <circle cx="8" cy="8" r="5.5" />
+      <circle cx="8" cy="2.5" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+// Counter-clockwise arrow: restore a circular sequence's original origin.
+function ResetIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2.8 6.5A5.2 5.2 0 1 1 3 10.4" />
+      <path d="M2.5 2.8v3.9h3.9" />
+    </svg>
+  );
+}
+
 export default function LeftPanel() {
   const data = useStore((s) => s.data);
   const loadSession = useStore((s) => s.loadSession);
@@ -529,7 +554,8 @@ export default function LeftPanel() {
           <p className="field-hint">{methodHint}</p>
 
           <div className="upload-thresholds">
-            <SliderField label="Min. identity" value={identityCutoff} min={0} max={1} step={0.05} onChange={setIdentityCutoff} />
+            <SliderField label="Identity cutoff" value={identityCutoff} min={0} max={1} step={0.05} onChange={setIdentityCutoff} />
+            <p className="field-hint">Links below this aren't kept, and genes are grouped into similarity groups at this threshold.</p>
             {engine === "diamond" && (
               <label className="field-inline">
                 <span>Max E-value</span>
@@ -554,83 +580,14 @@ export default function LeftPanel() {
         </div>
       </Section>
 
-      <Section key={data ? "links-loaded" : "links-empty"} title="Similarity links" defaultOpen={!!data}>
-        <Subsection title="Metric & filtering" defaultOpen>
-          <p className="scope-note">These controls update the currently displayed links immediately.</p>
-          <label className="field">
-            <span>Metric</span>
-            <select value={activeMetric} onChange={(e) => onMetricChange(e.target.value as MetricKey)}>
-              {metricChoices.map((m) => <option key={m} value={m}>{METRIC_OPTION_LABEL[m]}</option>)}
-            </select>
-          </label>
-          <p className="muted">{METRIC_INFO[activeMetric]}</p>
-          <SliderField
-            label={mr.lower ? `Maximum ${METRIC_LABEL[activeMetric]}` : `Minimum ${METRIC_LABEL[activeMetric]}`}
-            value={threshold}
-            min={mr.lo}
-            max={mr.hi}
-            step={mr.step}
-            onChange={(v) => setStyle({ linkThreshold: v })}
-          />
-          <p className="muted">{mr.lower ? "Links above this value are hidden." : "Links below this value are hidden."}</p>
-          {spanned && (
-            <>
-              <SliderField label="Minimum matching region (aa)" value={minFragment} min={0} max={fragMax} step={1} onChange={(v) => setStyle({ minFragmentAa: v })} />
-              <p className="muted">Hides local-alignment links whose matching region is shorter than this length.</p>
-            </>
-          )}
-        </Subsection>
-        <Subsection title="Link appearance">
-          <CheckField label="Show links" checked={style.showLinks} onChange={(v) => setStyle({ showLinks: v })} />
-          <CheckField label="Use gene colours" checked={style.colourLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ colourLinks: v })} />
-          <CheckField label="Draw straight links" checked={style.straightLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ straightLinks: v })} />
-          <CheckField label={`Show ${METRIC_LABEL[activeMetric]} values`} checked={style.showLinkLabels} disabled={!style.showLinks} onChange={(v) => setStyle({ showLinkLabels: v })} />
-          <CheckField label="Use aligned region only" checked={style.anchorLinksToAligned} disabled={!style.showLinks} onChange={(v) => setStyle({ anchorLinksToAligned: v })} />
-          <SliderField label="Opacity" value={style.linkOpacity} min={0} max={1} step={0.05} disabled={!style.showLinks} onChange={(v) => setStyle({ linkOpacity: v })} />
-          <p className="muted">“Use aligned region only” narrows local-alignment ribbons to the part of each gene that actually matched.</p>
-        </Subsection>
-      </Section>
-
-      <Section key={data ? "layout-loaded" : "layout-empty"} title="Sequences & layout" defaultOpen={!!data}>
+      <Section key={data ? "layout-loaded" : "layout-empty"} title="Sequences" defaultOpen={!!data}>
         {data ? (
           <>
-            <Subsection title="Row arrangement" defaultOpen>
-              <p className="muted">Drag a sequence's ⠿ handle sideways to reposition it, or vertically to move it into another row. Use ⇄ on the canvas to reverse its direction.</p>
-              <SliderField label="Scale (px/kb)" value={style.pxPerKb} min={5} max={500} step={5} onChange={(v) => setStyle({ pxPerKb: v })} />
-              <SliderField label="Row spacing" value={style.clusterSpacing} min={10} max={200} onChange={(v) => setStyle({ clusterSpacing: v })} />
-              <CheckField label="Prevent sequence overlap" checked={style.preventOverlap} onChange={(v) => setStyle({ preventOverlap: v })} />
-              <button className="btn btn-block" onClick={clearClusterOffsets} disabled={!hasOffsets}>Reset sequence positions</button>
-            </Subsection>
-
-            <Subsection title="Visible sequences" defaultOpen={hiddenCount > 0}>
-              <p className="muted">Untick a sequence to take it off the figure and out of exports. Its alignment is kept, so ticking it again brings it back to its row.</p>
-              <p className="field-hint">Showing {shownCount} of {data.clusters.length} sequences</p>
-              {data.clusters.length > 8 && (
-                <label className="field sequence-search">
-                  <span>Find a sequence</span>
-                  <input type="search" value={sequenceFilter} placeholder="Type a name…" onChange={(e) => setSequenceFilter(e.target.value)} />
-                </label>
-              )}
-              <div className="circular-list">
-                {filteredClusters.map((c) => {
-                  const shown = !hiddenClusters[c.uid];
-                  const last = shown && shownCount === 1;
-                  return (
-                    <div className="circular-row" key={c.uid}>
-                      <label className="circular-toggle" title={last ? "At least one sequence must stay visible" : shown ? "Hide this sequence" : "Show this sequence"}>
-                        <input type="checkbox" checked={shown} disabled={last} onChange={() => toggleClusterHidden(c.uid)} />
-                        <span className="circular-name">{c.name}</span>
-                      </label>
-                    </div>
-                  );
-                })}
-                {!filteredClusters.length && <p className="muted">No sequence names match this search.</p>}
-              </div>
-              <button className="btn btn-block" onClick={showAllClusters} disabled={hiddenCount === 0}>Show all sequences</button>
-            </Subsection>
-
-            <Subsection title="Circular sequences" defaultOpen={circularCount > 0}>
-              <p className="muted">Mark biologically circular sequences, then shift their displayed origin one CDS at a time to align them with related sequences. This does not turn the figure into a circular plot.</p>
+            <Subsection title="Sequence list" defaultOpen>
+              <p className="muted">Untick a sequence to hide it from the figure and exports; its alignment is kept. Click the ring icon to mark a sequence circular, then shift its origin one CDS at a time with ‹ › (this doesn't draw a circular plot).</p>
+              <p className="field-hint">
+                Showing {shownCount} of {data.clusters.length} sequences{circularCount > 0 && ` · ${circularCount} circular`}
+              </p>
               <div className="btn-row">
                 <button className="btn" onClick={() => setAllClustersCircular(true)} disabled={circularCount === data.clusters.length}>Mark all circular</button>
                 <button className="btn" onClick={() => setAllClustersCircular(false)} disabled={circularCount === 0}>Mark all linear</button>
@@ -643,31 +600,99 @@ export default function LeftPanel() {
               )}
               <div className="circular-list">
                 {filteredClusters.map((c) => {
+                  const shown = !hiddenClusters[c.uid];
+                  const last = shown && shownCount === 1;
                   const on = !!circularClusters[c.uid];
                   const rotation = clusterRotation[c.uid] ?? 0;
                   return (
-                    <div className="circular-row" key={c.uid}>
-                      <label className="circular-toggle" title={on ? "Treat as a linear sequence" : "Treat as a circular sequence"}>
-                        <input type="checkbox" checked={on} onChange={() => toggleClusterCircular(c.uid)} />
+                    <div className={"circular-row seq-row" + (shown ? "" : " is-hidden")} key={c.uid}>
+                      <label className="circular-toggle" title={last ? "At least one sequence must stay visible" : `${shown ? "Hide" : "Show"} ${c.name}`}>
+                        <input type="checkbox" checked={shown} disabled={last} onChange={() => toggleClusterHidden(c.uid)} />
                         <span className="circular-name">{c.name}</span>
                       </label>
                       {on && (
                         <span className="rotate-steppers" aria-label={`Origin rotation for ${c.name}`}>
-                          <button className="rotate-btn" title="Shift origin back by one CDS" onClick={() => rotateCluster(c.uid, -1)}>−1</button>
-                          <span className="rotate-count" title="Current rotation">{rotation > 0 ? `+${rotation}` : rotation}</span>
-                          <button className="rotate-btn" title="Shift origin forward by one CDS" onClick={() => rotateCluster(c.uid, 1)}>+1</button>
-                          <button className="rotate-reset" title="Restore this sequence's original origin" disabled={rotation === 0} onClick={() => rotateCluster(c.uid, -rotation)}>Reset</button>
+                          <button className="rotate-btn" title="Shift origin back by one CDS" aria-label="Shift origin back by one CDS" onClick={() => rotateCluster(c.uid, -1)}>‹</button>
+                          <span className="rotate-count" title="Origin shift, in CDS">{rotation > 0 ? `+${rotation}` : rotation}</span>
+                          <button className="rotate-btn" title="Shift origin forward by one CDS" aria-label="Shift origin forward by one CDS" onClick={() => rotateCluster(c.uid, 1)}>›</button>
+                          {/* Reserve the reset slot even at 0 so the steppers don't shift sideways. */}
+                          <button
+                            className="rotate-reset"
+                            title="Restore this sequence's original origin"
+                            aria-label="Restore original origin"
+                            disabled={rotation === 0}
+                            onClick={() => rotateCluster(c.uid, -rotation)}
+                          >
+                            <ResetIcon />
+                          </button>
                         </span>
                       )}
+                      <button
+                        className={"seq-circ" + (on ? " active" : "")}
+                        aria-pressed={on}
+                        aria-label={`Circular sequence: ${c.name}`}
+                        title={on ? "Circular — click to treat as linear" : "Linear — click to treat as circular (lets you shift the origin)"}
+                        onClick={() => toggleClusterCircular(c.uid)}
+                      >
+                        <CircularIcon />
+                      </button>
                     </div>
                   );
                 })}
                 {!filteredClusters.length && <p className="muted">No sequence names match this search.</p>}
               </div>
-              <button className="btn btn-block" onClick={resetAllClusterRotations} disabled={!hasRotations}>Reset all sequence origins</button>
+              <div className="btn-row">
+                <button className="btn" onClick={showAllClusters} disabled={hiddenCount === 0}>Show all</button>
+                <button className="btn" onClick={resetAllClusterRotations} disabled={!hasRotations}>Reset all origins</button>
+              </div>
+            </Subsection>
+
+            <Subsection title="Layout">
+              <p className="muted">Drag a sequence's ⠿ handle sideways to reposition it, or vertically to move it into another row. Use ⇄ on the canvas to reverse its direction.</p>
+              <SliderField label="Scale (px/kb)" value={style.pxPerKb} min={5} max={500} step={5} onChange={(v) => setStyle({ pxPerKb: v })} />
+              <SliderField label="Row spacing" value={style.clusterSpacing} min={10} max={200} onChange={(v) => setStyle({ clusterSpacing: v })} />
+              <CheckField label="Prevent sequence overlap" checked={style.preventOverlap} onChange={(v) => setStyle({ preventOverlap: v })} />
+              <button className="btn btn-block" onClick={clearClusterOffsets} disabled={!hasOffsets}>Reset sequence positions</button>
             </Subsection>
           </>
-        ) : <p className="muted">Load data to arrange sequences and configure circular origins.</p>}
+        ) : <p className="muted">Load data to choose, arrange and rotate sequences.</p>}
+      </Section>
+
+      <Section key={data ? "links-loaded" : "links-empty"} title="Similarity links" defaultOpen={!!data}>
+        <Subsection title="Filtering" defaultOpen>
+          <p className="scope-note">These controls update the currently displayed links immediately.</p>
+          <label className="field">
+            <span>Metric</span>
+            <select value={activeMetric} onChange={(e) => onMetricChange(e.target.value as MetricKey)}>
+              {metricChoices.map((m) => <option key={m} value={m}>{METRIC_OPTION_LABEL[m]}</option>)}
+            </select>
+          </label>
+          <p className="muted">{METRIC_INFO[activeMetric]}</p>
+          <SliderField
+            label={mr.lower ? "Hide links above" : "Hide links below"}
+            value={threshold}
+            min={mr.lo}
+            max={mr.hi}
+            step={mr.step}
+            onChange={(v) => setStyle({ linkThreshold: v })}
+          />
+          <p className="muted">Filters the displayed links only. Similarity groups (and their colours) come from the identity cutoff used for the alignment.</p>
+          {spanned && (
+            <>
+              <SliderField label="Minimum matching region (aa)" value={minFragment} min={0} max={fragMax} step={1} onChange={(v) => setStyle({ minFragmentAa: v })} />
+              <p className="muted">Hides local-alignment links whose matching region is shorter than this length.</p>
+            </>
+          )}
+        </Subsection>
+        <Subsection title="Appearance">
+          <CheckField label="Show links" checked={style.showLinks} onChange={(v) => setStyle({ showLinks: v })} />
+          <CheckField label="Use gene colours" checked={style.colourLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ colourLinks: v })} />
+          <CheckField label="Draw straight links" checked={style.straightLinks} disabled={!style.showLinks} onChange={(v) => setStyle({ straightLinks: v })} />
+          <CheckField label={`Show ${METRIC_LABEL[activeMetric]} values`} checked={style.showLinkLabels} disabled={!style.showLinks} onChange={(v) => setStyle({ showLinkLabels: v })} />
+          <CheckField label="Use aligned region only" checked={style.anchorLinksToAligned} disabled={!style.showLinks} onChange={(v) => setStyle({ anchorLinksToAligned: v })} />
+          <SliderField label="Opacity" value={style.linkOpacity} min={0} max={1} step={0.05} disabled={!style.showLinks} onChange={(v) => setStyle({ linkOpacity: v })} />
+          <p className="muted">“Use aligned region only” narrows local-alignment ribbons to the part of each gene that actually matched.</p>
+        </Subsection>
       </Section>
 
       <Section key={data ? "colour-data" : "colour-empty"} title="Colours & legend" defaultOpen={!!data}>
@@ -683,7 +708,7 @@ export default function LeftPanel() {
               <div className="segmented segmented-fill">
                 {(["group", "cluster", "field", "custom"] as ColourBy[]).map((c) => (
                   <button key={c} className={"seg" + (colourBy === c ? " active" : "")} onClick={() => onColourByChange(c)}>
-                    {c}
+                    {COLOUR_BY_LABEL[c]}
                   </button>
                 ))}
               </div>
@@ -737,18 +762,20 @@ export default function LeftPanel() {
                 </div>
               </>
             )}
-            </Subsection>
             {colourBy !== "custom" && (
-              <Subsection title="Colour map">
-                <p className="muted">Save the current label-to-colour mapping for reuse, or import a <code>label,colour</code> CSV to apply matching overrides.</p>
+              <>
+                <div className="flat-divider" />
+                <p className="export-group-label">Save &amp; load colours</p>
+                <p className="muted">Save the current label-to-colour mapping for reuse, or load a <code>label,colour</code> CSV to apply matching colours.</p>
                 <div className="btn-row">
-                  <button className="btn" onClick={exportColourCSV}>Export CSV</button>
-                  <label className="btn">Import CSV<input type="file" accept=".csv" hidden onChange={importColourCSV} /></label>
+                  <button className="btn" onClick={exportColourCSV}>Save CSV</button>
+                  <label className="btn">Load CSV<input type="file" accept=".csv" hidden onChange={importColourCSV} /></label>
                 </div>
-                <button className="btn btn-block" onClick={clearOverrides}>Reset colour overrides</button>
-              </Subsection>
+                <button className="btn btn-block" onClick={clearOverrides} disabled={!Object.keys(overrides).length}>Reset edited colours</button>
+              </>
             )}
-            <Subsection title="Figure legend">
+            </Subsection>
+            <Subsection title="Legend">
               <CheckField label="Show colour legend" checked={style.showLegend} onChange={(v) => setStyle({ showLegend: v })} />
               <SliderField label="Maximum entries (0 = all)" value={style.maxLegendEntries} min={0} max={40} disabled={!style.showLegend} onChange={(v) => setStyle({ maxLegendEntries: v })} />
               <SliderField label="Text size" value={style.legendFontSize} min={6} max={32} disabled={!style.showLegend} onChange={(v) => setStyle({ legendFontSize: v })} />
@@ -761,18 +788,17 @@ export default function LeftPanel() {
         )}
       </Section>
 
-      <Section title="Figure appearance">
-        <Subsection title="Genes" defaultOpen>
+      <Section title="Figure style">
+        <Subsection title="Genes & backbone" defaultOpen>
           <SelectField label="Shape" value={style.geneShape} options={GENE_SHAPES} onChange={(v) => setStyle({ geneShape: v })} />
           <SliderField label="Gene height" value={style.trackHeight} min={4} max={48} onChange={(v) => setStyle({ trackHeight: v })} />
           <SliderField label="Arrow-tip length" value={style.tipLength} min={0} max={48} onChange={(v) => setStyle({ tipLength: v })} />
           <SliderField label="Outline width" value={style.geneStrokeWidth} min={0} max={4} step={0.1} onChange={(v) => setStyle({ geneStrokeWidth: v })} />
           <ColourField label="Outline colour" value={style.geneStroke} onChange={(v) => setStyle({ geneStroke: v })} />
-        </Subsection>
-        <Subsection title="Sequence backbone">
-          <ColourField label="Colour" value={style.backboneColour} onChange={(v) => setStyle({ backboneColour: v })} />
-          <SliderField label="Width" value={style.backboneWidth} min={0} max={8} step={0.5} onChange={(v) => setStyle({ backboneWidth: v })} />
-          <SliderField label="Opacity" value={style.backboneOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ backboneOpacity: v })} />
+          <div className="flat-divider" />
+          <ColourField label="Backbone colour" value={style.backboneColour} onChange={(v) => setStyle({ backboneColour: v })} />
+          <SliderField label="Backbone width" value={style.backboneWidth} min={0} max={8} step={0.5} onChange={(v) => setStyle({ backboneWidth: v })} />
+          <SliderField label="Backbone opacity" value={style.backboneOpacity} min={0} max={1} step={0.05} onChange={(v) => setStyle({ backboneOpacity: v })} />
           <p className="muted">The backbone marks the sequence extent behind its genes.</p>
         </Subsection>
         <Subsection title="Sequence names">
@@ -788,7 +814,7 @@ export default function LeftPanel() {
           />
           <p className="muted">Pinned names remain at the chosen canvas edge while you pan. Names placed beside a sequence are always pinned.</p>
         </Subsection>
-        <Subsection title="Gene labels">
+        <Subsection title="Gene labels & tooltip">
           <SelectField label="Show labels" value={style.showGeneLabels} options={[{ value: "auto", label: "Auto (when zoomed in)" }, { value: "always", label: "Always" }, { value: "never", label: "Never" }]} onChange={(v) => setStyle({ showGeneLabels: v })} />
           <SelectField label="Label field" value={style.geneLabelField} disabled={style.showGeneLabels === "never"} options={[{ value: "", label: "Auto (gene → locus tag → protein ID)" }, ...fields.map((f) => ({ value: f, label: f }))]} onChange={(v) => setStyle({ geneLabelField: v })} />
           <SelectField label="Scope" value={style.geneLabelScope} disabled={style.showGeneLabels === "never"} options={[{ value: "all", label: "All genes" }, { value: "custom", label: "Custom groups only" }]} onChange={(v) => setStyle({ geneLabelScope: v })} />
@@ -796,38 +822,20 @@ export default function LeftPanel() {
           <SelectField label="Rotation" value={String(style.geneLabelRotation)} disabled={style.showGeneLabels === "never"} options={[{ value: "0", label: "Horizontal" }, { value: "45", label: "Diagonal (45°)" }, { value: "90", label: "Vertical (90°)" }]} onChange={(v) => setStyle({ geneLabelRotation: Number(v) })} />
           <SliderField label="Text size" value={style.geneLabelFontSize} min={6} max={20} disabled={style.showGeneLabels === "never"} onChange={(v) => setStyle({ geneLabelFontSize: v })} />
           <p className="muted">Auto labels appear as you zoom in. Overlapping labels are omitted to keep the figure readable.</p>
-        </Subsection>
-        <Subsection title="Gene tooltip">
-          <SliderField label="Maximum annotations (0 = all)" value={style.maxTooltipFields} min={0} max={24} onChange={(v) => setStyle({ maxTooltipFields: v })} />
+          <div className="flat-divider" />
+          <SliderField label="Tooltip annotations (0 = all)" value={style.maxTooltipFields} min={0} max={24} onChange={(v) => setStyle({ maxTooltipFields: v })} />
           <p className="muted">Annotations shown when hovering a gene, functional fields first (product, function, PFAM, ECOD…). Click a gene to open the full record regardless of this limit.</p>
         </Subsection>
-        <Subsection title="Scale bar & canvas">
+        <Subsection title="Scale bar & background">
           <CheckField label="Show scale bar" checked={style.showScaleBar} onChange={(v) => setStyle({ showScaleBar: v })} />
           <SliderField label="Length (kb, 0 = automatic)" value={style.scaleBarKb} min={0} max={50} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarKb: v })} />
           <SliderField label="Bar thickness" value={style.scaleBarThickness} min={0.5} max={8} step={0.5} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleBarThickness: v })} />
           <SliderField label="Scale text size" value={style.scaleFontSize} min={6} max={32} disabled={!style.showScaleBar} onChange={(v) => setStyle({ scaleFontSize: v })} />
           <ColourField label="Background" value={style.background} onChange={(v) => setStyle({ background: v })} />
-          <button className="btn btn-block" onClick={resetStyle}>Reset all appearance settings</button>
         </Subsection>
+        <button className="btn btn-block" onClick={resetStyle} title="Restore every style setting, including link, legend and layout styling, to its default">Reset all style settings</button>
       </Section>
 
-      <Section title="Export">
-        <p className="muted">Export the finished figure for publication, or download the underlying similarity results for further analysis.</p>
-        <p className="export-group-label">Figure</p>
-        <div className="btn-row">
-          <button className="btn" onClick={() => exportSVG(useStore.getState())} disabled={!data}>Export SVG</button>
-          <button className="btn" onClick={() => exportPNG(useStore.getState())} disabled={!data}>Export PNG</button>
-        </div>
-        <p className="export-group-label">Similarity data</p>
-        <div className="btn-row">
-          <button className="btn" onClick={() => exportAlignmentTableCSV(useStore.getState())} disabled={!data}>
-            Alignment CSV
-          </button>
-          <button className="btn" onClick={() => exportSimilarityMatrixCSV(useStore.getState())} disabled={!data}>
-            Matrix CSV
-          </button>
-        </div>
-      </Section>
     </aside>
   );
 }
