@@ -10,7 +10,7 @@ platforms = ["osx-arm64", "linux-64"]
 [dependencies]
 python = "3.11.*"
 fastapi = "*"
-uvicorn = "*"
+uvicorn = ">=0.52.1,<0.53"
 python-multipart = "*"
 pydantic = ">=2"
 biopython = "*"
