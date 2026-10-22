@@ -1396,9 +1396,73 @@ body {
 .swatch-input:hover {
   transform: scale(1.08);
 }
-.swatch-input::-webkit-color-swatch-wrapper { padding: 0; }
-.swatch-input::-webkit-color-swatch { border: none; border-radius: 5px; }
-.swatch-input::-moz-color-swatch { border: none; border-radius: 5px; }
+.swatch-input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16), 0 0 0 3px var(--accent-ring);
+}
+
+/* Popover opened by a swatch: react-colorful picker + hex field. Positioned
+   by ColourSwatch (fixed, portalled to <body>). */
+.colour-popover {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+}
+.colour-popover .react-colorful {
+  width: 180px;
+  height: 160px;
+}
+.colour-popover .react-colorful__saturation {
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+.colour-popover .react-colorful__last-control {
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+}
+.colour-popover .react-colorful__pointer {
+  width: 18px;
+  height: 18px;
+}
+.colour-hex {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 12px;
+}
+.colour-hex:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.colour-hex input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+/* The wrapper draws the focus ring; drop the global input one. */
+.colour-hex input:focus,
+.colour-hex input:focus-visible {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
 
 /* ---- Custom colour groups ---------------------------------------------- */
 .custom-groups {

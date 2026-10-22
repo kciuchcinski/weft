@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { HexColorInput, HexColorPicker } from "react-colorful";
 import { useStore } from "../state/store";
 import { fetchCapabilities, loadExampleSession } from "../api";
 import { GENBANK_RE, useUpload } from "../state/useUpload";
@@ -224,12 +226,97 @@ function SelectField<T extends string>(p: {
   );
 }
 
-function ColourField(p: { label: string; value: string; onChange: (v: string) => void }) {
+// Swatch that opens a small picker with a hex field. Replaces <input type="color">,
+// whose native dialog can't be restyled (Chrome's opens on RGB number boxes).
+// The popover is portalled to <body> with fixed positioning so the scrolling
+// panel can't clip it; it closes on outside click, Escape, scroll or resize.
+function ColourSwatch(p: { value: string; title?: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  // Place below the swatch, flipping above when it would run off the bottom.
+  useLayoutEffect(() => {
+    const btn = btnRef.current;
+    const pop = popRef.current;
+    if (!open || !btn || !pop) return;
+    const r = btn.getBoundingClientRect();
+    const h = pop.offsetHeight;
+    const below = r.bottom + 6;
+    pop.style.left = `${Math.min(r.left, window.innerWidth - pop.offsetWidth - 8)}px`;
+    pop.style.top = `${below + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 6) : below}px`;
+    pop.querySelector<HTMLInputElement>("input")?.select();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const inside = (t: EventTarget | null) =>
+      t instanceof Node && (!!popRef.current?.contains(t) || !!btnRef.current?.contains(t));
+    const onDown = (e: PointerEvent) => !inside(e.target) && setOpen(false);
+    const onScroll = (e: Event) => !inside(e.target) && setOpen(false);
+    const close = () => setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
   return (
-    <label className="field-inline">
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="swatch-input"
+        style={{ background: p.value }}
+        title={p.title}
+        aria-label={p.title ?? "Choose colour"}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      />
+      {open &&
+        createPortal(
+          <div
+            ref={popRef}
+            className="colour-popover"
+            // Keep keys (arrows on the sliders, Escape) away from the canvas's
+            // window-level pan/zoom/deselect shortcuts.
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Escape" || e.key === "Enter") {
+                setOpen(false);
+                btnRef.current?.focus();
+              }
+            }}
+          >
+            <HexColorPicker color={p.value} onChange={p.onChange} />
+            <label className="colour-hex">
+              <span>#</span>
+              <HexColorInput color={p.value} onChange={(v) => p.onChange(expandHex(v))} aria-label="Hex colour" />
+            </label>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+// HexColorInput accepts shorthand ("#abc"); store the full form like the picker does.
+function expandHex(v: string) {
+  const h = v.replace("#", "").toLowerCase();
+  return "#" + (h.length === 3 ? h.replace(/./g, "$&$&") : h);
+}
+
+function ColourField(p: { label: string; value: string; onChange: (v: string) => void }) {
+  // A div, not a <label>: clicking the caption would otherwise re-toggle the popover.
+  return (
+    <div className="field-inline">
       <span>{p.label}</span>
-      <input type="color" className="swatch-input" value={p.value} onChange={(e) => p.onChange(e.target.value)} />
-    </label>
+      <ColourSwatch value={p.value} title={p.label} onChange={p.onChange} />
+    </div>
   );
 }
 
@@ -271,13 +358,7 @@ function CustomColourEditor() {
             >
               {active ? "●" : "○"}
             </button>
-            <input
-              type="color"
-              className="swatch-input"
-              value={g.colour}
-              title="Group colour"
-              onChange={(e) => setCustomGroupColour(g.id, e.target.value)}
-            />
+            <ColourSwatch value={g.colour} title="Group colour" onChange={(v) => setCustomGroupColour(g.id, v)} />
             <input
               className="custom-group-name"
               value={g.label}
@@ -762,13 +843,7 @@ export default function LeftPanel() {
                 <div className="legend">
                   {items.map((item) => (
                     <div className="legend-row" key={item.id}>
-                      <input
-                        type="color"
-                        className="swatch-input"
-                        value={item.colour}
-                        title="Override colour"
-                        onChange={(e) => setOverride(item.id, e.target.value)}
-                      />
+                      <ColourSwatch value={item.colour} title="Override colour" onChange={(v) => setOverride(item.id, v)} />
                       {/* Similarity-group names are editable; cluster names are
                           renamed on the figure and field values come from the data. */}
                       {colourBy === "group" && item.id !== OTHER_ID ? (
