@@ -1,4 +1,4 @@
-"""Similarity engines. Each returns cross-cluster links with a full metric bundle (SPEC §2).
+"""Similarity engines. Each returns cross-cluster links with a full metric bundle.
 
 - ``parasail`` — exact pairwise alignment (clinker-style); the default engine.
   ``mode="global"`` gives one identity/similarity per pair (Needleman–Wunsch);
@@ -197,7 +197,7 @@ def _run_parasail(genes, gene_cluster, identity_cutoff, mode, progress: Progress
         raise ValueError(f"Unknown parasail mode '{mode}' (expected 'global' or 'local')")
 
     # Deduplicate identical translations: align each unique sequence once, fan the
-    # result out to every gene carrying it (SPEC §2.3).
+    # result out to every gene carrying it.
     seq_to_uids: dict[str, list[str]] = {}
     for uid, gene in genes.items():
         seq_to_uids.setdefault(gene.translation, []).append(uid)

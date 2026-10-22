@@ -1,4 +1,4 @@
-"""Pipeline orchestrator: parse → similarity → grouping → ordering → FigureData (SPEC §16)."""
+"""Pipeline orchestrator: parse → similarity → grouping → ordering → FigureData."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ Progress = Optional[Callable[[float, str], None]]
 
 
 class InputTooLarge(Exception):
-    """Raised when parsed input exceeds a configured resource guard (SPEC §14).
+    """Raised when parsed input exceeds a configured resource guard.
 
     The message is surfaced verbatim to the client via the job ``error`` field,
     so it must read as a clear, actionable limit explanation.

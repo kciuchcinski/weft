@@ -1,4 +1,4 @@
-"""Group genes into similarity groups from links (SPEC §3). [MVP: disjoint-set]
+"""Group genes into similarity groups from links, via a disjoint-set.
 
 Single-linkage at a metric threshold: two genes share a group when a chain of
 above-threshold links joins them. This is a similarity grouping, not homology

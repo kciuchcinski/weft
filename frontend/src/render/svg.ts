@@ -6,7 +6,7 @@ function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 }
 
-/** Serialise a scene to a standalone, correctly-sized SVG document (SPEC §11). */
+/** Serialise a scene to a standalone, correctly-sized SVG document. */
 export function sceneToSVG(scene: Scene, cfg: LayoutConfig, geneLabelEligible: Set<string> | null = null): string {
   const m = 24;
   const { minX, minY, maxX, maxY } = scene.bounds;

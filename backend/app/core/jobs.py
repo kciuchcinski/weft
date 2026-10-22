@@ -1,4 +1,6 @@
-"""Async job store (SPEC §14). Runs the pipeline on a thread pool; swap for RQ/Celery + Redis later."""
+"""Async job store. Runs the pipeline on an in-process thread pool; a multi-worker
+deployment would need an external queue (e.g. RQ/Celery + Redis).
+"""
 
 from __future__ import annotations
 

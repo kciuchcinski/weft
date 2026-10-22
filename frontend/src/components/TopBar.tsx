@@ -28,7 +28,7 @@ function BrandMark() {
   );
 }
 
-// Minimal top bar (SPEC §6): brand + New/Load/Save/Export + job status.
+// Minimal top bar: brand + New/Load/Save/Export + job status.
 export default function TopBar() {
   const jobStatus = useStore((s) => s.jobStatus);
   const togglePanel = useStore((s) => s.togglePanel);

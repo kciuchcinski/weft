@@ -1,4 +1,4 @@
-"""Order clusters by synteny via hierarchical clustering (SPEC §4). [MVP]"""
+"""Order clusters by synteny via hierarchical clustering."""
 
 from __future__ import annotations
 

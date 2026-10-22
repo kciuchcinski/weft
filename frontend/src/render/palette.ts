@@ -1,6 +1,6 @@
 import type { FigureData } from "../types";
 
-// Named categorical palettes (SPEC §8). These are the widely-used qualitative
+// Named categorical palettes. These are the widely-used qualitative
 // palettes from Tableau, D3/matplotlib, ColorBrewer, and Okabe–Ito. Okabe–Ito,
 // Tableau 10, and Dark2 are the most colourblind-friendly choices.
 export const PALETTES: Record<string, string[]> = {

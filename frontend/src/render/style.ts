@@ -4,7 +4,7 @@ import type { ClusterLabelPlacement, ClusterLabelSide, GeneLabelMode, GeneLabelP
 // user-facing "Locus spacing" control; kept as a fixed sensible default.
 const LOCUS_GAP = 24;
 
-/** User-tunable figure style (SPEC §10). */
+/** User-tunable figure style. */
 export interface StyleConfig {
   // Arrangement
   pxPerKb: number;

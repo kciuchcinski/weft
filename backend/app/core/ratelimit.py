@@ -1,4 +1,4 @@
-"""Lightweight in-memory rate limiting (SPEC §14 / §15 abuse guards).
+"""Lightweight in-memory rate limiting for the public API.
 
 The hosted beta runs a single uvicorn worker (the job store is in-process), so a
 per-process sliding window is sufficient and needs no Redis. Keyed on the client

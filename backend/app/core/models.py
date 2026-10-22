@@ -1,4 +1,4 @@
-"""Serialisable domain model — the figure JSON contract (SPEC §0, §2.4, §12)."""
+"""Serialisable domain model — the figure JSON contract."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ class Cluster(BaseModel):
 
 
 class LinkMetrics(BaseModel):
-    """Full metric bundle per link; the UI picks the active one live (SPEC §2.4)."""
+    """Full metric bundle per link; the UI picks the active one live."""
 
     identity: Optional[float] = None
     similarity: Optional[float] = None

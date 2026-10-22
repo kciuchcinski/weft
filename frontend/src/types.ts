@@ -1,4 +1,4 @@
-// Mirror of the backend figure JSON contract (backend/app/core/models.py, SPEC §0).
+// Mirror of the backend figure JSON contract (backend/app/core/models.py).
 
 export type MetricKey =
   | "identity"

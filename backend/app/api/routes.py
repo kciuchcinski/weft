@@ -1,4 +1,4 @@
-"""HTTP API surface (SPEC §13). Handlers are thin; heavy work lives in app.pipeline / app.core.jobs."""
+"""HTTP API surface. Handlers are thin; heavy work lives in app.pipeline / app.core.jobs."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Scratch TTL cleanup (SPEC §14 temp storage, §15 privacy).
+"""Scratch TTL cleanup for uploaded data.
 
 Per-upload scratch dirs hold user-submitted sequences. On a hosted beta they must
 not accumulate — both to bound disk and so unpublished data doesn't linger. A

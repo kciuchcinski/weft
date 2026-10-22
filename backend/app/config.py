@@ -1,4 +1,4 @@
-"""Application settings and resource limits (SPEC §14).
+"""Application settings and resource limits.
 
 Defaults suit local dev; every field can be overridden by an environment variable
 so the same image is safe to run as an open, hosted beta (see ``render.yaml`` /
