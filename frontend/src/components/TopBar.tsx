@@ -52,6 +52,7 @@ function RedoIcon() {
 // similarity data out to other formats — the usual native-file vs export split.
 export default function TopBar() {
   const jobStatus = useStore((s) => s.jobStatus);
+  const jobError = useStore((s) => s.jobError);
   const togglePanel = useStore((s) => s.togglePanel);
   const data = useStore((s) => s.data);
   const canUndo = useStore((s) => s.past.length > 0);
@@ -152,7 +153,7 @@ export default function TopBar() {
             </div>
           )}
         </details>
-        <span className="job-status" data-status={jobStatus}>
+        <span className="job-status" data-status={jobStatus} title={jobError ?? undefined}>
           <span className="status-dot" />
           {jobStatus}
         </span>

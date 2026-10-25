@@ -7,20 +7,13 @@ from typing import Callable, Optional
 
 from app.config import settings
 from app.core.models import Cluster, FigureData
+from app.pipeline.errors import InputTooLarge
 from app.pipeline.grouping import build_groups
 from app.pipeline.ordering import order_clusters
 from app.pipeline.parse import parse_files
 from app.pipeline.similarity import compute_links
 
 Progress = Optional[Callable[[float, str], None]]
-
-
-class InputTooLarge(Exception):
-    """Raised when parsed input exceeds a configured resource guard.
-
-    The message is surfaced verbatim to the client via the job ``error`` field,
-    so it must read as a clear, actionable limit explanation.
-    """
 
 
 def enforce_limits(clusters: list[Cluster]) -> None:

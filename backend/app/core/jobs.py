@@ -14,6 +14,7 @@ from typing import Optional
 
 from app.config import settings
 from app.core.models import FigureData, JobRequest
+from app.pipeline.errors import InputError, brief
 from app.pipeline.run import run_pipeline
 
 
@@ -123,8 +124,16 @@ class JobStore:
                 return
             job.status = JobState.failed
             job.message = "failed"
-            job.error = f"{type(exc).__name__}: {exc}"
+            job.error = _describe(exc)
             traceback.print_exc()
+
+
+def _describe(exc: Exception) -> str:
+    """The job error shown to the user. Input problems and the time limit explain
+    themselves; anything else is a fault on our side, so say so and keep the type."""
+    if isinstance(exc, (InputError, TimeoutError)):
+        return str(exc)
+    return f"Unexpected server error ({type(exc).__name__}: {brief(exc)})"
 
 
 job_store = JobStore()

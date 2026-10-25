@@ -496,6 +496,17 @@ body {
   margin-top: 1px;
   text-align: center;
 }
+.panel-alert {
+  margin: 0;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--danger);
+  background: #fdecec;
+  border: 1px solid #f7cfcf;
+  border-radius: var(--r-md);
+  overflow-wrap: anywhere;
+}
 .scope-note {
   margin: 0;
   padding: 8px 9px;
@@ -878,6 +889,7 @@ body {
   background: #fdecec;
   border: 1px solid #f7cfcf;
   border-radius: var(--r-md);
+  overflow-wrap: anywhere; /* long file names in parser errors */
 }
 
 /* Loading substate */

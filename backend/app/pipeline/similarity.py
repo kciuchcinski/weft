@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from app.core.models import Cluster, Link, LinkMetrics
+from app.pipeline.errors import InputTooLarge
 
 try:
     import parasail
@@ -222,13 +223,13 @@ def _run_parasail(genes, gene_cluster, identity_cutoff, evalue_cutoff, mode, pro
     reps = list(seq_to_uids.keys())
 
     if len(reps) > _MAX_PARASAIL_SEQS:
-        raise RuntimeError(
+        raise InputTooLarge(
             f"parasail engine handles up to {_MAX_PARASAIL_SEQS} unique proteins; "
             f"{len(reps)} present. Use the DIAMOND engine for inputs this large."
         )
     longest = max((len(s) for s in reps), default=0)
     if longest > _MAX_PARASAIL_LEN:
-        raise RuntimeError(
+        raise InputTooLarge(
             f"parasail engine caps protein length at {_MAX_PARASAIL_LEN} aa; "
             f"{longest} aa present. Use the DIAMOND engine."
         )

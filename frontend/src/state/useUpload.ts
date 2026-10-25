@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { runUploadJob } from "../api";
+import { errorMessage, runUploadJob } from "../api";
 import { useStore } from "./store";
 
 /** Accepted input extensions (GenBank, GFF/GTF, FASTA). */
@@ -58,7 +58,7 @@ export function useUpload() {
         }),
       );
     } catch (e) {
-      setJobStatus("failed");
+      setJobStatus("failed", errorMessage(e));
       console.error(e);
     } finally {
       setLoading(false);

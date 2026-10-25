@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Collection
+from collections.abc import Collection, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from Bio import SeqIO
@@ -11,6 +12,7 @@ from Bio.Seq import Seq
 from Bio.SeqFeature import SeqFeature
 
 from app.core.models import Cluster, Gene, Locus
+from app.pipeline.errors import InputError, brief
 
 GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gff", ".gff3", ".gtf")
@@ -104,6 +106,8 @@ def parse_genbank(path: str, as_separate_clusters: bool = False) -> list[Cluster
 
     with path.open() as fh:
         records = list(SeqIO.parse(fh, "genbank"))
+    if not records:
+        raise InputError(f"{path.name} contains no GenBank records (expected a LOCUS line).")
 
     for record in records:
         cds = [f for f in record.features if f.type == "CDS"]
@@ -187,7 +191,7 @@ def parse_gff_with_fasta(path: str, fasta_path: str) -> list[Cluster]:
     with Path(fasta_path).open() as fasta_fh:
         seq_index = {rec.id: rec.seq for rec in SeqIO.parse(fasta_fh, "fasta")}
     if not seq_index:
-        raise ValueError(f"No sequences in FASTA: {fasta_path}")
+        raise InputError(f"{Path(fasta_path).name} contains no FASTA sequences.")
 
     loci_by_seqid: dict[str, list[Gene]] = {}
     with gff_path.open() as fh:
@@ -244,6 +248,18 @@ def parse_gff_with_fasta(path: str, fasta_path: str) -> list[Cluster]:
     return [Cluster(uid=str(uuid.uuid4()), name=stem, loci=loci, metadata={"source": "gff"})]
 
 
+@contextmanager
+def _reading(name: str) -> Iterator[None]:
+    """Report any parser failure against the file it came from; Biopython's own
+    messages (e.g. "Premature end of line during sequence data") don't name it."""
+    try:
+        yield
+    except InputError:
+        raise
+    except Exception as exc:  # noqa: BLE001 — any parser failure is bad input
+        raise InputError(f"Couldn't read {name}: {brief(exc)}") from exc
+
+
 def parse_files(
     paths: list[str],
     as_separate_clusters: bool = False,
@@ -261,20 +277,22 @@ def parse_files(
         suffix = path.suffix.lower()
         if suffix in GBK_SUFFIXES:
             split = as_separate_clusters or path.name in separate
-            clusters.extend(parse_genbank(str(path), as_separate_clusters=split))
+            with _reading(path.name):
+                clusters.extend(parse_genbank(str(path), as_separate_clusters=split))
             continue
         if suffix in GFF_SUFFIXES:
             fasta = fasta_by_stem.get(path.stem)
             if not fasta:
-                raise ValueError(
+                raise InputError(
                     f"Missing FASTA pair for {path.name}; expected one of "
                     f"{path.stem}.fa/.fna/.fasta"
                 )
-            clusters.extend(parse_gff_with_fasta(str(path), fasta))
+            with _reading(path.name):
+                clusters.extend(parse_gff_with_fasta(str(path), fasta))
             continue
         if suffix in FASTA_SUFFIXES:
             continue
-        raise ValueError(
-            f"Unsupported file type: {path} (supported: GenBank, GFF3/GTF + FASTA)"
+        raise InputError(
+            f"Unsupported file type: {path.name} (supported: GenBank, GFF3/GTF + FASTA)"
         )
     return clusters

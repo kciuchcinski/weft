@@ -185,6 +185,7 @@ function sessionToState(session: Session) {
     identityCutoff: session.view.identityCutoff ?? 0.3,
     evalueCutoff: session.view.evalueCutoff ?? 1e-3,
     jobStatus: "idle",
+    jobError: null,
     staged: [],
     separateRecords: {},
   };
@@ -203,6 +204,8 @@ interface AppState extends SessionView {
   data: FigureData | null;
   panelCollapsed: boolean;
   jobStatus: string;
+  // Why the last job failed, in words fit for the user; null unless jobStatus is "failed".
+  jobError: string | null;
   // Gene open in the inspector. Deliberately outside SessionView: selecting a
   // protein is navigation, not a figure edit, so it stays out of undo history,
   // the saved session and the autosave.
@@ -247,7 +250,8 @@ interface AppState extends SessionView {
   setIdentityCutoff: (v: number) => void;
   setEvalueCutoff: (v: number) => void;
   togglePanel: () => void;
-  setJobStatus: (s: string) => void;
+  /** Set the job status; `error` explains a failure and is cleared by any other status. */
+  setJobStatus: (s: string, error?: string | null) => void;
   /** Open the inspector on a gene (null closes it). */
   selectGene: (uid: string | null) => void;
 
@@ -341,6 +345,7 @@ export const useStore = create<AppState>((set, get) => {
   evalueCutoff: initialView.evalueCutoff ?? 1e-3,
   panelCollapsed: false,
   jobStatus: "idle",
+  jobError: null,
   selectedGene: null,
   staged: [],
   separateRecords: {},
@@ -535,7 +540,7 @@ export const useStore = create<AppState>((set, get) => {
   setIdentityCutoff: hist("identity", (identityCutoff) => set({ identityCutoff })),
   setEvalueCutoff: hist("evalue", (evalueCutoff) => set({ evalueCutoff })),
   togglePanel: () => set((s) => ({ panelCollapsed: !s.panelCollapsed })),
-  setJobStatus: (jobStatus) => set({ jobStatus }),
+  setJobStatus: (jobStatus, jobError = null) => set({ jobStatus, jobError }),
   selectGene: (selectedGene) => set({ selectedGene }),
 
   setColourBy: hist("colourBy", (colourBy) => set({ colourBy })),
@@ -601,7 +606,7 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", selectedGene: null, staged: [], separateRecords: {}, past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", jobError: null, selectedGene: null, staged: [], separateRecords: {}, past: [], future: [] }),
 
   loadSession: (session) => set({ ...sessionToState(session), selectedGene: null, past: [], future: [] }),
 

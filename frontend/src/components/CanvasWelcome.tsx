@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useStore } from "../state/store";
-import { loadExampleSession } from "../api";
+import { errorMessage, loadExampleSession } from "../api";
 import { useUpload } from "../state/useUpload";
 
 // Gene arrow slots shared by both lanes. The bottom lane reuses the same
@@ -115,6 +115,7 @@ export default function CanvasWelcome() {
   const loadSession = useStore((s) => s.loadSession);
   const setJobStatus = useStore((s) => s.setJobStatus);
   const jobStatus = useStore((s) => s.jobStatus);
+  const jobError = useStore((s) => s.jobError);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Shared with the left panel: choosing files stages them; Run starts the job.
@@ -129,7 +130,7 @@ export default function CanvasWelcome() {
       loadSession(await loadExampleSession(setJobStatus));
       setJobStatus("idle");
     } catch (e) {
-      setJobStatus("failed");
+      setJobStatus("failed", errorMessage(e));
       console.error(e);
     } finally {
       setExampleLoading(false);
@@ -182,7 +183,7 @@ export default function CanvasWelcome() {
               <div className="welcome-alert" role="alert">
                 {jobStatus === "no supported files"
                   ? "Those files aren’t supported. Try GenBank (.gbk/.gb) or GFF3/GTF with FASTA."
-                  : "Something went wrong running that job. Check the backend is running, then try again."}
+                  : jobError ?? "Something went wrong running that job. Check the backend is running, then try again."}
               </div>
             )}
 
@@ -211,7 +212,7 @@ export default function CanvasWelcome() {
               <div className="welcome-alert" role="alert">
                 {jobStatus === "no supported files"
                   ? "Those files aren’t supported. Try GenBank (.gbk/.gb) or GFF3/GTF with FASTA."
-                  : "Something went wrong running that job. Check the backend is running, then try again."}
+                  : jobError ?? "Something went wrong running that job. Check the backend is running, then try again."}
               </div>
             )}
 

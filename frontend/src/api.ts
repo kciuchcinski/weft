@@ -1,21 +1,43 @@
 import type { FigureData } from "./types";
 import type { Session } from "./state/store";
 
-async function getJSON(path: string): Promise<any> {
-  const r = await fetch(path);
-  if (!r.ok) throw new Error(`${path} → ${r.status}`);
+const UNREACHABLE = "Couldn’t reach the Weft server. Check the backend is running, then try again.";
+
+/** Text of a thrown error, for showing to the user. */
+export function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+/** fetch + JSON, throwing an Error whose message is fit to show the user. */
+async function request(path: string, init?: RequestInit): Promise<any> {
+  let r: Response;
+  try {
+    r = await fetch(path, init);
+  } catch {
+    throw new Error(UNREACHABLE); // network failure: nothing answered at all
+  }
+  if (!r.ok) throw new Error(await failureText(r));
   return r.json();
 }
 
-async function postJSON(path: string, body: unknown): Promise<any> {
-  const r = await fetch(path, {
+/** FastAPI explains rejections in `detail` (a string, or a list of validation
+ * issues). A 5xx without one is a dead backend behind the dev proxy or host. */
+async function failureText(r: Response): Promise<string> {
+  const body = await r.json().catch(() => null);
+  const detail = body?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length) return detail.map((d) => d?.msg ?? String(d)).join("; ");
+  return r.status >= 500 ? UNREACHABLE : `Request failed (${r.status} ${r.statusText}).`;
+}
+
+const getJSON = (path: string) => request(path);
+
+const postJSON = (path: string, body: unknown) =>
+  request(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(`${path} → ${r.status}`);
-  return r.json();
-}
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -75,7 +97,8 @@ async function pollJob(jobId: string, onStatus?: OnStatus): Promise<FigureData> 
     const s = await getJSON(`/api/jobs/${jobId}`);
     onStatus?.(s.status);
     if (s.status === "succeeded") return s.result as FigureData;
-    if (s.status === "failed") throw new Error(s.error || "job failed");
+    if (s.status === "failed") throw new Error(s.error || "The job failed without reporting why.");
+    if (s.status === "cancelled") throw new Error("The job was cancelled.");
     await sleep(300);
   }
 }
@@ -96,9 +119,7 @@ export async function runUploadJob(files: File[], onStatus?: OnStatus, params?: 
   onStatus?.("uploading");
   const fd = new FormData();
   files.forEach((f) => fd.append("files", f));
-  const up = await fetch("/api/upload", { method: "POST", body: fd });
-  if (!up.ok) throw new Error(`upload → ${up.status}`);
-  const { upload_token } = await up.json();
+  const { upload_token } = await request("/api/upload", { method: "POST", body: fd });
   onStatus?.("submitting");
   const { job_id } = await postJSON("/api/jobs", jobBody({ upload_token }, params));
   return pollJob(job_id, onStatus);

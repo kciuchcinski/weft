@@ -175,7 +175,8 @@ def parse(req: ParseRequest):
 def get_job(job_id: str):
     job = job_store.get(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail="job not found")
+        # Jobs live in memory, so a restarted server has forgotten them.
+        raise HTTPException(status_code=404, detail="Job not found; the server may have restarted. Run it again.")
     return job.public()
 
 

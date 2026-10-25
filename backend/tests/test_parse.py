@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from app.pipeline.errors import InputError, brief
 from app.pipeline.parse import parse_files
 from app.pipeline.run import _keep_files_together
 
@@ -127,6 +128,39 @@ class ParseGffTests(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 parse_files([str(root / "sample.gff3")])
+
+
+class ParseErrorTests(unittest.TestCase):
+    """Parser failures reach the user verbatim, so they must name the file and stay short."""
+
+    def _parse(self, name: str, text: str) -> str:
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / name
+            path.write_text(text)
+            with self.assertRaises(InputError) as ctx:
+                parse_files([str(path)])
+        return str(ctx.exception)
+
+    def test_truncated_header_names_the_file(self) -> None:
+        msg = self._parse("cut.gbk", MULTI_VALUE_GBK.split("FEATURES")[0])
+        self.assertTrue(msg.startswith("Couldn't read cut.gbk: "), msg)
+        self.assertIn("Premature end of line", msg)
+
+    def test_feature_dump_is_trimmed(self) -> None:
+        # Cut mid-qualifier: Biopython's message then quotes the whole feature.
+        msg = self._parse("cut.gbk", MULTI_VALUE_GBK.split('/db_xref="ECOD')[0] + '/db_xref="EC')
+        self.assertNotIn("\n", msg)
+        self.assertLessEqual(len(msg), 250)
+
+    def test_file_without_records_is_rejected(self) -> None:
+        msg = self._parse("junk.gbk", "not a genbank file\n")
+        self.assertIn("junk.gbk contains no GenBank records", msg)
+
+
+class BriefTests(unittest.TestCase):
+    def test_keeps_first_two_lines_and_caps_length(self) -> None:
+        self.assertEqual(brief(ValueError("Problem:\n1..10\n/translation=MAAA")), "Problem: 1..10")
+        self.assertEqual(len(brief(ValueError("x" * 500))), 200)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { createPortal } from "react-dom";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { useStore } from "../state/store";
-import { fetchCapabilities, loadExampleSession } from "../api";
+import { errorMessage, fetchCapabilities, loadExampleSession } from "../api";
 import { GENBANK_RE, useUpload } from "../state/useUpload";
 import { availableFields, computeColours, hiddenGeneUids, OTHER_ID, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
@@ -405,6 +405,7 @@ export default function LeftPanel() {
   const data = useStore((s) => s.data);
   const loadSession = useStore((s) => s.loadSession);
   const setJobStatus = useStore((s) => s.setJobStatus);
+  const jobError = useStore((s) => s.jobError);
   const activeMetric = useStore((s) => s.activeMetric);
   const setActiveMetric = useStore((s) => s.setActiveMetric);
   const engine = useStore((s) => s.engine);
@@ -528,7 +529,7 @@ export default function LeftPanel() {
       loadSession(await loadExampleSession(setJobStatus));
       setJobStatus("idle");
     } catch (e) {
-      setJobStatus("failed");
+      setJobStatus("failed", errorMessage(e));
       console.error(e);
     } finally {
       setExampleLoading(false);
@@ -676,6 +677,10 @@ export default function LeftPanel() {
           >
             {runLabel}
           </button>
+          {/* With no figure the welcome card shows the failure; once one is up it's hidden. */}
+          {data && jobError && !loading && (
+            <p className="panel-alert" role="alert">{jobError}</p>
+          )}
           {data && !staged.length && (
             <p className="field-hint upload-note">Showing a {data.clusters.length}-sequence figure · {data.links.length} links. Add files to run a new one.</p>
           )}
