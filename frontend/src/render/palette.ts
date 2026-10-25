@@ -68,10 +68,24 @@ interface Bucket {
  * the kept buckets take slots, so a value ranked 11th by first appearance but kept
  * by the cap doesn't wrap onto the 1st value's colour.
  *
+ * With `byCount`, buckets are first ranked by total gene count (so the most common
+ * category takes the first palette colour, independent of which sequences are
+ * hidden) and legend rows are listed from most to least common visible genes.
+ * "Other" is always the last row: light grey unless overridden via `OTHER_ID`.
+ *
  * Genes in `hiddenGenes` still get a colour but are left out of legend counts and
  * ranking, and a bucket with no visible genes gets no legend row.
  */
-function finalizeColours(buckets: Bucket[], palette: string[], maxEntries: number, hiddenGenes?: Set<string>): ColourResult {
+function finalizeColours(
+  buckets: Bucket[],
+  palette: string[],
+  maxEntries: number,
+  hiddenGenes?: Set<string>,
+  byCount = false,
+  otherColour: string = UNGROUPED,
+): ColourResult {
+  // Stable sort: ties keep first-appearance order.
+  if (byCount) buckets = [...buckets].sort((a, b) => b.geneUids.length - a.geneUids.length);
   const shownCount = (b: Bucket) =>
     hiddenGenes?.size ? b.geneUids.reduce((n, uid) => n + (hiddenGenes.has(uid) ? 0 : 1), 0) : b.geneUids.length;
   const counts = new Map(buckets.map((b) => [b.id, shownCount(b)]));
@@ -99,7 +113,7 @@ function finalizeColours(buckets: Bucket[], palette: string[], maxEntries: numbe
     const takesSlot = !keep || (keep.has(b.id) && count > 0);
     const auto = palette[slot % palette.length];
     if (takesSlot) slot += 1;
-    const colour = kept ? b.colour ?? auto : UNGROUPED;
+    const colour = kept ? b.colour ?? auto : otherColour;
     b.geneUids.forEach((uid) => gene.set(uid, colour));
     if (count === 0) continue;
     if (kept) {
@@ -109,8 +123,9 @@ function finalizeColours(buckets: Bucket[], palette: string[], maxEntries: numbe
       otherGroups += 1;
     }
   }
+  if (byCount) items.sort((a, b) => b.count - a.count);
   if (otherGroups > 0) {
-    items.push({ id: OTHER_ID, label: `Other (${otherGroups})`, colour: UNGROUPED, count: otherCount });
+    items.push({ id: OTHER_ID, label: `Other (${otherGroups})`, colour: otherColour, count: otherCount });
   }
   return { gene, items };
 }
@@ -147,6 +162,8 @@ export function hiddenGeneUids(data: FigureData, hiddenClusters: Record<string, 
  *  - "cluster" → one colour per cluster (keyed by cluster uid)
  *  - "field"   → one colour per distinct value of `colourField` in gene.names
  *  - "custom"  → user-defined groups, each carrying its own colour
+ * Groups and field values are ranked most to least common; sequences and custom
+ * groups keep their own order.
  */
 export function computeColours(
   data: FigureData,
@@ -170,8 +187,8 @@ export function computeColours(
     });
   } else if (colourBy === "field") {
     // Bucket genes by the chosen qualifier value; genes lacking the field stay
-    // uncoloured (fall through to UNGROUPED at draw time). Values are ordered by
-    // first appearance so palette assignment is stable across renders.
+    // uncoloured (fall through to UNGROUPED at draw time). Values are collected in
+    // first-appearance order, which breaks ties when they're ranked by count.
     const field = colourField ?? "";
     const order: string[] = [];
     const uidsByValue = new Map<string, string[]>();
@@ -201,5 +218,6 @@ export function computeColours(
     }));
   }
 
-  return finalizeColours(buckets, palette, maxEntries, hiddenGenes);
+  const byCount = colourBy === "group" || colourBy === "field";
+  return finalizeColours(buckets, palette, maxEntries, hiddenGenes, byCount, overrides[OTHER_ID] ?? UNGROUPED);
 }
