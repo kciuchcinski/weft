@@ -11,12 +11,28 @@ export interface View {
   panY: number;
 }
 
+/** A similarity link spotlit from the inspector. Its endpoints' similarity groups
+ * (`genes`) and the ribbons among them stay vivid while the rest of the figure
+ * fades; the hovered partner (`focus`) gets a red outline and the inspected gene
+ * (`origin`) a black one. Canvas only — never part of the exported figure. */
+export interface Highlight {
+  link: string;
+  genes: Set<string>;
+  focus: string;
+  origin: string;
+}
+
+const HIGHLIGHT_FOCUS = "#dc2626"; // --danger
+const HIGHLIGHT_ORIGIN = "#000000";
+const HIGHLIGHT_FADE = 0.3;
+
 export function draw(
   ctx: CanvasRenderingContext2D,
   scene: Scene,
   view: View,
   cfg: LayoutConfig,
   geneLabelEligible: Set<string> | null = null,
+  highlight: Highlight | null = null,
 ): void {
   ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
   ctx.clearRect(0, 0, view.cssW, view.cssH);
@@ -28,9 +44,24 @@ export function draw(
   ctx.scale(view.zoom, view.zoom);
 
   for (const l of scene.links) {
-    ctx.globalAlpha = l.alpha;
+    if (highlight?.link === l.link.uid) continue;
+    const inGroup = !highlight || (highlight.genes.has(l.link.query) && highlight.genes.has(l.link.target));
+    ctx.globalAlpha = inGroup ? l.alpha : l.alpha * HIGHLIGHT_FADE;
     ctx.fillStyle = l.colour;
     ctx.fill(new Path2D(ribbonPath(l, cfg.straight)));
+  }
+  // The spotlit ribbon goes over the faded ones, at a floor opacity so even a weak
+  // match reads clearly. Only adjacent rows carry ribbons, so it may not exist.
+  const lit = highlight ? scene.links.find((l) => l.link.uid === highlight.link) : undefined;
+  if (lit) {
+    const path = new Path2D(ribbonPath(lit, cfg.straight));
+    ctx.globalAlpha = Math.max(lit.alpha, 0.6);
+    ctx.fillStyle = lit.colour;
+    ctx.fill(path);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = HIGHLIGHT_FOCUS;
+    ctx.lineWidth = 1.5 / view.zoom;
+    ctx.stroke(path);
   }
   ctx.globalAlpha = 1;
 
@@ -45,17 +76,46 @@ export function draw(
   }
   ctx.globalAlpha = 1;
 
-  ctx.strokeStyle = cfg.geneStroke;
-  ctx.lineWidth = cfg.geneStrokeWidth / view.zoom;
-  for (const g of scene.genes) {
+  const tracePath = (g: Scene["genes"][number]) => {
     const pts = genePoints(g, cfg.trackHeight, cfg.geneShape, cfg.tipLength);
     ctx.beginPath();
     ctx.moveTo(pts[0][0], pts[0][1]);
     for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
     ctx.closePath();
+  };
+
+  ctx.strokeStyle = cfg.geneStroke;
+  ctx.lineWidth = cfg.geneStrokeWidth / view.zoom;
+  for (const g of scene.genes) {
+    tracePath(g);
+    ctx.globalAlpha = highlight && !highlight.genes.has(g.uid) ? HIGHLIGHT_FADE : 1;
     ctx.fillStyle = g.colour;
     ctx.fill();
     if (cfg.geneStrokeWidth > 0) ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // The link's two genes get a background-coloured halo under a coloured outline, so
+  // they stand out against any fill colour: red for the hovered partner, black for
+  // the inspected gene. Stroke widths are screen px (÷ zoom) so the outline stays
+  // visible even when the figure is zoomed far out; refilling after stroking keeps
+  // only the outer half of each stroke, i.e. a 2px ring.
+  if (highlight) {
+    ctx.save();
+    ctx.lineJoin = "round";
+    for (const g of scene.genes) {
+      if (g.uid !== highlight.focus && g.uid !== highlight.origin) continue;
+      tracePath(g);
+      ctx.strokeStyle = cfg.background;
+      ctx.lineWidth = 7 / view.zoom;
+      ctx.stroke();
+      ctx.strokeStyle = g.uid === highlight.focus ? HIGHLIGHT_FOCUS : HIGHLIGHT_ORIGIN;
+      ctx.lineWidth = 4 / view.zoom;
+      ctx.stroke();
+      ctx.fillStyle = g.colour;
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   if (cfg.showLinkLabels) {

@@ -4,7 +4,7 @@ import { computeColours, hiddenGeneUids } from "../render/palette";
 import { buildScene, formatMetric, qualifierEntries, type Scene } from "../render/layout";
 import { labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
-import { draw } from "../render/draw";
+import { draw, type Highlight } from "../render/draw";
 import { ribbonPath } from "../render/geometry";
 import CanvasWelcome from "./CanvasWelcome";
 import GeneInspector from "./GeneInspector";
@@ -227,6 +227,24 @@ export default function CanvasView() {
   const geneLabelEligibleRef = useRef(geneLabelEligible);
   geneLabelEligibleRef.current = geneLabelEligible;
 
+  // Link spotlit from the inspector's "Similar proteins" list: its endpoints plus
+  // every member of their similarity groups.
+  const highlightedLink = useStore((s) => s.highlightedLink);
+  const selectedGene = useStore((s) => s.selectedGene);
+  const highlight = useMemo<Highlight | null>(() => {
+    const link = highlightedLink ? data?.links.find((l) => l.uid === highlightedLink) : undefined;
+    if (!data || !link) return null;
+    const origin = link.target === selectedGene ? link.target : link.query;
+    const focus = origin === link.query ? link.target : link.query;
+    const genes = new Set([origin, focus]);
+    for (const g of data.groups) {
+      if (g.genes.includes(origin) || g.genes.includes(focus)) g.genes.forEach((u) => genes.add(u));
+    }
+    return { link: link.uid, genes, focus, origin };
+  }, [highlightedLink, selectedGene, data]);
+  const highlightRef = useRef(highlight);
+  highlightRef.current = highlight;
+
   const zoom = useRef(1);
   const pan = useRef({ x: 0, y: 0 });
   const sceneRef = useRef<Scene | null>(scene);
@@ -326,7 +344,7 @@ export default function CanvasView() {
       syncCtls();
       return;
     }
-    draw(ctx, sceneRef.current, { dpr, cssW, cssH, zoom: zoom.current, panX: pan.current.x, panY: pan.current.y }, cfgRef.current, geneLabelEligibleRef.current);
+    draw(ctx, sceneRef.current, { dpr, cssW, cssH, zoom: zoom.current, panX: pan.current.x, panY: pan.current.y }, cfgRef.current, geneLabelEligibleRef.current, highlightRef.current);
     syncCtls();
   };
 
@@ -404,11 +422,12 @@ export default function CanvasView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
-  // Redraw (no refit) when draw-only style changes, or the CDS-label scope changes.
+  // Redraw (no refit) when draw-only style changes, the CDS-label scope changes, or
+  // the inspector spotlights a different link.
   useEffect(() => {
     render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg, geneLabelEligible]);
+  }, [cfg, geneLabelEligible, highlight]);
 
   // Keep the canvas sized to its container.
   useEffect(() => {

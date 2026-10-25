@@ -210,6 +210,9 @@ interface AppState extends SessionView {
   // protein is navigation, not a figure edit, so it stays out of undo history,
   // the saved session and the autosave.
   selectedGene: string | null;
+  // Similarity link whose row is hovered in the inspector, spotlit on the canvas.
+  // Transient, like selectedGene.
+  highlightedLink: string | null;
   // Files chosen but not yet aligned. Transient (never persisted); the upload
   // hook stages into it and the explicit "Run" button consumes it. Shared so the
   // left panel and the welcome screen see one staging queue.
@@ -254,6 +257,8 @@ interface AppState extends SessionView {
   setJobStatus: (s: string, error?: string | null) => void;
   /** Open the inspector on a gene (null closes it). */
   selectGene: (uid: string | null) => void;
+  /** Spotlight a similarity link (and both its genes) on the canvas; null clears. */
+  setHighlightedLink: (uid: string | null) => void;
 
   setColourBy: (c: ColourBy) => void;
   setPaletteName: (p: string) => void;
@@ -347,6 +352,7 @@ export const useStore = create<AppState>((set, get) => {
   jobStatus: "idle",
   jobError: null,
   selectedGene: null,
+  highlightedLink: null,
   staged: [],
   separateRecords: {},
   past: [],
@@ -542,6 +548,7 @@ export const useStore = create<AppState>((set, get) => {
   togglePanel: () => set((s) => ({ panelCollapsed: !s.panelCollapsed })),
   setJobStatus: (jobStatus, jobError = null) => set({ jobStatus, jobError }),
   selectGene: (selectedGene) => set({ selectedGene }),
+  setHighlightedLink: (highlightedLink) => set({ highlightedLink }),
 
   setColourBy: hist("colourBy", (colourBy) => set({ colourBy })),
   setPaletteName: hist("palette", (paletteName) => set({ paletteName })),
@@ -637,7 +644,14 @@ export const useStore = create<AppState>((set, get) => {
   };
 });
 
-useStore.subscribe((state) => {
+useStore.subscribe((state, prev) => {
   const session = state.getSession();
+  // Transient changes (hover highlights, selection, job status) leave every session
+  // field untouched; skip re-serialising the whole dataset for them.
+  const before = snapshotOf(prev);
+  const unchanged =
+    session.data === before.data &&
+    (Object.keys(session.view) as (keyof SessionView)[]).every((k) => session.view[k] === before.view[k]);
+  if (unchanged) return;
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
 });

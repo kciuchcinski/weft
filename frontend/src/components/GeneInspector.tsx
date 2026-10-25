@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../state/store";
 import { computeColours, hiddenGeneUids } from "../render/palette";
 import { formatMetric, metricLowerIsBetter, qualifierEntries } from "../render/layout";
@@ -47,8 +47,13 @@ export default function GeneInspector() {
   const customGroups = useStore((s) => s.customGroups);
   const maxLegendEntries = useStore((s) => s.style.maxLegendEntries);
   const hiddenClusters = useStore((s) => s.hiddenClusters);
+  const setHighlightedLink = useStore((s) => s.setHighlightedLink);
 
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Drop the canvas spotlight whenever the inspected protein changes or the panel
+  // closes: the hovered row vanishes from under the cursor without a mouseleave.
+  useEffect(() => () => setHighlightedLink(null), [selectedGene, setHighlightedLink]);
 
   // uid → the gene plus the cluster and locus it sits in, so the header can name
   // where the protein came from and link rows can name their partner's sequence.
@@ -177,6 +182,10 @@ export default function GeneInspector() {
                     disabled={!partner}
                     title={partner ? "Inspect this protein" : undefined}
                     onClick={() => partner && selectGene(partner.gene.uid)}
+                    onMouseEnter={() => setHighlightedLink(link.uid)}
+                    onMouseLeave={() => setHighlightedLink(null)}
+                    onFocus={() => setHighlightedLink(link.uid)}
+                    onBlur={() => setHighlightedLink(null)}
                   >
                     <span className="gi-link-name">{partner?.gene.label ?? "—"}</span>
                     <span className="gi-link-cluster">{partner?.cluster.name ?? ""}</span>
