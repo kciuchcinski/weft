@@ -51,6 +51,10 @@ export interface Session {
   view: SessionView;
 }
 
+/** Version stamped on every saved session. backend/tests/test_example_session.py
+ * reads this line to check the bundled example, so keep it a plain literal. */
+export const SESSION_SCHEMA_VERSION = 1;
+
 const SESSION_STORAGE_KEY = "weft.session.v1";
 
 function defaultSessionView(): SessionView {
@@ -103,7 +107,7 @@ function loadPersistedSession(): Session | null {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Session;
-    if (!parsed || parsed.schemaVersion !== 1 || !parsed.view) return null;
+    if (!parsed || parsed.schemaVersion !== SESSION_SCHEMA_VERSION || !parsed.view) return null;
     return parsed;
   } catch {
     return null;
@@ -136,7 +140,7 @@ function initialLanes(data: FigureData | null): string[][] {
  * persistence) and the undo/redo history stack. */
 function snapshotOf(s: AppState): Session {
   return {
-    schemaVersion: 1,
+    schemaVersion: SESSION_SCHEMA_VERSION,
     data: s.data,
     view: {
       lanes: s.lanes,

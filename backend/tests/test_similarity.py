@@ -28,7 +28,7 @@ _SEQ_A = _FLANK_A + _CORE + _FLANK_A
 _SEQ_B = _FLANK_B + _CORE + _FLANK_B
 
 _AMINO = "ACDEFGHIKLMNPQRSTVWY"
-_TEST_DATA = Path(__file__).resolve().parents[2] / "test_data"
+_EXAMPLE_INPUTS = Path(__file__).resolve().parents[2] / "examples" / "OXA-232" / "input"
 
 
 def _random_protein(rng: random.Random, length: int) -> str:
@@ -67,11 +67,12 @@ class ParasailEngineTests(unittest.TestCase):
         links = compute_links(clusters, engine="parasail", mode="local", identity_cutoff=0.3)
         self.assertEqual(links, [])
 
-    @unittest.skipUnless(_TEST_DATA.is_dir(), "test_data not present")
-    def test_local_mode_groups_match_global_on_test_data(self) -> None:
+    def test_local_mode_groups_match_global_on_example_inputs(self) -> None:
         # Local mode may add a few partial links but must not chain chance matches
-        # into extra merges: grouping should match global mode.
-        paths = sorted(str(p) for p in _TEST_DATA.glob("*.gbk"))
+        # into extra merges: grouping should match global mode. No skip guard: the
+        # inputs are tracked, so a missing directory should fail, not pass silently.
+        paths = sorted(str(p) for p in _EXAMPLE_INPUTS.glob("*.gbk"))
+        self.assertTrue(paths, f"no example inputs in {_EXAMPLE_INPUTS}")
         global_fd = run_pipeline(paths, engine="parasail", mode="global")
         local_fd = run_pipeline(paths, engine="parasail", mode="local")
         self.assertEqual(len(local_fd.groups), len(global_fd.groups))
