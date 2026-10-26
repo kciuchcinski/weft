@@ -6,7 +6,15 @@ gene map. Cross-record similarity is shown as ribbons between the genes. The fig
 edited interactively and exported as vector or raster graphics, with the underlying
 similarity data exported as tables.
 
-![Five bacteriophage records compared in Weft; ribbons connect similar proteins, genes are coloured by functional annotation](docs/screenshot.png)
+![Four complete ColKP3/blaOXA-232 plasmids and one draft assembly split across three contigs, compared in Weft; ribbons connect similar proteins](examples/OXA-232/Figure1/Figure_1.svg)
+
+## Example data
+
+**Load example dataset** in the app opens a precomputed session of ColKP3-type plasmids
+carrying blaOXA-232: four complete plasmids deposited with different start positions, and one
+draft assembly split across three contigs. The session loads as a static file, so nothing is
+recomputed. The GenBank inputs, accessions, saved session and exported figure are in
+[examples/OXA-232/](examples/OXA-232/).
 
 ## Method
 
@@ -111,28 +119,43 @@ docker run -p 8000:8000 weft     # http://localhost:8000
 
 The image contains parasail and DIAMOND. It targets `linux/amd64`, so an Apple Silicon build should be possible, but it runs under emulation and may take several minutes to start.
 
-To build from source (requires pixi and Node.js 20), see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+From source (requires [pixi](https://pixi.sh) and Node.js 20). The pixi environment includes
+DIAMOND.
+
+```bash
+cd backend && pixi install && pixi run dev     # API on http://localhost:8000
+cd frontend && npm install && npm run dev      # http://localhost:5173, proxies /api to the backend
+```
+
+Tests:
+
+```bash
+cd backend && pixi run python -m unittest discover -s tests -t .
+cd frontend && npm run build                   # type-check + production build
+```
 
 ## Limits
 
-Default per-job limits, configurable through environment variables (see
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#configuration)):
+Default per-job limits:
 
-| Parameter | Default |
-|---|---|
-| Clusters | 100 |
-| Genes, total | 6,000 |
-| Protein length | 20,000 aa |
-| Upload size | 50 MB |
-| Parasail: unique proteins | 800 |
-| Parasail: protein length | 5,000 aa |
+| Parameter | Default | Environment variable |
+|---|---|---|
+| Clusters | 100 | `MAX_CLUSTERS` |
+| Genes, total | 6,000 | `MAX_TOTAL_GENES` |
+| Protein length | 20,000 aa | `MAX_SEQUENCE_LENGTH` |
+| Upload size | 50 MB | `MAX_UPLOAD_BYTES` (bytes) |
+| Parasail: unique proteins | 800 | fixed |
+| Parasail: protein length | 5,000 aa | fixed |
+
+Server settings: `MAX_CONCURRENT_JOBS` (default 2), `JOB_TIMEOUT_SECONDS` (300),
+`SCRATCH_TTL_SECONDS` (1,800) and `DEFAULT_ENGINE` (`parasail`).
 
 Exact pairwise alignment scales quadratically with the number of proteins. Use DIAMOND for
 larger inputs.
 
 ## Data handling
 
-Uploaded files are deleted from the server 30 minutes after upload. Figure state is stored
+Uploaded files are deleted from the server 30 minutes after upload (`SCRATCH_TTL_SECONDS`). Figure state is stored
 only in the user's browser and in session files the user saves.
 
 ## Citation
