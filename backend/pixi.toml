@@ -1,6 +1,6 @@
 [workspace]
 name = "weft-backend"
-version = "1.0.0-rc1"
+version = "1.0.0-rc2"
 description = "Weft backend — parse, align (DIAMOND), group, order → figure JSON"
 channels = ["conda-forge", "bioconda"]
 # linux-64 is what the deploy image builds against (it carries the DIAMOND binary
