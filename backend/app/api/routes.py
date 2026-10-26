@@ -64,12 +64,6 @@ def health():
     }
 
 
-@router.get("/examples")
-def examples():
-    files = sorted(p.name for p in settings.example_dir.glob("*.gbk"))
-    return {"name": "test_data", "dir": str(settings.example_dir), "files": files}
-
-
 @router.post("/upload", dependencies=[Depends(rate_limit_uploads)])
 async def upload(files: list[UploadFile] = File(default=[])):
     token = str(uuid.uuid4())
@@ -125,18 +119,13 @@ def upload_text(req: UploadTextRequest):
 
 
 def _resolve_paths(req: JobRequest) -> list[str]:
-    if req.example:
-        paths = sorted(str(p) for p in settings.example_dir.glob("*.gbk"))
-        if not paths:
-            raise HTTPException(status_code=404, detail="No example data available")
-        return paths
     if req.upload_token:
         folder = settings.scratch_dir / req.upload_token
         paths = sorted(str(p) for p in folder.glob("*")) if folder.exists() else []
         if not paths:
             raise HTTPException(status_code=404, detail=f"No files for upload_token {req.upload_token}")
         return paths
-    raise HTTPException(status_code=400, detail="Provide 'example' or 'upload_token'")
+    raise HTTPException(status_code=400, detail="Provide 'upload_token'")
 
 
 @router.post("/jobs", dependencies=[Depends(rate_limit_jobs)])
@@ -148,7 +137,7 @@ def create_job(req: JobRequest):
 
 @router.post("/parse")
 def parse(req: ParseRequest):
-    paths = _resolve_paths(JobRequest(upload_token=req.upload_token, example=req.example))
+    paths = _resolve_paths(JobRequest(upload_token=req.upload_token))
     warnings: list[str] = []
     errors: list[str] = []
     try:

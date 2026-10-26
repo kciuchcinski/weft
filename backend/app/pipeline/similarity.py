@@ -313,7 +313,7 @@ def compute_links(
         if not diamond_available():
             raise RuntimeError(
                 "DIAMOND binary not found on PATH. Run through the pixi env "
-                "(e.g. `pixi run example` / `pixi run dev`) so the contained env is active."
+                "(e.g. `pixi run dev`) so the contained env is active."
             )
         return _run_diamond(genes, gene_cluster, identity_cutoff, evalue_cutoff, sensitivity)
     if engine == "parasail":

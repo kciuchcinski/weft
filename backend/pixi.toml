@@ -22,4 +22,3 @@ parasail-python = "*"
 
 [tasks]
 dev = "uvicorn app.main:app --reload --port 8000"
-example = "python -m app.build_example"

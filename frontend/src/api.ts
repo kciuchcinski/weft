@@ -104,10 +104,10 @@ async function pollJob(jobId: string, onStatus?: OnStatus): Promise<FigureData> 
 }
 
 /**
- * Load the bundled example. Rather than re-running DIAMOND, this fetches a
- * curated session (figure data + a saved view: three lanes with phage1 shown
- * both intact and split across one row, coloured by the PHROG "function" field)
- * built ahead of time by `pixi run example`.
+ * Load the bundled example: a static, precomputed session (figure data + saved
+ * view) for the OXA-232 / ColKP3 plasmids — nothing is computed on the server.
+ * It is a copy of examples/OXA-232/Figure1/Figure1-weft-session.json; to change
+ * the example, save a session from the app and replace public/example_session.json.
  */
 export async function loadExampleSession(onStatus?: OnStatus): Promise<Session> {
   onStatus?.("loading example");

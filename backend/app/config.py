@@ -55,7 +55,6 @@ class Settings:
 
     repo_root: Path = REPO_ROOT
     scratch_dir: Path = field(default_factory=lambda: _env_path("SCRATCH_DIR", BACKEND_DIR / "scratch"))
-    example_dir: Path = field(default_factory=lambda: _env_path("EXAMPLE_DIR", REPO_ROOT / "test_data"))
     # Directory holding the built frontend (dist). Empty/absent → API-only (dev).
     static_dir: Path = field(default_factory=lambda: _env_path("STATIC_DIR", REPO_ROOT / "frontend" / "dist"))
 

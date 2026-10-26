@@ -1,0 +1,495 @@
+LOCUS       NZ_RJTR01000007         2591 bp    DNA     linear   CON 04-AUG-2026
+DEFINITION  Klebsiella ornithinolytica strain YDC775_9
+            4_YDC_775-9_S56_R1_001_contig00081, whole genome shotgun sequence.
+ACCESSION   NZ_RJTR01000007 NZ_RJTR01000000
+VERSION     NZ_RJTR01000007.1
+DBLINK      BioProject: PRJNA224116
+            BioSample: SAMN10343278
+            Assembly: GCF_003782085.1
+KEYWORDS    WGS; RefSeq.
+SOURCE      Klebsiella ornithinolytica (Raoultella ornithinolytica)
+  ORGANISM  Klebsiella ornithinolytica
+            Bacteria; Pseudomonadati; Pseudomonadota; Gammaproteobacteria;
+            Enterobacterales; Enterobacteriaceae; Klebsiella.
+REFERENCE   1  (bases 1 to 2591)
+  AUTHORS   Iovleva,A.V.
+  TITLE     OXA-232 in Raoultella ornithinolytica
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 2591)
+  AUTHORS   Iovleva,A.V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (04-NOV-2018) Medicine/Infectious Diseases, University of
+            Pittsburgh, Scaife Hall, Suite 829 3550 Terrace Street, Pittsburgh,
+            PA 15213, USA
+COMMENT     REFSEQ INFORMATION: The reference sequence is identical to
+            RJTR01000007.1.
+            The annotation was added by the NCBI Prokaryotic Genome Annotation
+            Pipeline (PGAP). Information about PGAP can be found here:
+            https://www.ncbi.nlm.nih.gov/genome/annotation_prok/
+            
+            ##Genome-Assembly-Data-START##
+            Assembly Method        :: CLC NGS Cell v. 10.1.1
+            Genome Representation  :: Full
+            Expected Final Version :: Yes
+            Genome Coverage        :: 175x
+            Sequencing Technology  :: Illumina NextSeq
+            ##Genome-Assembly-Data-END##
+            
+            ##Genome-Annotation-Data-START##
+            Annotation Provider               :: NCBI RefSeq
+            Annotation Name                   :: GCF_003782085.1-RS_2026_08_04
+            Annotation Date                   :: 08/04/2026 19:03:02
+            Annotation Pipeline               :: NCBI Prokaryotic Genome
+                                                 Annotation Pipeline (PGAP)
+            Annotation Method                 :: Best-placed reference protein
+                                                 set; GeneMarkS-2+
+            Annotation Software revision      :: 6.11
+            Features Annotated                :: Gene; CDS; rRNA; tRNA; ncRNA
+            Genes (total)                     :: 5,157
+            CDSs (total)                      :: 5,086
+            Genes (coding)                    :: 4,994
+            CDSs (with protein)               :: 4,994
+            Genes (RNA)                       :: 71
+            rRNAs                             :: 2, 2, 2 (5S, 16S, 23S)
+            complete rRNAs                    :: 1, 1 (5S, 16S)
+            partial rRNAs                     :: 1, 1, 2 (5S, 16S, 23S)
+            tRNAs                             :: 58
+            ncRNAs                            :: 7
+            Pseudo Genes (total)              :: 92
+            CDSs (without protein)            :: 92
+            Pseudo Genes (ambiguous residues) :: 0 of 92
+            Pseudo Genes (frameshifted)       :: 22 of 92
+            Pseudo Genes (incomplete)         :: 72 of 92
+            Pseudo Genes (internal stop)      :: 15 of 92
+            Pseudo Genes (multiple problems)  :: 14 of 92
+            ##Genome-Annotation-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..2591
+                     /organism="Klebsiella ornithinolytica"
+                     /mol_type="genomic DNA"
+                     /submitter_seqid="4_YDC_775-9_S56_R1_001_contig00081"
+                     /strain="YDC775_9"
+                     /isolation_source="Abdominal abscess"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:54291"
+                     /geo_loc_name="USA: Pittsburgh"
+                     /lat_lon="40.44 N 79.96 W"
+                     /collection_date="2016-04"
+                     /collected_by="University of Pittsburgh"
+     gene            complement(119..457)
+                     /locus_tag="EDL90_RS00075"
+     CDS             complement(119..457)
+                     /locus_tag="EDL90_RS00075"
+                     /inference="COORDINATES: similar to AA
+                     sequence:RefSeq:WP_000502641.1"
+                     /GO_function="GO:0003677 - DNA binding [Evidence IEA]"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="MobC family plasmid mobilization relaxosome
+                     protein"
+                     /protein_id="WP_043907051.1"
+                     /translation="MAGQPLKRLRSIKIRVSDAELERLRELCPKAQLAEWMREQCLGV
+                     AQPQRRTPAPTVDPALLRQLAGMGNNLNQIARRVNSGEWGPLDRLRIIAELSAIGREL
+                     EELHHDHQIP"
+     gene            complement(439..831)
+                     /locus_tag="EDL90_RS00080"
+     CDS             complement(439..831)
+                     /locus_tag="EDL90_RS00080"
+                     /inference="COORDINATES: protein motif:HMM:NF037437.7"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="antitoxin VbhA family protein"
+                     /protein_id="WP_043907050.1"
+                     /translation="MSTTQIEKDSRRKAVNGVISSFQLEGEAITDEFKILLEDYINGK
+                     ISTDEVLAMVSDEPTTTEYDYEITPRTLGLGGGWNLRLLENGEEVGGGVFPLPEHCDF
+                     RDEKALQTLLDSLYEDALAEASAWLASR"
+     gene            complement(1239..2186)
+                     /locus_tag="EDL90_RS00085"
+     CDS             complement(1239..2186)
+                     /locus_tag="EDL90_RS00085"
+                     /inference="COORDINATES: similar to AA
+                     sequence:RefSeq:WP_009440807.1"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="replication initiation protein"
+                     /protein_id="WP_015060053.1"
+                     /translation="MRKCAQLELFRERLPRKPYYSDELTTGLRIADVARALGARYIQP
+                     NGPTHRHWIVFDVDHAAATLSWDDVGAPAPNITVTNKANGHAHLIYGLDTPIRTAPDG
+                     NAAPLRYAAAIEAALREKLGADMGYSGLICKNPLHEHWLVQVWEPRLYDLAWLSDYLD
+                     LSSYNGRKSLPEYGLGRNCTLFEKTRLWAYKAIRQGWPDYPEWLAACVDRASGYNAQF
+                     EQPLPANEVRHTAKSIAKWTHQHLSPAGFREEQARRGAKGGKVSKGGGRPSNSGKDKS
+                     DLLPEVLRLKAQGYTNRDIADDLQISPSTVSVYLKRDRP"
+ORIGIN      
+        1 tgggctcgga gatgtgtata agagacaggg gttgccccgg tcgagcgttg cgccttcccg
+       61 gttcccgtca cggcccaaca agtagccaac aggcccggag ccccggccta ccccacggtt
+      121 atggaatttg atgatcatgg tgcagttcct ccagctcgcg gcctatagcg gacagctccg
+      181 ctatgatgcg cagccgatcc aacggccccc actccccgga attaacgcgc cgggcgatct
+      241 ggttcaggtt gttgcccatt ccggccaact gccgcaagag cgccggatct acggtaggcg
+      301 ccggcgttcg gcgctggggt tgcgcaacac cgagacattg ctcccgcatc cactccgcca
+      361 gttgggcctt ggggcagagc tcccgcaggc gctcaagctc cgcatctgag acccggatct
+      421 tgatagagcg gaggcgcttt aacggctggc cagccatgca gaggcctccg ctaaggcgtc
+      481 ctcatagagg ctatcgagta gcgtctggag cgccttttca tcccgaaaat cgcagtgctc
+      541 cggcaagggg aaaacacccc cgccgacctc ttcgccgttc tccagcaaac gcagattcca
+      601 gcccccgcca agaccgagag tgcggggggt gatttcgtag tcgtattccg ttgttgtggg
+      661 ttcgtcactt accatagcta acacctcatc ggtggaaatt tttccattga tataatcttc
+      721 aagtagaatt ttgaattcat cggttatggc ctccccctct agttggaaac tagaaataac
+      781 gccattgact gccttccttc tcgaatcttt ctctatctgt gttgttgaca tagggcctcg
+      841 tccattctcc agagccaaga agccaccgcg cagaccgtcc cgaaggggcg gatcgagcgg
+      901 gggccacagg gggtttcggg ggggcgtagc acccctgaac aaggccacag aggcccgaga
+      961 ccgcgaagca ggtagagggg cctctgtgta gccttgctta gtacattatt caaccatggg
+     1021 cgggatactg caagccctag agcaagatca agggaaagag cggctccgtg gataactgct
+     1081 gccgcccaca ccccccgaaa aaacaggggg gcgatggacg gacaggcgca gttgtccacc
+     1141 tcgccaaaga tccgcgctaa aaggattttt taaggctaaa agacaagagc gcaggaaccc
+     1201 ccctaaaggg ggctattatc tgataaggct tgtttcgatc acggacgatc acgctttagg
+     1261 taaacgctca ccgtactggg ggagatttga agatcgtccg ctatatcgcg gttggtgtac
+     1321 ccctgagcct taagccgcag aacctccggc aatagatcgg acttgtcctt accgctattg
+     1381 ctcggccttc cccctccctt ggataccttg ccgcccttcg cacctctccg ggcctgctcc
+     1441 tctctgaacc ctgcggggct taggtgctgg tgcgtccatt tggcaatgga cttggccgtg
+     1501 tgccggactt cgtttgcggg gagcggctgc tcgaactggg cgttatatcc tgatgcccgg
+     1561 tcaacacaag cggccaacca ttcggggtaa tccggccagc cctgccggat cgctttatag
+     1621 gcccacaggc gcgttttctc gaacagggta cagtttcgcc caagcccgta ctcaggaagc
+     1681 gatttgcggc cattgtagga gctcagatcg aggtaatcgg atagccaggc taaatcgtag
+     1741 agccggggtt cccatacctg caccagccag tgctcatgca gggggttctt gcagatcagc
+     1801 ccggagtagc ccatatccgc ccctaatttc tcccggagcg cggcctcgat ggcggcggca
+     1861 taccgcagag gggctgcatt tccatccggg gcagtgcgga tcggcgtatc cagtccgtag
+     1921 atcagatgcg cgtggccgtt ggccttgttc gtgacggtaa tgttaggggc tggagcgcct
+     1981 acgtcatccc aagataacgt agcggctgca tggtctacgt caaaaacgat ccagtggcgg
+     2041 tgcgttggcc cgttcggctg gatgtaacgc gcaccaaggg cgcgggcaac atccgcaatc
+     2101 cgtaggcccg ttgtaagctc gtcggaatag tagggtttcc ggggcaggcg ctcccgaaac
+     2161 agctcaagct gtgcgcactt tctcaagcac caccgcgctt attggcggcg tggggttgtt
+     2221 tggcatgatc catgtgatag acttctcttg tgattcgtca cggcccccgt ttttcgcagc
+     2281 tccgccaaga tgcaagcgat aacgggggtt tgtcttttct ggacaatacg ttacagcagg
+     2341 cacatcctag agagcaacgt tagttgcatg taacctttca ccctggaaca tatttccacc
+     2401 tccttctgct tctgcgctgt tttgaattgc ttgatctacg cctctaacta ggtcgatcct
+     2461 tgggattgag tggcaccatt gtcagtgcaa gaatactgat ccatataagt ctctctagtc
+     2521 ggacaacacc aagtgttgaa gagatcaaaa atcaacctat atcctgtctc ttatacacat
+     2581 ctgacgctgc c
+//
+LOCUS       NZ_RJTR01000067          795 bp    DNA     linear   CON 04-AUG-2026
+DEFINITION  Klebsiella ornithinolytica strain YDC775_9
+            4_YDC_775-9_S56_R1_001_contig00091, whole genome shotgun sequence.
+ACCESSION   NZ_RJTR01000067 NZ_RJTR01000000
+VERSION     NZ_RJTR01000067.1
+DBLINK      BioProject: PRJNA224116
+            BioSample: SAMN10343278
+            Assembly: GCF_003782085.1
+KEYWORDS    WGS; RefSeq.
+SOURCE      Klebsiella ornithinolytica (Raoultella ornithinolytica)
+  ORGANISM  Klebsiella ornithinolytica
+            Bacteria; Pseudomonadati; Pseudomonadota; Gammaproteobacteria;
+            Enterobacterales; Enterobacteriaceae; Klebsiella.
+REFERENCE   1  (bases 1 to 795)
+  AUTHORS   Iovleva,A.V.
+  TITLE     OXA-232 in Raoultella ornithinolytica
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 795)
+  AUTHORS   Iovleva,A.V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (04-NOV-2018) Medicine/Infectious Diseases, University of
+            Pittsburgh, Scaife Hall, Suite 829 3550 Terrace Street, Pittsburgh,
+            PA 15213, USA
+COMMENT     REFSEQ INFORMATION: The reference sequence is identical to
+            RJTR01000067.1.
+            The annotation was added by the NCBI Prokaryotic Genome Annotation
+            Pipeline (PGAP). Information about PGAP can be found here:
+            https://www.ncbi.nlm.nih.gov/genome/annotation_prok/
+            
+            ##Genome-Assembly-Data-START##
+            Assembly Method        :: CLC NGS Cell v. 10.1.1
+            Genome Representation  :: Full
+            Expected Final Version :: Yes
+            Genome Coverage        :: 175x
+            Sequencing Technology  :: Illumina NextSeq
+            ##Genome-Assembly-Data-END##
+            
+            ##Genome-Annotation-Data-START##
+            Annotation Provider               :: NCBI RefSeq
+            Annotation Name                   :: GCF_003782085.1-RS_2026_08_04
+            Annotation Date                   :: 08/04/2026 19:03:02
+            Annotation Pipeline               :: NCBI Prokaryotic Genome
+                                                 Annotation Pipeline (PGAP)
+            Annotation Method                 :: Best-placed reference protein
+                                                 set; GeneMarkS-2+
+            Annotation Software revision      :: 6.11
+            Features Annotated                :: Gene; CDS; rRNA; tRNA; ncRNA
+            Genes (total)                     :: 5,157
+            CDSs (total)                      :: 5,086
+            Genes (coding)                    :: 4,994
+            CDSs (with protein)               :: 4,994
+            Genes (RNA)                       :: 71
+            rRNAs                             :: 2, 2, 2 (5S, 16S, 23S)
+            complete rRNAs                    :: 1, 1 (5S, 16S)
+            partial rRNAs                     :: 1, 1, 2 (5S, 16S, 23S)
+            tRNAs                             :: 58
+            ncRNAs                            :: 7
+            Pseudo Genes (total)              :: 92
+            CDSs (without protein)            :: 92
+            Pseudo Genes (ambiguous residues) :: 0 of 92
+            Pseudo Genes (frameshifted)       :: 22 of 92
+            Pseudo Genes (incomplete)         :: 72 of 92
+            Pseudo Genes (internal stop)      :: 15 of 92
+            Pseudo Genes (multiple problems)  :: 14 of 92
+            ##Genome-Annotation-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..795
+                     /organism="Klebsiella ornithinolytica"
+                     /mol_type="genomic DNA"
+                     /submitter_seqid="4_YDC_775-9_S56_R1_001_contig00091"
+                     /strain="YDC775_9"
+                     /isolation_source="Abdominal abscess"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:54291"
+                     /geo_loc_name="USA: Pittsburgh"
+                     /lat_lon="40.44 N 79.96 W"
+                     /collection_date="2016-04"
+                     /collected_by="University of Pittsburgh"
+     gene            96..>795
+                     /locus_tag="EDL90_RS27010"
+     CDS             96..>795
+                     /locus_tag="EDL90_RS27010"
+                     /inference="COORDINATES: similar to AA
+                     sequence:RefSeq:WP_000635827.1"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="relaxase/mobilization nuclease domain-containing
+                     protein"
+                     /protein_id="WP_164489671.1"
+                     /translation="MIIKFHNRGVGRGSGPVGYLLGRDGNREGATLDRGNPAVIEALI
+                     DSSPYAKKYTSGVLSFAEADLPRATKDKLMSDFEKALLPGLEGNQYAVLWVEHRDKGR
+                     LELNFVVPNIELQSGKRLQPYFHKADNPRLDAWRTVVNGELKLHDPDDPLNRQAVITP
+                     KDLPRGHKEAAQAITDGLLRMAGAGEIQSRDDVRKALQGAGFSVVRETKNSLSIADPD
+                     GGRNIRLKGCLLYTS"
+ORIGIN      
+        1 ataagagaca gattccgggg agtgggggcc gttggatcgg ctgcgcatca tagcggagct
+       61 gtccgctata ggccgcgagc tggaggaact gcaccatgat catcaaattc cataaccgtg
+      121 gggtaggccg gggctccggg cctgttggct acttgttggg ccgtgacggg aaccgggaag
+      181 gcgcaacgct cgaccggggc aaccctgcgg tgattgaagc cctgattgat tccagtccct
+      241 acgccaaaaa atacacctct ggcgttctgt cgtttgccga ggctgattta cccagggcga
+      301 ccaaggacaa gctgatgagc gactttgaaa aggcgctcct gcccggactg gagggcaacc
+      361 agtacgctgt tttgtgggta gagcaccgcg acaaggggcg gctggagctg aattttgtag
+      421 tcccgaacat cgaattgcag agcgggaagc ggctgcaacc ctacttccac aaggccgaca
+      481 atccgcgcct cgatgcgtgg cgaaccgtgg taaacgggga gctgaaattg cacgacccgg
+      541 acgatccgtt aaaccgtcag gccgttatca cgccaaagga tttgccgagg gggcacaagg
+      601 aggccgctca ggccattaca gacgggcttt tacgcatggc cggagcaggg gagatccaga
+      661 gccgcgatga tgtgcgcaaa gccttgcagg gtgcgggttt cagcgtggta cgcgaaacca
+      721 aaaacagcct gagcattgcc gacccggacg gggggcggaa catccgatta aagggctgtc
+      781 tcttatacac atctg
+//
+LOCUS       NZ_RJTR01000044         3258 bp    DNA     linear   CON 04-AUG-2026
+DEFINITION  Klebsiella ornithinolytica strain YDC775_9
+            4_YDC_775-9_S56_R1_001_contig00079, whole genome shotgun sequence.
+ACCESSION   NZ_RJTR01000044 NZ_RJTR01000000
+VERSION     NZ_RJTR01000044.1
+DBLINK      BioProject: PRJNA224116
+            BioSample: SAMN10343278
+            Assembly: GCF_003782085.1
+KEYWORDS    WGS; RefSeq.
+SOURCE      Klebsiella ornithinolytica (Raoultella ornithinolytica)
+  ORGANISM  Klebsiella ornithinolytica
+            Bacteria; Pseudomonadati; Pseudomonadota; Gammaproteobacteria;
+            Enterobacterales; Enterobacteriaceae; Klebsiella.
+REFERENCE   1  (bases 1 to 3258)
+  AUTHORS   Iovleva,A.V.
+  TITLE     OXA-232 in Raoultella ornithinolytica
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 3258)
+  AUTHORS   Iovleva,A.V.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (04-NOV-2018) Medicine/Infectious Diseases, University of
+            Pittsburgh, Scaife Hall, Suite 829 3550 Terrace Street, Pittsburgh,
+            PA 15213, USA
+COMMENT     REFSEQ INFORMATION: The reference sequence is identical to
+            RJTR01000044.1.
+            The annotation was added by the NCBI Prokaryotic Genome Annotation
+            Pipeline (PGAP). Information about PGAP can be found here:
+            https://www.ncbi.nlm.nih.gov/genome/annotation_prok/
+            
+            ##Genome-Assembly-Data-START##
+            Assembly Method        :: CLC NGS Cell v. 10.1.1
+            Genome Representation  :: Full
+            Expected Final Version :: Yes
+            Genome Coverage        :: 175x
+            Sequencing Technology  :: Illumina NextSeq
+            ##Genome-Assembly-Data-END##
+            
+            ##Genome-Annotation-Data-START##
+            Annotation Provider               :: NCBI RefSeq
+            Annotation Name                   :: GCF_003782085.1-RS_2026_08_04
+            Annotation Date                   :: 08/04/2026 19:03:02
+            Annotation Pipeline               :: NCBI Prokaryotic Genome
+                                                 Annotation Pipeline (PGAP)
+            Annotation Method                 :: Best-placed reference protein
+                                                 set; GeneMarkS-2+
+            Annotation Software revision      :: 6.11
+            Features Annotated                :: Gene; CDS; rRNA; tRNA; ncRNA
+            Genes (total)                     :: 5,157
+            CDSs (total)                      :: 5,086
+            Genes (coding)                    :: 4,994
+            CDSs (with protein)               :: 4,994
+            Genes (RNA)                       :: 71
+            rRNAs                             :: 2, 2, 2 (5S, 16S, 23S)
+            complete rRNAs                    :: 1, 1 (5S, 16S)
+            partial rRNAs                     :: 1, 1, 2 (5S, 16S, 23S)
+            tRNAs                             :: 58
+            ncRNAs                            :: 7
+            Pseudo Genes (total)              :: 92
+            CDSs (without protein)            :: 92
+            Pseudo Genes (ambiguous residues) :: 0 of 92
+            Pseudo Genes (frameshifted)       :: 22 of 92
+            Pseudo Genes (incomplete)         :: 72 of 92
+            Pseudo Genes (internal stop)      :: 15 of 92
+            Pseudo Genes (multiple problems)  :: 14 of 92
+            ##Genome-Annotation-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..3258
+                     /organism="Klebsiella ornithinolytica"
+                     /mol_type="genomic DNA"
+                     /submitter_seqid="4_YDC_775-9_S56_R1_001_contig00079"
+                     /strain="YDC775_9"
+                     /isolation_source="Abdominal abscess"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:54291"
+                     /geo_loc_name="USA: Pittsburgh"
+                     /lat_lon="40.44 N 79.96 W"
+                     /collection_date="2016-04"
+                     /collected_by="University of Pittsburgh"
+     gene            150..587
+                     /locus_tag="EDL90_RS10895"
+     CDS             150..587
+                     /locus_tag="EDL90_RS10895"
+                     /inference="COORDINATES: ab initio
+                     prediction:GeneMarkS-2+"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: GeneMarkS-2+."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="MbeB family mobilization protein"
+                     /protein_id="WP_015060050.1"
+                     /translation="MSKILDMAKDFEQSSKQQANAIEKRLTEEFTRHEKAISGALKSS
+                     EEKMSAAIAEHSQKMGWLLLKTWIWMLVSIVLFLSATSGILWYQGELIAERQATLQAL
+                     AEKGGKLKLTQCGKKLEHLCVQISDPNPTVWGKDTYWIVPKGY"
+     gene            588..860
+                     /locus_tag="EDL90_RS10900"
+     CDS             588..860
+                     /locus_tag="EDL90_RS10900"
+                     /inference="COORDINATES: protein motif:HMM:NF016769.7"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="MbeD family mobilization/exclusion protein"
+                     /protein_id="WP_119719502.1"
+                     /translation="MTGLERELLCAFEALQSAYEQQHKAWQESYANLASMNESTKQEA
+                     EISRAAAERLTRQVNGLTQQVDGLSKQLEGLTGLVSKLQKKGNTGS"
+     gene            complement(1198..1479)
+                     /locus_tag="EDL90_RS10905"
+     CDS             complement(1198..1479)
+                     /locus_tag="EDL90_RS10905"
+                     /inference="COORDINATES: ab initio
+                     prediction:GeneMarkS-2+"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: GeneMarkS-2+."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="hypothetical protein"
+                     /protein_id="WP_043907053.1"
+                     /translation="MGFFNLSKALEEVSDAFGAKETAIASAKLLGKGVVNLAHFAATT
+                     GLDSVVKQTSNKVLNSESSTEEQREQAKKSAAWADARIAARNKAENTED"
+     gene            1823..2620
+                     /locus_tag="EDL90_RS10910"
+     CDS             1823..2620
+                     /locus_tag="EDL90_RS10910"
+                     /EC_number="3.5.2.6"
+                     /inference="COORDINATES: similar to AA
+                     sequence:RefSeq:WP_011071128.1"
+                     /note="Derived by automated computational analysis using
+                     gene prediction method: Protein Homology."
+                     /codon_start=1
+                     /transl_table=11
+                     /product="OXA-48 family carbapenem-hydrolyzing class D
+                     beta-lactamase OXA-232"
+                     /protein_id="WP_043907054.1"
+                     /translation="MRVLALSAVFLVASIIGMPAVAKEWQENKSWNAHFTEHKSQGVV
+                     VLWNENKQQGFTNNLKRANQAFLPASTFKIPNSLIALDLGVVKDEHQVFKWDGQTRDI
+                     AAWNRDHDLITAMKYSVVPVYQEFARQIGEARMSKMLHAFDYGNEDISGNVDSFWLDG
+                     GIRISATQQIAFLRKLYHNKLHVSERSQRIVKQAMLTEANGDYIIRAKTGYSTSIEPK
+                     IGWWVGWVELDDNVWFFAMNMDMPTSDGLGLRQAITKEVLKQEKIIP"
+     gene            complement(3027..>3179)
+                     /locus_tag="EDL90_RS10915"
+                     /pseudo
+     CDS             complement(3027..>3179)
+                     /locus_tag="EDL90_RS10915"
+                     /inference="COORDINATES: similar to AA
+                     sequence:RefSeq:WP_015059985.1"
+                     /note="incomplete; partial in the middle of a contig;
+                     missing N-terminus; Derived by automated computational
+                     analysis using gene prediction method: Protein Homology."
+                     /pseudo
+                     /codon_start=1
+                     /transl_table=11
+                     /product="EreA family erythromycin esterase"
+ORIGIN      
+        1 agatgtgtat aagagacaga tccagagccg cgatgatgtg cgcaaagcct tgcagggtgc
+       61 gggtttcagc gtggtacgcg aaaccaaaaa cagcctgagc attgccgacc cggacggggg
+      121 gcggaacatc cgattaaagg gggtgctgta tgagcaagat tttagacatg gcgaaggact
+      181 tcgagcagag ctcgaagcag caggccaacg ctatcgagaa gcgtctgacc gaagaattca
+      241 cgaggcacga gaaagctatc tccggggcgt tgaaatcaag cgaggagaaa atgagcgccg
+      301 ctattgccga gcacagccag aaaatgggct ggctgttgct caaaacgtgg atctggatgc
+      361 tggtcagcat cgtcctgttc ttgagcgcaa cgagcgggat cctctggtat cagggggaat
+      421 tgatagcgga gcggcaagcc actctccaag ccttggcaga gaagggcggc aagctaaagc
+      481 tgacccagtg cgggaagaaa ttggagcacc tttgcgtgca gatctccgac cccaatccaa
+      541 ccgtttgggg gaaggatacc tattggatcg tgccgaaggg gtactaaatg acgggattgg
+      601 agcgggaatt gctctgcgcg ttcgaggctt tgcagagcgc atacgagcag cagcacaagg
+      661 catggcagga aagctacgcg aacttggcga gcatgaacga gagcaccaaa caagaggccg
+      721 agatcagcag ggcagcagca gagcgattga cgaggcaggt gaacggctta acgcagcaag
+      781 tggacggctt gagcaagcag ctggagggct tgaccgggct agtcagcaag ttgcaaaaga
+      841 aagggaacac aggctcctga aggcactgga tcgaggctgg gagcgtggag acagatcgcg
+      901 aggctttgag cgttgacgga acaaaacggc cgtcagttat aaaaaaagga aagtgctatc
+      961 actttccttt tatcggcggg aattatcgtt gagttcttct atgccatttt tcatagtagt
+     1021 aactgtaatc ttcatctcta ccaccagatt caatccagtc atcatactca gggctatttt
+     1081 tgaaatctga atcagacatg ctaactcctt gttattagtt ggcttctatg gaagctagcg
+     1141 caccgtgaag ttatgatcaa cgatgtagtc cacatcattg tcgaaatgtg cgttcagcta
+     1201 gtcttcggtg ttttctgctt tatttctagc ggcgattctc gcgtctgccc atgcggcaga
+     1261 ctttttagcc tgttctcgtt gttcttcggt tgaagactcg ctgttgagaa ctttgttgct
+     1321 cgtttgtttg accaccgaat ccaaacctgt tgttgctgca aaatgagcta ggttaacaac
+     1381 tcccttacct aacaacttgg cactagcgat tgcggtttct ttagccccaa aagcatcaga
+     1441 cacctcctca agcgctttag ataggttaaa aaatcccata ctccccctaa gaatatcatc
+     1501 aataaaattg agtgttgctc tgtggataac ttgcagagtt tattaagtat cattgcagca
+     1561 aagatgaaat caatgattta tcaaaaatga ttgaaaggtg gttgtaaata atgttacaat
+     1621 gtgtgagaag cagtctaaat tcttcgtgaa atagtgattt ttgaagctaa taaaaaacac
+     1681 acgtggaatt taggtaatag ttaaagcttg tgcctgattg ttgccacaat tggtcagcag
+     1741 tttgctaggg aatgagaggg cagagaatga taagcttagc acttaatttg tatggatata
+     1801 ttgcattaag caaggggacg ttatgcgtgt attagcctta tcggctgtgt ttttggtggc
+     1861 atcgattatc ggaatgccag cggtagcaaa ggaatggcaa gaaaacaaaa gttggaatgc
+     1921 tcactttact gaacataaat cacagggcgt agttgtgctc tggaatgaga ataagcagca
+     1981 aggatttacc aataatctta aacgggcgaa ccaagcattt ttacccgcat ctacctttaa
+     2041 aattcccaat agcttgatcg ccctcgattt gggcgtggtt aaggatgaac accaagtctt
+     2101 taagtgggat ggacagacgc gtgatatcgc cgcttggaat cgtgaccatg acttaattac
+     2161 cgcgatgaag tactcagttg tgcctgttta tcaagaattt gcccgccaaa ttggtgaggc
+     2221 acgtatgagt aaaatgctgc acgccttcga ttatggcaat gaggatatct cgggcaatgt
+     2281 agacagtttt tggctcgatg gtggtattcg catttcggct acccagcaaa tcgctttttt
+     2341 acgcaagctg tatcacaaca agctgcacgt ttctgagcgt agtcagcgca tcgtgaaaca
+     2401 agccatgctg accgaagcca atggcgacta tattattcgg gctaaaacgg gatactcgac
+     2461 tagtatcgaa cctaagattg gctggtgggt tggttgggtt gaacttgatg ataatgtgtg
+     2521 gttttttgcg atgaatatgg atatgcccac atcggatggt ttagggctgc gccaagccat
+     2581 cacaaaagaa gtgctcaaac aggagaaaat tattccctag aagtggttag cgcgtatttg
+     2641 tgtgaaatag ccgtcatata agctgtaaag atatatggac aaaatgctga tgctcgatgc
+     2701 gcttgtagtt aatggctcat acttaatcgg tcaggcctaa tcgacttaag ctccgcgcgt
+     2761 taactttcag cctgagcatt agcatcacat tcctaaacgt aaaaagccta gccaatttgc
+     2821 taggcttttt tgttatctca atggccatgg tcactcaaca tgggggtgtg aataaaggag
+     2881 tggcgatgtc agtaaaggtg aatgccgctg cgataaagtg cctagcccat caaggattgt
+     2941 aggctttctt ggctgctaaa gcgtttgacg aaaaagtcca agaaggcgct gatattggtt
+     3001 ctccatcatt ttcatctacc ggtttactat aggtcaacca ggccgtcctt gccggcgctt
+     3061 gggacgcaga cgatggcatc aaatgcctcg ctcaaattcg tttctacaga ggcgctttgg
+     3121 gaccgcattc gctttgcttt catgggggca tctgtcaatg tcagacatga atcctccgat
+     3181 ataggttgat ttttgatctc ttcaacactt ggtgttgtcc gactagagag acttatatct
+     3241 gtctcttata cacatctg
+//

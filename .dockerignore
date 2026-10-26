@@ -9,11 +9,9 @@
 
 # Rebuilt inside the image
 frontend/dist
-frontend/public/sample_data.json
 
 # Backend local env / uploads / conda
 backend/scratch
 backend/.pixi
-backend/example_src
 .venv
 venv

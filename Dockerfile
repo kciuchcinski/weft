@@ -39,7 +39,6 @@ COPY backend/pixi.toml backend/pixi.lock ./
 RUN pixi install --locked && pixi clean cache --yes
 
 COPY backend/app ./app
-COPY test_data /app/test_data
 # Built client — config.py's STATIC_DIR default resolves to /app/frontend/dist.
 COPY --from=frontend /frontend/dist /app/frontend/dist
 

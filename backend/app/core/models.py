@@ -75,7 +75,6 @@ class FigureData(BaseModel):
 
 class JobRequest(BaseModel):
     upload_token: Optional[str] = None
-    example: Optional[str] = None  # run on a bundled example set (e.g. "test_data")
     engine: str = "parasail"  # parasail | diamond (diamond needs the binary on PATH)
     mode: str = "global"  # global | local — only consumed by the parasail engine
     scope: str = "all-vs-all"  # all-vs-all | adjacent
@@ -88,7 +87,6 @@ class JobRequest(BaseModel):
 
 class ParseRequest(BaseModel):
     upload_token: Optional[str] = None
-    example: Optional[str] = None
     as_separate_clusters: bool = False
     separate_records: list[str] = []
 

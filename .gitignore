@@ -7,10 +7,6 @@ venv/
 .pytest_cache/
 .pixi/
 
-# Generated example artifact (frontend/public/example_session.json is kept — it
-# is needed at build/runtime for the bundled example).
-sample_data.json
-
 # Node / frontend
 node_modules/
 dist/
