@@ -18,6 +18,8 @@ dist/
 
 # Scratch / uploads
 scratch/
+# Benchmark inputs (re-fetched from NCBI by bench/runtime.py) and run state
+bench/data/
 *.log
 
 # OS / editor
