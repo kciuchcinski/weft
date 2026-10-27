@@ -1,5 +1,5 @@
 import type { FigureData, Gene, Link, MetricKey } from "../types";
-import { UNGROUPED, type LegendItem } from "./palette";
+import { UNGROUPED, type CustomGroup, type LegendItem } from "./palette";
 import { measureLabel } from "./labels";
 
 // Shared offscreen canvas for measuring rendered text width. Layout is renderer-
@@ -23,13 +23,18 @@ export type GeneShapeKind = "triangle" | "arrow" | "rounded" | "box";
 export type ClusterLabelPlacement = "above" | "beside";
 export type ClusterLabelSide = "left" | "right";
 
-/** CDS-label visibility: never; always (per gene in scope, truncated to fit); or
- * auto (only once a gene is wide enough on screen — labels appear as you zoom in). */
+/** CDS-label visibility: never; always (every gene in scope, full text, even where
+ * labels overlap); or auto (only once the full name fits its gene on screen — labels
+ * appear as you zoom in — and only where it doesn't collide with another). */
 export type GeneLabelMode = "auto" | "always" | "never";
 /** Which genes may be labelled: every gene, or only custom-group members. */
 export type GeneLabelScope = "all" | "custom";
 /** Where a CDS label sits relative to its arrow: above it, or centred on it. */
 export type GeneLabelPosition = "above" | "on";
+
+/** `geneLabelField` value that labels each gene with its custom group's name. Not
+ * a qualifier key: "@" never appears in GenBank qualifier names. */
+export const CUSTOM_GROUP_LABEL_FIELD = "@custom-group";
 
 /**
  * The text to label a gene with, for a chosen qualifier field. When `field` is set
@@ -550,6 +555,10 @@ export function buildScene(
   clusterRotation: Record<string, number> = {},
   /** Clusters left off the figure, keyed by uid. */
   hiddenClusters: Record<string, boolean> = {},
+  /** Per-cluster extra space above its row (world px); a row takes its largest. */
+  clusterSpaceAbove: Record<string, number> = {},
+  /** Hand-built groups, for labelling genes by group name (CUSTOM_GROUP_LABEL_FIELD). */
+  customGroups: CustomGroup[] = [],
 ): Scene {
   const genes: GeneShape[] = [];
   const loci: LocusLine[] = [];
@@ -557,6 +566,11 @@ export function buildScene(
   const labels: ClusterLabel[] = [];
   const shapeByUid = new Map<string, GeneShape>();
   const indexByUid = new Map(data.clusters.map((c, i) => [c.uid, i]));
+  // A gene belongs to at most one custom group; genes in none stay unlabelled.
+  const groupLabelByGene = new Map<string, string>();
+  if (cfg.geneLabelField === CUSTOM_GROUP_LABEL_FIELD) {
+    for (const grp of customGroups) for (const u of grp.genes) groupLabelByGene.set(u, grp.label);
+  }
 
   const clusterWidth = (ci: number): number => {
     const c = data.clusters[ci];
@@ -639,7 +653,9 @@ export function buildScene(
         y: originY,
         strand: reversed ? -rg.g.strand : rg.g.strand,
         colour: geneColour.get(rg.g.uid) ?? UNGROUPED,
-        label: resolveGeneLabel(rg.g, cfg.geneLabelField),
+        label: cfg.geneLabelField === CUSTOM_GROUP_LABEL_FIELD
+          ? groupLabelByGene.get(rg.g.uid) ?? ""
+          : resolveGeneLabel(rg.g, cfg.geneLabelField),
       };
       genes.push(shape);
       shapeByUid.set(rg.g.uid, shape);
@@ -652,8 +668,11 @@ export function buildScene(
   const OVERLAP_GAP = 10;
 
   const eff = effectiveLanes(data, lanes, hiddenClusters);
+  // Rows sit one fixed stride apart, plus any extra space requested above each.
+  let extraAbove = 0;
   eff.forEach((lane, laneIdx) => {
-    const originY = laneIdx * (cfg.trackHeight + cfg.rowGap) + cfg.labelGap + cfg.trackHeight;
+    extraAbove += Math.max(0, ...lane.map((u) => clusterSpaceAbove[u] ?? 0));
+    const originY = laneIdx * (cfg.trackHeight + cfg.rowGap) + extraAbove + cfg.labelGap + cfg.trackHeight;
 
     // Base X is sequential left-to-right packing; the per-cluster offset lets the
     // user slide a cluster horizontally within its row on top of that.

@@ -18,6 +18,9 @@ export interface SessionView {
   /** Per-cluster origin rotation for circular clusters, in whole-CDS steps. Positive
    * moves the origin forward, so the first CDS wraps to the end. */
   clusterRotation: Record<string, number>;
+  /** Per-cluster extra space (world px) above its row, e.g. room for text added
+   * after export. A row takes the largest value among its visible clusters. */
+  clusterSpaceAbove: Record<string, number>;
   /** Clusters left off the figure, keyed by uid. They keep their place in `lanes`
    * so showing one again returns it to its row. */
   hiddenClusters: Record<string, boolean>;
@@ -63,6 +66,7 @@ function defaultSessionView(): SessionView {
     clusterOffsets: {},
     circularClusters: {},
     clusterRotation: {},
+    clusterSpaceAbove: {},
     hiddenClusters: {},
     activeMetric: "identity",
     colourBy: "group",
@@ -147,6 +151,7 @@ function snapshotOf(s: AppState): Session {
       clusterOffsets: s.clusterOffsets,
       circularClusters: s.circularClusters,
       clusterRotation: s.clusterRotation,
+      clusterSpaceAbove: s.clusterSpaceAbove,
       hiddenClusters: s.hiddenClusters,
       activeMetric: s.activeMetric,
       colourBy: s.colourBy,
@@ -174,6 +179,7 @@ function sessionToState(session: Session) {
     clusterOffsets: session.view.clusterOffsets ?? {},
     circularClusters: session.view.circularClusters ?? {},
     clusterRotation: session.view.clusterRotation ?? {},
+    clusterSpaceAbove: session.view.clusterSpaceAbove ?? {},
     hiddenClusters: session.view.hiddenClusters ?? {},
     activeMetric: clampMetric(session.view.activeMetric, session.data),
     colourBy: session.view.colourBy,
@@ -238,6 +244,10 @@ interface AppState extends SessionView {
   rotateCluster: (uid: string, delta: number) => void;
   /** Restore every circular cluster to its original origin. */
   resetAllClusterRotations: () => void;
+  /** Set the extra space above a cluster's row (world px); 0 clears it. */
+  setClusterSpaceAbove: (uid: string, px: number) => void;
+  /** Clear every cluster's extra space above. */
+  resetAllClusterSpaceAbove: () => void;
   /** Hide/show a cluster on the figure. The last visible cluster can't be hidden. */
   toggleClusterHidden: (uid: string) => void;
   /** Show every hidden cluster again. */
@@ -338,6 +348,7 @@ export const useStore = create<AppState>((set, get) => {
   clusterOffsets: initialView.clusterOffsets ?? {},
   circularClusters: initialView.circularClusters ?? {},
   clusterRotation: initialView.clusterRotation ?? {},
+  clusterSpaceAbove: initialView.clusterSpaceAbove ?? {},
   hiddenClusters: initialView.hiddenClusters ?? {},
   activeMetric: clampMetric(initialView.activeMetric, persisted?.data ?? null),
   colourBy: initialView.colourBy,
@@ -372,6 +383,7 @@ export const useStore = create<AppState>((set, get) => {
       clusterOffsets: {},
       circularClusters: {},
       clusterRotation: {},
+      clusterSpaceAbove: {},
       hiddenClusters: {},
       customGroups: [],
       activeCustomGroup: null,
@@ -466,6 +478,16 @@ export const useStore = create<AppState>((set, get) => {
 
   resetAllClusterRotations: hist("rotate:all", () => set({ clusterRotation: {} })),
 
+  setClusterSpaceAbove: hist((uid) => `space:${uid}`, (uid, px) =>
+    set((s) => {
+      const clusterSpaceAbove = { ...s.clusterSpaceAbove };
+      if (px > 0) clusterSpaceAbove[uid] = px;
+      else delete clusterSpaceAbove[uid];
+      return { clusterSpaceAbove };
+    })),
+
+  resetAllClusterSpaceAbove: hist("space:all", () => set({ clusterSpaceAbove: {} })),
+
   toggleClusterHidden: hist((uid) => `hide:${uid}`, (uid) =>
     set((s) => {
       if (!s.data) return {};
@@ -507,7 +529,7 @@ export const useStore = create<AppState>((set, get) => {
       if (!s.data) return {};
       const cfg = makeConfig(s.style);
       const colours = computeColours(s.data, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups);
-      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters);
+      const scene = buildScene(s.data, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, [], s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters, s.clusterSpaceAbove, s.customGroups);
       const clusterOffsets = computeCenteringOffsets(scene, s.data, geneUid, s.clusterOffsets, s.activeMetric);
       return clusterOffsets === s.clusterOffsets ? {} : { clusterOffsets };
     })),
@@ -617,7 +639,7 @@ export const useStore = create<AppState>((set, get) => {
 
   // Session-level resets are history barriers: they clear the undo/redo stacks.
   newSession: () =>
-    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", jobError: null, selectedGene: null, staged: [], separateRecords: {}, past: [], future: [] }),
+    set({ data: null, lanes: [], clusterOffsets: {}, circularClusters: {}, clusterRotation: {}, clusterSpaceAbove: {}, hiddenClusters: {}, overrides: {}, customGroups: [], activeCustomGroup: null, rowNames: {}, jobStatus: "idle", jobError: null, selectedGene: null, staged: [], separateRecords: {}, past: [], future: [] }),
 
   loadSession: (session) => set({ ...sessionToState(session), selectedGene: null, past: [], future: [] }),
 

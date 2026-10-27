@@ -1,4 +1,4 @@
-import type { ClusterLabel, GeneLabelMode, GeneLabelPosition, GeneShape, LayoutConfig } from "./layout";
+import type { ClusterLabel, GeneLabelMode, GeneLabelPosition, GeneShape, GeneShapeKind, LayoutConfig } from "./layout";
 
 // Type-only import above, so there is no runtime cycle with layout.ts (which
 // imports measureLabel from here).
@@ -29,25 +29,44 @@ export function measureGeneLabel(text: string, fontSize: number): number {
   return measureFont(text, GENE_LABEL_FONT(fontSize));
 }
 
-/** Longest ellipsised prefix of `text` fitting within `maxWidth`; "" if not even
- * one character plus the ellipsis fits (caller then drops the label). */
-function truncateToWidth(text: string, fontSize: number, maxWidth: number): string {
-  if (measureGeneLabel(text, fontSize) <= maxWidth) return text;
-  let best = "";
-  for (let i = 1; i < text.length; i++) {
-    const cand = text.slice(0, i) + "…";
-    if (measureGeneLabel(cand, fontSize) <= maxWidth) best = cand;
-    else break;
-  }
-  return best;
-}
-
 /** A placed gene label in screen space. `x`,`y` is the label's *centre* (both axes);
  * renderers rotate around it, so it is anchor-agnostic (text-align/baseline centre). */
 export interface GeneLabelPlacement {
   text: string;
   x: number;
   y: number;
+  /** Half-width/height of the rotated label's axis-aligned bounding box. */
+  hx: number;
+  hy: number;
+  /** Text colour. */
+  ink: string;
+  /** Draw a background-coloured halo behind the text (labels off the arrow). */
+  halo: boolean;
+}
+
+const DARK_INK = "#202124";
+/** Screen px kept between a label inside a glyph and the glyph's outline. */
+const BODY_PAD = 3;
+const LIGHT_INK = "#ffffff";
+
+/** WCAG relative luminance of a #rgb/#rrggbb colour; null if unparseable. */
+function luminance(hex: string): number | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const h = m[1].length === 3 ? m[1].replace(/./g, "$&$&") : m[1];
+  const lin = (i: number) => {
+    const c = parseInt(h.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4);
+}
+
+/** Dark or white text, whichever contrasts more with `fill`. */
+function inkOn(fill: string): string {
+  const l = luminance(fill);
+  if (l == null) return DARK_INK;
+  const dark = luminance(DARK_INK)!;
+  return (1.05 / (l + 0.05)) > ((l + 0.05) / (dark + 0.05)) ? LIGHT_INK : DARK_INK;
 }
 
 export interface GeneLabelOpts {
@@ -59,33 +78,34 @@ export interface GeneLabelOpts {
   position: GeneLabelPosition;
   /** Label rotation in degrees (0 = horizontal). Sign is applied by renderers. */
   rotationDeg: number;
+  /** Glyph shape and world tip length, so labels on the arrow keep off its head. */
+  geneShape: GeneShapeKind;
+  tipLength: number;
   /** When set, only these gene uids may be labelled (custom-group scope). */
   eligible: Set<string> | null;
 }
 
 /**
- * Adaptive CDS-label placement. Labels are centred on each gene and sit either just
- * above its arrow or on it (`position`), optionally rotated (`rotationDeg`). Text is
- * truncated to fit — to the gene's on-screen width when horizontal, or to a generous
- * cap when rotated (rotation exists precisely to fit long names on narrow genes). In
- * "auto" mode only genes wide enough on screen are labelled (labels reveal as you
- * zoom in; the width gate relaxes when rotated). A greedy pass ordered by on-screen
- * width drops any label whose rotated bounding box overlaps one already placed. Runs
- * in screen space with the live view, so it must be recomputed when zoom/pan change.
+ * Adaptive CDS-label placement. Labels sit either just above each gene's arrow, bottom
+ * edges aligned (a tilted label starts at the gene's centre), or centred on it
+ * (`position`), optionally rotated (`rotationDeg`). Text is never truncated: the
+ * font size is the user's lever for fitting names. "always" draws every label even
+ * where they overlap, leaving the trade-off to the user. In "auto" mode a horizontal
+ * label appears only once its full name fits its gene (labels reveal as you zoom in),
+ * a rotated one once the gene is a few px wide, and a greedy pass ordered by
+ * on-screen width drops any label whose rotated bounding box overlaps one already
+ * placed. Runs in screen space with the live view, so it must be recomputed when
+ * zoom/pan change.
  */
 export function placeGeneLabels(genes: GeneShape[], view: LabelView, opts: GeneLabelOpts): GeneLabelPlacement[] {
   if (opts.mode === "never") return [];
-  const MIN_GENE_PX = 26; // auto: minimum on-screen gene width worth labelling (horizontal)
   const GAP = 4; // screen px between the label and the arrow's top edge ("above")
   const rotated = opts.rotationDeg !== 0;
   const rad = (opts.rotationDeg * Math.PI) / 180;
   const cosA = Math.abs(Math.cos(rad));
   const sinA = Math.abs(Math.sin(rad));
   const fh = opts.fontSize;
-  // When rotated the along-text direction is no longer bounded by the gene width, so
-  // allow a longer label; horizontal labels stay bounded by their gene.
-  const ROT_MAX_PX = 260;
-  const gate = rotated ? 12 : MIN_GENE_PX; // auto min on-screen gene width
+  const ROT_MIN_GENE_PX = 12; // auto: minimum on-screen gene width for a rotated label
   const placements: GeneLabelPlacement[] = [];
   const boxes: Array<[number, number, number, number]> = []; // [left, right, top, bottom]
 
@@ -95,31 +115,63 @@ export function placeGeneLabels(genes: GeneShape[], view: LabelView, opts: GeneL
       const w = Math.abs(g.x1 - g.x0) * view.zoom;
       const cx = ((g.x0 + g.x1) / 2) * view.zoom + view.panX;
       const arrowTop = (g.y - opts.trackHeight / 2) * view.zoom + view.panY;
-      return { g, w, cx, arrowTop };
+      // The glyph's body: the gene minus its head on the side it points to (same
+      // tip rule as genePoints), inset so text clears the outline.
+      const pointed = (opts.geneShape === "triangle" || opts.geneShape === "arrow") && g.strand !== 0;
+      const tip = pointed ? Math.min(opts.tipLength, Math.abs(g.x1 - g.x0)) * view.zoom : 0;
+      const bodyW = w - tip - 2 * BODY_PAD;
+      const bodyCx = cx + (pointed ? (g.strand > 0 ? -tip / 2 : tip / 2) : 0);
+      return { g, w, cx, arrowTop, bodyW, bodyCx };
     })
-    .filter((c) => opts.mode === "always" || c.w >= gate)
+    .filter((c) => opts.mode === "always" || !rotated || c.w >= ROT_MIN_GENE_PX)
     .sort((a, b) => b.w - a.w); // wider genes win collisions
 
   const trackPx = opts.trackHeight * view.zoom;
+  const above = opts.position === "above";
   for (const c of cands) {
-    const maxW = rotated ? ROT_MAX_PX : Math.max(c.w, MIN_GENE_PX);
-    const text = truncateToWidth(c.g.label, opts.fontSize, maxW);
-    if (!text) continue;
+    const text = c.g.label;
     const tw = measureGeneLabel(text, opts.fontSize);
-    const x = c.cx;
-    // Vertical centre of the label: on the arrow, or above it (clear of the arrow
-    // plus the label's own half-height so it never overlaps the glyph).
-    const arrowCentre = c.arrowTop + trackPx / 2;
-    const y = opts.position === "on" ? arrowCentre : c.arrowTop - GAP - fh / 2;
-    // Axis-aligned bounding box of the rotated label rectangle (tw × fh) about (x,y).
+    // Auto mode: a horizontal label waits until its full name fits its gene.
+    if (opts.mode === "auto" && !rotated && tw > (above ? c.w : c.bodyW)) continue;
+    // A horizontal label on the arrow that fits the glyph's body sits inside it: it
+    // takes the ink that reads best on the gene's fill and needs no halo. Anything
+    // else crosses the background, ribbons or other rows, so it gets dark ink on a
+    // background-coloured halo.
+    const inside = !above && !rotated && fh <= trackPx && tw <= c.bodyW;
+    // Half-extents of the axis-aligned bounding box of the rotated label (tw × fh).
     const hx = cosA * tw / 2 + sinA * fh / 2;
     const hy = sinA * tw / 2 + cosA * fh / 2;
+    // On the arrow: centred on it. Above: the box's bottom edge sits GAP clear of the
+    // arrow, so every label ends on one line whatever its length; a tilted label
+    // starts at the gene's centre and runs up-right from there.
+    const x = above && rotated ? c.cx + cosA * tw / 2 : inside ? c.bodyCx : c.cx;
+    const y = above ? c.arrowTop - GAP - hy : c.arrowTop + trackPx / 2;
     const left = x - hx, right = x + hx, top = y - hy, bottom = y + hy;
-    if (boxes.some((p) => left < p[1] && right > p[0] && top < p[3] && bottom > p[2])) continue;
+    if (opts.mode === "auto" && boxes.some((p) => left < p[1] && right > p[0] && top < p[3] && bottom > p[2])) continue;
     boxes.push([left, right, top, bottom]);
-    placements.push({ text, x, y });
+    placements.push({ text, x, y, hx, hy, ink: inside ? inkOn(c.g.colour) : DARK_INK, halo: !inside });
   }
   return placements;
+}
+
+/**
+ * `bounds` grown to cover gene labels placed at `zoom` with no pan. Scene bounds
+ * leave labels out (they are placed per view), so exports grow theirs with this or
+ * clip tall rotated labels on the top row.
+ */
+export function boundsWithGeneLabels(
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+  placements: GeneLabelPlacement[],
+  zoom: number,
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  let { minX, minY, maxX, maxY } = bounds;
+  for (const p of placements) {
+    minX = Math.min(minX, (p.x - p.hx) / zoom);
+    maxX = Math.max(maxX, (p.x + p.hx) / zoom);
+    minY = Math.min(minY, (p.y - p.hy) / zoom);
+    maxY = Math.max(maxY, (p.y + p.hy) / zoom);
+  }
+  return { minX, minY, maxX, maxY };
 }
 
 export interface LabelView {

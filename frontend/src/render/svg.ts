@@ -1,6 +1,6 @@
 import type { LayoutConfig, Scene } from "./layout";
 import { genePoints, ribbonPath } from "./geometry";
-import { placeGeneLabels } from "./labels";
+import { boundsWithGeneLabels, placeGeneLabels } from "./labels";
 
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
@@ -9,7 +9,23 @@ function esc(s: string): string {
 /** Serialise a scene to a standalone, correctly-sized SVG document. */
 export function sceneToSVG(scene: Scene, cfg: LayoutConfig, geneLabelEligible: Set<string> | null = null): string {
   const m = 24;
-  const { minX, minY, maxX, maxY } = scene.bounds;
+  // CDS labels, placed in world space (export is zoom-independent, so the layout is
+  // computed at 1:1 with no pan). Placed first so the viewBox can grow to fit them.
+  const geneLabels = cfg.showGeneLabels === "never" ? [] : placeGeneLabels(
+    scene.genes,
+    { zoom: 1, panX: 0, panY: 0, cssW: 0 },
+    {
+      mode: cfg.showGeneLabels,
+      fontSize: cfg.geneLabelFontSize,
+      trackHeight: cfg.trackHeight,
+      position: cfg.geneLabelPosition,
+      rotationDeg: cfg.geneLabelRotation,
+      geneShape: cfg.geneShape,
+      tipLength: cfg.tipLength,
+      eligible: geneLabelEligible,
+    },
+  );
+  const { minX, minY, maxX, maxY } = boundsWithGeneLabels(scene.bounds, geneLabels, 1);
   const w = (maxX - minX) + 2 * m;
   const h = (maxY - minY) + 2 * m;
   const tx = m - minX;
@@ -53,30 +69,18 @@ export function sceneToSVG(scene: Scene, cfg: LayoutConfig, geneLabelEligible: S
     }
   }
 
-  // CDS labels, placed in world space (export is zoom-independent, so the layout is
-  // computed at 1:1 with no pan). Halo via paint-order keeps them legible.
-  if (cfg.showGeneLabels !== "never") {
-    const placements = placeGeneLabels(
-      scene.genes,
-      { zoom: 1, panX: 0, panY: 0, cssW: w },
-      {
-        mode: cfg.showGeneLabels,
-        fontSize: cfg.geneLabelFontSize,
-        trackHeight: cfg.trackHeight,
-        position: cfg.geneLabelPosition,
-        rotationDeg: cfg.geneLabelRotation,
-        eligible: geneLabelEligible,
-      },
-    );
+  // CDS labels (placed above). Halo, where set, via paint-order.
+  {
     const rot = cfg.geneLabelRotation;
-    for (const p of placements) {
+    for (const p of geneLabels) {
       // SVG rotate is clockwise; negate to match the canvas (positive reads up-right).
       // placement.y is the label's vertical centre, so anchor on the central baseline.
       const transform = rot !== 0 ? ` transform="rotate(${(-rot).toFixed(1)} ${p.x.toFixed(1)} ${p.y.toFixed(1)})"` : "";
       parts.push(
         `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="central"${transform} ` +
-        `font-family="system-ui, sans-serif" font-size="${cfg.geneLabelFontSize}" font-weight="500" fill="#202124" ` +
-        `stroke="${cfg.background}" stroke-width="3" paint-order="stroke">${esc(p.text)}</text>`
+        `font-family="system-ui, sans-serif" font-size="${cfg.geneLabelFontSize}" font-weight="500" fill="${p.ink}"` +
+        (p.halo ? ` stroke="${cfg.background}" stroke-width="3" paint-order="stroke"` : "") +
+        `>${esc(p.text)}</text>`
       );
     }
   }

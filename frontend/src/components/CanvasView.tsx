@@ -134,6 +134,7 @@ export default function CanvasView() {
   const clusterOffsets = useStore((s) => s.clusterOffsets);
   const circularClusters = useStore((s) => s.circularClusters);
   const clusterRotation = useStore((s) => s.clusterRotation);
+  const clusterSpaceAbove = useStore((s) => s.clusterSpaceAbove);
   const hiddenClusters = useStore((s) => s.hiddenClusters);
   const activeMetric = useStore((s) => s.activeMetric);
   const colourBy = useStore((s) => s.colourBy);
@@ -177,12 +178,14 @@ export default function CanvasView() {
             circularClusters,
             clusterRotation,
             hiddenClusters,
+            clusterSpaceAbove,
+            customGroups,
           )
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
-      circularClusters, clusterRotation, hiddenClusters,
+      circularClusters, clusterRotation, hiddenClusters, clusterSpaceAbove,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
       style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,
@@ -193,8 +196,9 @@ export default function CanvasView() {
       // anchor, and their drawn extent grows the bounds the SVG viewBox is cut from.
       style.showClusterNames, style.clusterFontSize,
       style.clusterLabelPlacement, style.clusterLabelSide, style.clusterLabelPinned,
-      // Resolved into each gene's drawn label, so it changes the scene's text.
-      style.geneLabelField,
+      // Resolved into each gene's drawn label, so it changes the scene's text (custom
+      // groups too, when labelling by group name).
+      style.geneLabelField, customGroups,
     ]
   );
 
@@ -587,11 +591,19 @@ export default function CanvasView() {
         const uid = dragUid.current;
         const curCtl = ctlsRef.current.find((c) => c.uid === uid);
         // Stay in "slide" mode while the cursor is within the current row's vertical
-        // territory (half a row-stride around its baseline). This comfortably covers
-        // the handle, which sits at the label above the track. Moving further toward
-        // another row switches to a re-home preview.
-        const stride = (cfgRef.current.trackHeight + cfgRef.current.rowGap) * zoom.current;
-        const inOwnRow = curCtl != null && Math.abs(my - curCtl.centerY) <= stride / 2;
+        // territory (halfway to the neighbouring row the cursor heads for, or half a
+        // row-stride at the edges; rows can sit further apart with extra space above).
+        // This comfortably covers the handle, which sits at the label above the track.
+        // Moving further toward another row switches to a re-home preview.
+        let inOwnRow = false;
+        if (curCtl != null) {
+          const centers = laneCenters();
+          const neighbour = centers[centers.findIndex((l) => l.lane === curCtl.lane) + (my < curCtl.centerY ? -1 : 1)];
+          const reach = neighbour
+            ? Math.abs(neighbour.y - curCtl.centerY) / 2
+            : ((cfgRef.current.trackHeight + cfgRef.current.rowGap) * zoom.current) / 2;
+          inOwnRow = Math.abs(my - curCtl.centerY) <= reach;
+        }
         if (inOwnRow) {
           // Slide live; sliding past a neighbour reorders it within the row on release.
           pendingTarget.current = null;

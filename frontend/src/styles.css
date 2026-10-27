@@ -1571,6 +1571,10 @@ body {
   -webkit-appearance: none;
   cursor: pointer;
   padding-right: 26px;
+  /* A select is as wide as its longest option; let it shrink to the row instead
+     of spilling past the panel (the selected text ellipsises). */
+  min-width: 0;
+  text-overflow: ellipsis;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23868d97' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
@@ -1822,6 +1826,17 @@ label.btn {
   border-color: var(--accent);
   background: var(--accent-weak);
   color: var(--accent-strong);
+}
+.seq-circ:disabled {
+  visibility: hidden;
+}
+/* Expanded "space above" slider under its sequence row. */
+.seq-row:has(+ .seq-space) {
+  border-bottom: 0;
+}
+.seq-space {
+  padding: 2px 0 8px 24px;
+  border-bottom: 1px solid var(--border);
 }
 .seq-row .rotate-steppers {
   gap: 1px;

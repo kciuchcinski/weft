@@ -4,6 +4,7 @@ import { computeColours, hiddenGeneUids, type ColourBy, type CustomGroup } from 
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
 import { draw } from "./render/draw";
+import { boundsWithGeneLabels, placeGeneLabels } from "./render/labels";
 import { download } from "./download";
 
 export interface FigureState {
@@ -23,6 +24,7 @@ export interface FigureState {
   circularClusters: Record<string, boolean>;
   /** Per-cluster origin rotation (whole-CDS steps) for circular clusters. */
   clusterRotation: Record<string, number>;
+  clusterSpaceAbove: Record<string, number>;
   /** Clusters left off the figure; every export omits them. */
   hiddenClusters: Record<string, boolean>;
   style: StyleConfig;
@@ -31,7 +33,7 @@ export interface FigureState {
 function sceneFrom(s: FigureState) {
   const cfg = makeConfig(s.style);
   const colours = computeColours(s.data!, s.colourBy, s.paletteName, s.overrides, s.colourField, s.customGroups, s.style.maxLegendEntries, hiddenGeneUids(s.data!, s.hiddenClusters));
-  const scene = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters);
+  const scene = buildScene(s.data!, s.lanes, cfg, colours.gene, s.activeMetric, s.clusterOffsets, undefined, colours.items, s.rowNames, s.circularClusters, s.clusterRotation, s.hiddenClusters, s.clusterSpaceAbove, s.customGroups);
   return { cfg, scene };
 }
 
@@ -53,8 +55,24 @@ export function exportPNG(s: FigureState, scale = 2): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
   const m = 24;
-  const b = scene.bounds;
-  const w = Math.max(1, Math.ceil((b.maxX - b.minX + 2 * m) * scale));
+  const eligible = geneLabelEligible(s);
+  // Gene labels are drawn in screen space at the export zoom; grow the canvas to fit.
+  const geneLabels = cfg.showGeneLabels === "never" ? [] : placeGeneLabels(
+    scene.genes,
+    { zoom: scale, panX: 0, panY: 0, cssW: 0 },
+    {
+      mode: cfg.showGeneLabels,
+      fontSize: cfg.geneLabelFontSize,
+      trackHeight: cfg.trackHeight,
+      position: cfg.geneLabelPosition,
+      rotationDeg: cfg.geneLabelRotation,
+      geneShape: cfg.geneShape,
+      tipLength: cfg.tipLength,
+      eligible,
+    },
+  );
+  const b = boundsWithGeneLabels(scene.bounds, geneLabels, scale);
+  const w =Math.max(1, Math.ceil((b.maxX - b.minX + 2 * m) * scale));
   const h = Math.max(1, Math.ceil((b.maxY - b.minY + 2 * m) * scale));
   const canvas = document.createElement("canvas");
   canvas.width = w;
@@ -66,7 +84,7 @@ export function exportPNG(s: FigureState, scale = 2): void {
     scene,
     { dpr: 1, cssW: w, cssH: h, zoom: scale, panX: (m - b.minX) * scale, panY: (m - b.minY) * scale },
     cfg,
-    geneLabelEligible(s),
+    eligible,
   );
   canvas.toBlob((blob) => { if (blob) download(blob, "weft.png"); });
 }

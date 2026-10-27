@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import { useStore } from "../state/store";
@@ -7,6 +7,8 @@ import { GENBANK_RE, useUpload } from "../state/useUpload";
 import { availableFields, computeColours, hiddenGeneUids, OTHER_ID, PALETTE_NAMES, type ColourBy } from "../render/palette";
 import {
   availableMetrics,
+  CUSTOM_GROUP_LABEL_FIELD,
+  effectiveLanes,
   geneAaLengths,
   hasPartialSpans,
   linkFragmentAa,
@@ -391,6 +393,17 @@ function CircularIcon() {
   );
 }
 
+// Vertical double arrow: extra space above a sequence's row.
+function SpaceIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2v12" />
+      <path d="M5 4.5 8 2l3 2.5" />
+      <path d="M5 11.5 8 14l3-2.5" />
+    </svg>
+  );
+}
+
 // Counter-clockwise arrow: restore a circular sequence's original origin.
 function ResetIcon() {
   return (
@@ -440,12 +453,18 @@ export default function LeftPanel() {
   const setAllClustersCircular = useStore((s) => s.setAllClustersCircular);
   const rotateCluster = useStore((s) => s.rotateCluster);
   const resetAllClusterRotations = useStore((s) => s.resetAllClusterRotations);
+  const clusterSpaceAbove = useStore((s) => s.clusterSpaceAbove);
+  const setClusterSpaceAbove = useStore((s) => s.setClusterSpaceAbove);
+  const resetAllClusterSpaceAbove = useStore((s) => s.resetAllClusterSpaceAbove);
   const hiddenClusters = useStore((s) => s.hiddenClusters);
+  const lanes = useStore((s) => s.lanes);
   const toggleClusterHidden = useStore((s) => s.toggleClusterHidden);
   const showAllClusters = useStore((s) => s.showAllClusters);
 
   const [drag, setDrag] = useState(false);
   const [sequenceFilter, setSequenceFilter] = useState("");
+  // Sequence whose "space above" slider is expanded in the list (one at a time).
+  const [spacingOpen, setSpacingOpen] = useState<string | null>(null);
   // Shared upload flow: selection stages files; the explicit "Run" button below
   // the alignment settings starts the job, so method/thresholds can be set first.
   const { staged, stageFiles, runStaged, clearStaged, loading } = useUpload();
@@ -516,11 +535,16 @@ export default function LeftPanel() {
     return Math.max(10, Math.ceil(max));
   })();
   const minFragment = Math.min(fragMax, style.minFragmentAa);
-  const filteredClusters = data?.clusters.filter((c) => c.name.toLowerCase().includes(sequenceFilter.trim().toLowerCase())) ?? [];
+  // List sequences in figure order (rows top to bottom, left to right within a row).
+  // Hidden ones keep their stored place in `lanes`, so they stay where they'll reappear.
+  const byUid = new Map(data?.clusters.map((c) => [c.uid, c]) ?? []);
+  const orderedClusters = data ? effectiveLanes(data, lanes).flat().map((u) => byUid.get(u)!) : [];
+  const filteredClusters = orderedClusters.filter((c) => c.name.toLowerCase().includes(sequenceFilter.trim().toLowerCase()));
   const circularCount = data?.clusters.filter((c) => circularClusters[c.uid]).length ?? 0;
   const hiddenCount = data?.clusters.filter((c) => hiddenClusters[c.uid]).length ?? 0;
   const shownCount = (data?.clusters.length ?? 0) - hiddenCount;
   const hasRotations = Object.values(clusterRotation).some((v) => v !== 0);
+  const hasSpaceAbove = Object.values(clusterSpaceAbove).some((v) => v !== 0);
 
   // loadSession clears the staged queue, so the example replaces any pending files.
   const loadExample = async () => {
@@ -691,7 +715,7 @@ export default function LeftPanel() {
         {data ? (
           <>
             <Subsection title="Sequence list" defaultOpen>
-              <p className="muted">Untick a sequence to hide it from the figure and exports; its alignment is kept. Click the ring icon to mark a sequence circular, then shift its origin one CDS at a time with ‹ › (this doesn't draw a circular plot).</p>
+              <p className="muted">Untick a sequence to hide it from the figure and exports; its alignment is kept. Click the ring icon to mark a sequence circular, then shift its origin one CDS at a time with ‹ › (this doesn't draw a circular plot). Click ↕ to manually adjust space above a sequence's row</p>
               <p className="field-hint">
                 Showing {shownCount} of {data.clusters.length} sequences{circularCount > 0 && ` · ${circularCount} circular`}
               </p>
@@ -711,8 +735,11 @@ export default function LeftPanel() {
                   const last = shown && shownCount === 1;
                   const on = !!circularClusters[c.uid];
                   const rotation = clusterRotation[c.uid] ?? 0;
+                  const space = clusterSpaceAbove[c.uid] ?? 0;
+                  const spaceOpen = shown && spacingOpen === c.uid;
                   return (
-                    <div className={"circular-row seq-row" + (shown ? "" : " is-hidden")} key={c.uid}>
+                    <Fragment key={c.uid}>
+                    <div className={"circular-row seq-row" + (shown ? "" : " is-hidden")}>
                       <label className="circular-toggle" title={last ? "At least one sequence must stay visible" : `${shown ? "Hide" : "Show"} ${c.name}`}>
                         <input type="checkbox" checked={shown} disabled={last} onChange={() => toggleClusterHidden(c.uid)} />
                         <span className="circular-name">{c.name}</span>
@@ -735,6 +762,16 @@ export default function LeftPanel() {
                         </span>
                       )}
                       <button
+                        className={"seq-circ" + (space > 0 ? " active" : "")}
+                        aria-expanded={spaceOpen}
+                        aria-label={`Space above ${c.name}`}
+                        title={space > 0 ? `${space} px of extra space above this row — click to adjust` : "Add space above this sequence's row"}
+                        disabled={!shown}
+                        onClick={() => setSpacingOpen(spaceOpen ? null : c.uid)}
+                      >
+                        <SpaceIcon />
+                      </button>
+                      <button
                         className={"seq-circ" + (on ? " active" : "")}
                         aria-pressed={on}
                         aria-label={`Circular sequence: ${c.name}`}
@@ -744,6 +781,12 @@ export default function LeftPanel() {
                         <CircularIcon />
                       </button>
                     </div>
+                    {spaceOpen && (
+                      <div className="seq-space">
+                        <SliderField label="Space above (px)" value={space} min={0} max={400} step={5} onChange={(v) => setClusterSpaceAbove(c.uid, v)} />
+                      </div>
+                    )}
+                    </Fragment>
                   );
                 })}
                 {!filteredClusters.length && <p className="muted">No sequence names match this search.</p>}
@@ -751,6 +794,7 @@ export default function LeftPanel() {
               <div className="btn-row">
                 <button className="btn" onClick={showAllClusters} disabled={hiddenCount === 0}>Show all</button>
                 <button className="btn" onClick={resetAllClusterRotations} disabled={!hasRotations}>Reset all origins</button>
+                <button className="btn" onClick={resetAllClusterSpaceAbove} disabled={!hasSpaceAbove}>Reset all spacing</button>
               </div>
             </Subsection>
 
@@ -928,7 +972,7 @@ export default function LeftPanel() {
         </Subsection>
         <Subsection title="Gene labels & tooltip">
           <SelectField label="Show labels" value={style.showGeneLabels} options={[{ value: "auto", label: "Auto (when zoomed in)" }, { value: "always", label: "Always" }, { value: "never", label: "Never" }]} onChange={(v) => setStyle({ showGeneLabels: v })} />
-          <SelectField label="Label field" value={style.geneLabelField} disabled={style.showGeneLabels === "never"} options={[{ value: "", label: "Auto (gene → locus tag → protein ID)" }, ...fields.map((f) => ({ value: f, label: f }))]} onChange={(v) => setStyle({ geneLabelField: v })} />
+          <SelectField label="Label field" value={style.geneLabelField} disabled={style.showGeneLabels === "never"} options={[{ value: "", label: "Auto (gene → locus tag → protein ID)" }, { value: CUSTOM_GROUP_LABEL_FIELD, label: "Custom group name" }, ...fields.map((f) => ({ value: f, label: f }))]} onChange={(v) => setStyle({ geneLabelField: v })} />
           <SelectField label="Scope" value={style.geneLabelScope} disabled={style.showGeneLabels === "never"} options={[{ value: "all", label: "All genes" }, { value: "custom", label: "Custom groups only" }]} onChange={(v) => setStyle({ geneLabelScope: v })} />
           <SelectField label="Position" value={style.geneLabelPosition} disabled={style.showGeneLabels === "never"} options={[{ value: "above", label: "Above the gene" }, { value: "on", label: "On the gene" }]} onChange={(v) => setStyle({ geneLabelPosition: v })} />
           <SelectField label="Rotation" value={String(style.geneLabelRotation)} disabled={style.showGeneLabels === "never"} options={[{ value: "0", label: "Horizontal" }, { value: "45", label: "Diagonal (45°)" }, { value: "90", label: "Vertical (90°)" }]} onChange={(v) => setStyle({ geneLabelRotation: Number(v) })} />

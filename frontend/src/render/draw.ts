@@ -203,9 +203,9 @@ export function draw(
     }
   }
 
-  // CDS labels: adaptive, horizontal, screen-space (constant size, placed against
-  // the live zoom so they reveal on zoom-in and never rotate). A background halo
-  // keeps them legible over arrows and ribbons.
+  // CDS labels: adaptive, screen-space (constant size, placed against the live zoom
+  // so they reveal on zoom-in). Labels off the arrow get a background halo to stay
+  // legible over ribbons; ones on it contrast-pick their ink against the gene fill.
   if (cfg.showGeneLabels !== "never") {
     const placements = placeGeneLabels(
       scene.genes,
@@ -216,6 +216,8 @@ export function draw(
         trackHeight: cfg.trackHeight,
         position: cfg.geneLabelPosition,
         rotationDeg: cfg.geneLabelRotation,
+        geneShape: cfg.geneShape,
+        tipLength: cfg.tipLength,
         eligible: geneLabelEligible,
       },
     );
@@ -228,19 +230,20 @@ export function draw(
       // Canvas +angle is clockwise (y-down); negate so a positive rotation reads
       // upward-to-the-right, matching the SVG export.
       const rad = -(cfg.geneLabelRotation * Math.PI) / 180;
+      ctx.strokeStyle = cfg.background;
       if (rad === 0) {
-        ctx.strokeStyle = cfg.background;
-        for (const p of placements) ctx.strokeText(p.text, p.x, p.y);
-        ctx.fillStyle = "#202124";
-        for (const p of placements) ctx.fillText(p.text, p.x, p.y);
+        for (const p of placements) if (p.halo) ctx.strokeText(p.text, p.x, p.y);
+        for (const p of placements) {
+          ctx.fillStyle = p.ink;
+          ctx.fillText(p.text, p.x, p.y);
+        }
       } else {
         for (const p of placements) {
           ctx.save();
           ctx.translate(p.x, p.y);
           ctx.rotate(rad);
-          ctx.strokeStyle = cfg.background;
-          ctx.strokeText(p.text, 0, 0);
-          ctx.fillStyle = "#202124";
+          if (p.halo) ctx.strokeText(p.text, 0, 0);
+          ctx.fillStyle = p.ink;
           ctx.fillText(p.text, 0, 0);
           ctx.restore();
         }
