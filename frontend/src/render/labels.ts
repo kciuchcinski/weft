@@ -1,6 +1,7 @@
-import type { ClusterLabel, GeneLabelMode, GeneLabelPosition, GeneShape, GeneShapeKind, LayoutConfig } from "./layout";
+import type { ClusterLabel, GeneLabelMode, GeneLabelPosition, GeneLabelScope, GeneShape, GeneShapeKind, LayoutConfig } from "./layout";
+import type { CustomGroup } from "./palette";
 
-// Type-only import above, so there is no runtime cycle with layout.ts (which
+// Type-only imports above, so there is no runtime cycle with layout.ts (which
 // imports measureLabel from here).
 
 let measureCtx: CanvasRenderingContext2D | null | undefined;
@@ -152,6 +153,14 @@ export function placeGeneLabels(genes: GeneShape[], view: LabelView, opts: GeneL
     placements.push({ text, x, y, hx, hy, ink: inside ? inkOn(c.g.colour) : DARK_INK, halo: !inside });
   }
   return placements;
+}
+
+/** Gene uids eligible for CDS labels under `scope` (null = every gene). Shared by the
+ * canvas and the exports so both label the same genes. */
+export function geneLabelEligible(scope: GeneLabelScope, customGroups: CustomGroup[], genes: GeneShape[]): Set<string> | null {
+  if (scope === "custom") return new Set(customGroups.flatMap((g) => g.genes));
+  if (scope === "top") return new Set(genes.filter((g) => g.lane === 0).map((g) => g.uid));
+  return null;
 }
 
 /**

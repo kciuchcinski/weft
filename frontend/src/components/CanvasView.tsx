@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { useStore, type MoveTarget } from "../state/store";
 import { computeColours, hiddenGeneUids } from "../render/palette";
 import { buildScene, formatMetric, qualifierEntries, type Scene } from "../render/layout";
-import { labelScreenRect, measureLabel } from "../render/labels";
+import { geneLabelEligible as geneLabelEligibleFor, labelScreenRect, measureLabel } from "../render/labels";
 import { makeConfig } from "../render/style";
 import { draw, type Highlight } from "../render/draw";
 import { ribbonPath } from "../render/geometry";
@@ -187,7 +187,7 @@ export default function CanvasView() {
       data, lanes, clusterOffsets, colours, activeMetric, hDraggingUid, rowNames,
       circularClusters, clusterRotation, hiddenClusters, clusterSpaceAbove,
       style.pxPerKb, style.clusterSpacing, style.trackHeight,
-      style.preventOverlap, style.showLinks, style.linkThreshold, style.linkOpacity,
+      style.preventOverlap, style.manualRowSpacing, style.showLinks, style.linkThreshold, style.linkOpacity,
       style.anchorLinksToAligned, style.minFragmentAa,
       style.colourLinks, style.showLinkLabels, style.showScaleBar, style.showLegend,
       style.scaleFontSize, style.legendFontSize,
@@ -222,12 +222,10 @@ export default function CanvasView() {
   }
 
   // Which genes may carry a CDS label under the current scope (null = all genes).
-  const geneLabelEligible = useMemo(() => {
-    if (style.geneLabelScope !== "custom") return null;
-    const set = new Set<string>();
-    customGroups.forEach((g) => g.genes.forEach((u) => set.add(u)));
-    return set;
-  }, [style.geneLabelScope, customGroups]);
+  const geneLabelEligible = useMemo(
+    () => (scene ? geneLabelEligibleFor(style.geneLabelScope, customGroups, scene.genes) : null),
+    [style.geneLabelScope, customGroups, scene],
+  );
   const geneLabelEligibleRef = useRef(geneLabelEligible);
   geneLabelEligibleRef.current = geneLabelEligible;
 
@@ -937,7 +935,7 @@ export default function CanvasView() {
           <div className="tt-row">
             {hover.gene.start.toLocaleString()}–{hover.gene.end.toLocaleString()} bp ({hover.gene.strand < 0 ? "−" : "+"})
           </div>
-          {qualifierEntries(hover.gene, style.maxTooltipFields).map(([k, v]) => (
+          {qualifierEntries(hover.gene).map(([k, v]) => (
             <div className="tt-row" key={k}>
               <span className="tt-key">{k}</span> {v}
             </div>

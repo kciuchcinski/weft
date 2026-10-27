@@ -9,6 +9,9 @@ export interface StyleConfig {
   // Arrangement
   pxPerKb: number;
   clusterSpacing: number;
+  /** Apply the per-row extra spacing (clusterSpaceAbove) on top of `clusterSpacing`.
+   * Off keeps rows evenly spaced without forgetting the per-row values. */
+  manualRowSpacing: boolean;
   /** When true, clusters dragged along their row cannot overlap their neighbours. */
   preventOverlap: boolean;
   // CDS glyphs
@@ -42,10 +45,6 @@ export interface StyleConfig {
   geneLabelPosition: GeneLabelPosition;
   /** Label rotation in degrees (0 = horizontal). */
   geneLabelRotation: number;
-  /** Cap the qualifiers listed in the hover tooltip; 0 = show every one. Purely a
-   * screen-space concern (the inspector always shows all), so it never reaches
-   * LayoutConfig. */
-  maxTooltipFields: number;
   // Links
   showLinks: boolean;
   straightLinks: boolean;
@@ -83,6 +82,7 @@ export interface StyleConfig {
 export const DEFAULT_STYLE: StyleConfig = {
   pxPerKb: 50,
   clusterSpacing: 54,
+  manualRowSpacing: false,
   preventOverlap: true,
   geneShape: "triangle",
   trackHeight: 16,
@@ -103,7 +103,6 @@ export const DEFAULT_STYLE: StyleConfig = {
   geneLabelFontSize: 11,
   geneLabelPosition: "above",
   geneLabelRotation: 0,
-  maxTooltipFields: 0,
   showLinks: true,
   straightLinks: false,
   colourLinks: true,
@@ -129,6 +128,7 @@ export function makeConfig(style: StyleConfig): LayoutConfig {
     pxPerBp: style.pxPerKb / 1000,
     trackHeight: style.trackHeight,
     rowGap: style.clusterSpacing,
+    manualRowSpacing: style.manualRowSpacing,
     locusGap: LOCUS_GAP,
     colGap: 64,
     preventOverlap: style.preventOverlap,

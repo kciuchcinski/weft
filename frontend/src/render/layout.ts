@@ -27,8 +27,9 @@ export type ClusterLabelSide = "left" | "right";
  * labels overlap); or auto (only once the full name fits its gene on screen — labels
  * appear as you zoom in — and only where it doesn't collide with another). */
 export type GeneLabelMode = "auto" | "always" | "never";
-/** Which genes may be labelled: every gene, or only custom-group members. */
-export type GeneLabelScope = "all" | "custom";
+/** Which genes may be labelled: every gene, only custom-group members, or only the
+ * genes of the top row (as drawn, so hidden clusters don't count). */
+export type GeneLabelScope = "all" | "custom" | "top";
 /** Where a CDS label sits relative to its arrow: above it, or centred on it. */
 export type GeneLabelPosition = "above" | "on";
 
@@ -113,6 +114,8 @@ export interface LayoutConfig {
   pxPerBp: number;
   trackHeight: number;
   rowGap: number;
+  /** Add each row's extra space (buildScene's clusterSpaceAbove) to the gap above it. */
+  manualRowSpacing: boolean;
   locusGap: number;
   colGap: number;
   preventOverlap: boolean;
@@ -180,6 +183,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
   pxPerBp: 0.05,
   trackHeight: 16,
   rowGap: 54,
+  manualRowSpacing: false,
   locusGap: 24,
   colGap: 64,
   preventOverlap: true,
@@ -555,7 +559,8 @@ export function buildScene(
   clusterRotation: Record<string, number> = {},
   /** Clusters left off the figure, keyed by uid. */
   hiddenClusters: Record<string, boolean> = {},
-  /** Per-cluster extra space above its row (world px); a row takes its largest. */
+  /** Per-cluster extra space above its row (world px); a row takes its largest.
+   * Applied only with cfg.manualRowSpacing, and never above the first row. */
   clusterSpaceAbove: Record<string, number> = {},
   /** Hand-built groups, for labelling genes by group name (CUSTOM_GROUP_LABEL_FIELD). */
   customGroups: CustomGroup[] = [],
@@ -668,10 +673,11 @@ export function buildScene(
   const OVERLAP_GAP = 10;
 
   const eff = effectiveLanes(data, lanes, hiddenClusters);
-  // Rows sit one fixed stride apart, plus any extra space requested above each.
+  // Rows sit one fixed stride apart, plus (when manual) any extra space requested
+  // between a row and the one above it.
   let extraAbove = 0;
   eff.forEach((lane, laneIdx) => {
-    extraAbove += Math.max(0, ...lane.map((u) => clusterSpaceAbove[u] ?? 0));
+    if (cfg.manualRowSpacing && laneIdx > 0) extraAbove += Math.max(0, ...lane.map((u) => clusterSpaceAbove[u] ?? 0));
     const originY = laneIdx * (cfg.trackHeight + cfg.rowGap) + extraAbove + cfg.labelGap + cfg.trackHeight;
 
     // Base X is sequential left-to-right packing; the per-cluster offset lets the

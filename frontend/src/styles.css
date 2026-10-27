@@ -1827,16 +1827,13 @@ label.btn {
   background: var(--accent-weak);
   color: var(--accent-strong);
 }
-.seq-circ:disabled {
-  visibility: hidden;
-}
-/* Expanded "space above" slider under its sequence row. */
-.seq-row:has(+ .seq-space) {
-  border-bottom: 0;
-}
-.seq-space {
-  padding: 2px 0 8px 24px;
-  border-bottom: 1px solid var(--border);
+/* Per-row extra spacing sliders under "Manually adjust spacing". */
+.row-spacing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
 }
 .seq-row .rotate-steppers {
   gap: 1px;

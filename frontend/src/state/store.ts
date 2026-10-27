@@ -244,8 +244,9 @@ interface AppState extends SessionView {
   rotateCluster: (uid: string, delta: number) => void;
   /** Restore every circular cluster to its original origin. */
   resetAllClusterRotations: () => void;
-  /** Set the extra space above a cluster's row (world px); 0 clears it. */
-  setClusterSpaceAbove: (uid: string, px: number) => void;
+  /** Set the extra space between a row and the one above it (world px), given the
+   * row's visible cluster uids; 0 clears it. */
+  setRowSpaceAbove: (uids: string[], px: number) => void;
   /** Clear every cluster's extra space above. */
   resetAllClusterSpaceAbove: () => void;
   /** Hide/show a cluster on the figure. The last visible cluster can't be hidden. */
@@ -478,11 +479,15 @@ export const useStore = create<AppState>((set, get) => {
 
   resetAllClusterRotations: hist("rotate:all", () => set({ clusterRotation: {} })),
 
-  setClusterSpaceAbove: hist((uid) => `space:${uid}`, (uid, px) =>
+  // Stored per cluster so the space travels with a sequence moved to another row;
+  // a row's gap is its members' largest, so setting every member sets the row.
+  setRowSpaceAbove: hist((uids: string[]) => `space:${uids.join("|")}`, (uids, px) =>
     set((s) => {
       const clusterSpaceAbove = { ...s.clusterSpaceAbove };
-      if (px > 0) clusterSpaceAbove[uid] = px;
-      else delete clusterSpaceAbove[uid];
+      for (const uid of uids) {
+        if (px > 0) clusterSpaceAbove[uid] = px;
+        else delete clusterSpaceAbove[uid];
+      }
       return { clusterSpaceAbove };
     })),
 

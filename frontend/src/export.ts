@@ -4,7 +4,7 @@ import { computeColours, hiddenGeneUids, type ColourBy, type CustomGroup } from 
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
 import { draw } from "./render/draw";
-import { boundsWithGeneLabels, placeGeneLabels } from "./render/labels";
+import { boundsWithGeneLabels, geneLabelEligible, placeGeneLabels } from "./render/labels";
 import { download } from "./download";
 
 export interface FigureState {
@@ -37,25 +37,18 @@ function sceneFrom(s: FigureState) {
   return { cfg, scene };
 }
 
-/** Gene uids eligible for CDS labels under the current scope (null = all genes). */
-function geneLabelEligible(s: FigureState): Set<string> | null {
-  if (s.style.geneLabelScope !== "custom") return null;
-  const set = new Set<string>();
-  s.customGroups.forEach((g) => g.genes.forEach((u) => set.add(u)));
-  return set;
-}
-
 export function exportSVG(s: FigureState): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
-  download(new Blob([sceneToSVG(scene, cfg, geneLabelEligible(s))], { type: "image/svg+xml" }), "weft.svg");
+  const eligible = geneLabelEligible(s.style.geneLabelScope, s.customGroups, scene.genes);
+  download(new Blob([sceneToSVG(scene, cfg, eligible)], { type: "image/svg+xml" }), "weft.svg");
 }
 
 export function exportPNG(s: FigureState, scale = 2): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
   const m = 24;
-  const eligible = geneLabelEligible(s);
+  const eligible = geneLabelEligible(s.style.geneLabelScope, s.customGroups, scene.genes);
   // Gene labels are drawn in screen space at the export zoom; grow the canvas to fit.
   const geneLabels = cfg.showGeneLabels === "never" ? [] : placeGeneLabels(
     scene.genes,
