@@ -46,6 +46,10 @@ export default function StatusBar() {
           <span className="statusbar-placeholder">Paper: coming soon</span>
         )}
         <span aria-hidden="true">·</span>
+        <a href={`${REPO_URL}/blob/main/TUTORIAL.md`} target="_blank" rel="noreferrer" title="Step-by-step tutorial">
+          Tutorial
+        </a>
+        <span aria-hidden="true">·</span>
         <a href={REPO_URL} target="_blank" rel="noreferrer" title="Source code on GitHub">
           <GitHubIcon />
           GitHub

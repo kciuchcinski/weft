@@ -16,6 +16,9 @@ draft assembly split across three contigs. The session loads as a static file, s
 recomputed. The GenBank inputs, accessions, saved session and exported figure are in
 [examples/OXA-232/](examples/OXA-232/).
 
+[TUTORIAL.md](TUTORIAL.md) rebuilds this figure from the GenBank files step by step and covers
+using your own data.
+
 ## Method
 
 ### Input
@@ -49,11 +52,11 @@ In local mode, each ribbon spans only the aligned region of each protein.
 
 ### Similarity groups
 
-Genes are joined into a group when links above a chosen threshold, on a chosen metric,
-connect them, either directly or through intermediate genes. Formally, the groups are the
+Genes are joined into a group when links at or above the identity cutoff chosen before
+alignment connect them, either directly or through intermediate genes. Formally, the groups are the
 connected components of the thresholded gene graph (single linkage); singletons are left
 ungrouped. The groups are used for colouring and ordering. They are not homology or
-orthology assignments, and they change with the threshold.
+orthology assignments, and they change with the cutoff.
 
 ### Cluster order
 
@@ -70,11 +73,12 @@ when no groups are shared, the input order is kept.
 After alignment, the figure is edited client-side; changing the layout does not trigger a
 new alignment. Supported operations:
 
-- Change the link metric (identity, similarity, coverage; bitscore and E-value with DIAMOND)
-  and threshold. Similarity groups are recomputed in the browser.
+- Filter the displayed links by any metric (identity, similarity, coverage; bitscore and
+  E-value with DIAMOND) and threshold. Similarity groups are computed at the identity cutoff
+  chosen before alignment; changing them requires running the alignment again.
 - Reorder clusters, move them within or between rows, and reverse their orientation.
-- Hide clusters from the figure and its exports (**Sequences & layout → Visible
-  sequences**), and show them again in their original row.
+- Hide clusters from the figure and its exports (**Sequences → Sequence
+  list**), and show them again in their original row.
 - Align similar genes across rows on a selected gene.
 - Mark records as circular and shift the displayed origin one CDS at a time.
 - Colour genes by similarity group, by cluster, by any feature qualifier (e.g. `product`,
