@@ -1,10 +1,10 @@
 import type { FigureData, MetricKey } from "./types";
-import { buildScene } from "./render/layout";
+import { buildScene, type LayoutConfig, type Scene } from "./render/layout";
 import { computeColours, hiddenGeneUids, type ColourBy, type CustomGroup } from "./render/palette";
 import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
-import { draw } from "./render/draw";
-import { boundsWithGeneLabels, geneLabelEligible, placeGeneLabels } from "./render/labels";
+import { draw, type View } from "./render/draw";
+import { boundsWithGeneLabels, geneLabelEligible, geneLabelOpts, placeGeneLabels } from "./render/labels";
 import { saveFile } from "./download";
 
 export interface FigureState {
@@ -37,48 +37,53 @@ function sceneFrom(s: FigureState) {
   return { cfg, scene };
 }
 
+/**
+ * Zoom at which exports lay out everything the canvas draws at a constant screen
+ * size (cluster names, CDS labels, link labels, outline widths), relative to the
+ * figure. SVG and PNG share it so their text sizes agree; the PNG's pixel
+ * resolution is set separately and does not change these proportions.
+ */
+const EXPORT_ZOOM = 2;
+/** Margin around the figure, in world px. */
+const EXPORT_MARGIN = 24;
+
+/** The view both exports render through: the figure plus its CDS labels, framed by a margin. */
+function exportView(scene: Scene, cfg: LayoutConfig, eligible: Set<string> | null): View {
+  const z = EXPORT_ZOOM;
+  const m = EXPORT_MARGIN;
+  // Scene bounds leave CDS labels out; place them unpanned to grow the frame around them.
+  const geneLabels = placeGeneLabels(scene.genes, { zoom: z, panX: 0, panY: 0, cssW: 0 }, geneLabelOpts(cfg, eligible));
+  const b = boundsWithGeneLabels(scene.bounds, geneLabels, z);
+  return {
+    dpr: 1,
+    cssW: Math.max(1, Math.ceil((b.maxX - b.minX + 2 * m) * z)),
+    cssH: Math.max(1, Math.ceil((b.maxY - b.minY + 2 * m) * z)),
+    zoom: z,
+    panX: (m - b.minX) * z,
+    panY: (m - b.minY) * z,
+  };
+}
+
 export function exportSVG(s: FigureState): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
   const eligible = geneLabelEligible(s.style.geneLabelScope, s.customGroups, scene.genes);
-  void saveFile(new Blob([sceneToSVG(scene, cfg, eligible)], { type: "image/svg+xml" }), "weft.svg");
+  const view = exportView(scene, cfg, eligible);
+  void saveFile(new Blob([sceneToSVG(scene, cfg, view, eligible)], { type: "image/svg+xml" }), "weft.svg");
 }
 
+/** `scale` is output pixels per world px. */
 export function exportPNG(s: FigureState, scale = 2): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
-  const m = 24;
   const eligible = geneLabelEligible(s.style.geneLabelScope, s.customGroups, scene.genes);
-  // Gene labels are drawn in screen space at the export zoom; grow the canvas to fit.
-  const geneLabels = cfg.showGeneLabels === "never" ? [] : placeGeneLabels(
-    scene.genes,
-    { zoom: scale, panX: 0, panY: 0, cssW: 0 },
-    {
-      mode: cfg.showGeneLabels,
-      fontSize: cfg.geneLabelFontSize,
-      trackHeight: cfg.trackHeight,
-      position: cfg.geneLabelPosition,
-      rotationDeg: cfg.geneLabelRotation,
-      geneShape: cfg.geneShape,
-      tipLength: cfg.tipLength,
-      eligible,
-    },
-  );
-  const b = boundsWithGeneLabels(scene.bounds, geneLabels, scale);
-  const w =Math.max(1, Math.ceil((b.maxX - b.minX + 2 * m) * scale));
-  const h = Math.max(1, Math.ceil((b.maxY - b.minY + 2 * m) * scale));
+  const view = { ...exportView(scene, cfg, eligible), dpr: scale / EXPORT_ZOOM };
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = Math.max(1, Math.round(view.cssW * view.dpr));
+  canvas.height = Math.max(1, Math.round(view.cssH * view.dpr));
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  draw(
-    ctx,
-    scene,
-    { dpr: 1, cssW: w, cssH: h, zoom: scale, panX: (m - b.minX) * scale, panY: (m - b.minY) * scale },
-    cfg,
-    eligible,
-  );
+  draw(ctx, scene, view, cfg, eligible);
   canvas.toBlob((blob) => { if (blob) void saveFile(blob, "weft.png"); });
 }
 

@@ -86,6 +86,21 @@ export interface GeneLabelOpts {
   eligible: Set<string> | null;
 }
 
+/** Gene-label options from the layout config. Shared by the canvas and both exports
+ * so they place labels identically. */
+export function geneLabelOpts(cfg: LayoutConfig, eligible: Set<string> | null): GeneLabelOpts {
+  return {
+    mode: cfg.showGeneLabels,
+    fontSize: cfg.geneLabelFontSize,
+    trackHeight: cfg.trackHeight,
+    position: cfg.geneLabelPosition,
+    rotationDeg: cfg.geneLabelRotation,
+    geneShape: cfg.geneShape,
+    tipLength: cfg.tipLength,
+    eligible,
+  };
+}
+
 /**
  * Adaptive CDS-label placement. Labels sit either just above each gene's arrow, bottom
  * edges aligned (a tilted label starts at the gene's centre), or centred on it

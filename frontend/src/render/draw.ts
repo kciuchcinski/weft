@@ -1,6 +1,6 @@
 import type { LayoutConfig, Scene } from "./layout";
 import { genePoints, ribbonPath } from "./geometry";
-import { labelScreenRect, placeGeneLabels } from "./labels";
+import { geneLabelOpts, labelScreenRect, placeGeneLabels } from "./labels";
 
 export interface View {
   dpr: number;
@@ -207,20 +207,7 @@ export function draw(
   // so they reveal on zoom-in). Labels off the arrow get a background halo to stay
   // legible over ribbons; ones on it contrast-pick their ink against the gene fill.
   if (cfg.showGeneLabels !== "never") {
-    const placements = placeGeneLabels(
-      scene.genes,
-      { zoom: view.zoom, panX: view.panX, panY: view.panY, cssW: view.cssW },
-      {
-        mode: cfg.showGeneLabels,
-        fontSize: cfg.geneLabelFontSize,
-        trackHeight: cfg.trackHeight,
-        position: cfg.geneLabelPosition,
-        rotationDeg: cfg.geneLabelRotation,
-        geneShape: cfg.geneShape,
-        tipLength: cfg.tipLength,
-        eligible: geneLabelEligible,
-      },
-    );
+    const placements = placeGeneLabels(scene.genes, view, geneLabelOpts(cfg, geneLabelEligible));
     if (placements.length) {
       ctx.font = `500 ${cfg.geneLabelFontSize}px system-ui, sans-serif`;
       ctx.textAlign = "center";
