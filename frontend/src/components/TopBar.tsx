@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useStore } from "../state/store";
 import { describeAlignment } from "../render/layout";
 import { exportAlignmentTableCSV, exportPNG, exportSimilarityMatrixCSV, exportSVG } from "../export";
-import { download } from "../download";
+import { saveFile } from "../download";
 
 // A compact synteny glyph: two aligned rows of gene arrows joined by a link
 // ribbon, echoing what the app produces. Rendered as the brand mark.
@@ -92,7 +92,8 @@ export default function TopBar() {
 
   const onSave = () => {
     const session = useStore.getState().getSession();
-    download(new Blob([JSON.stringify(session)], { type: "application/json" }), "weft-session.json");
+    const blob = new Blob([JSON.stringify(session, null, 2) + "\n"], { type: "application/json" });
+    void saveFile(blob, "weft-session.json");
   };
 
   const onLoadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {

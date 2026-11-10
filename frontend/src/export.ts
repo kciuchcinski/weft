@@ -5,7 +5,7 @@ import { makeConfig, type StyleConfig } from "./render/style";
 import { sceneToSVG } from "./render/svg";
 import { draw } from "./render/draw";
 import { boundsWithGeneLabels, geneLabelEligible, placeGeneLabels } from "./render/labels";
-import { download } from "./download";
+import { saveFile } from "./download";
 
 export interface FigureState {
   data: FigureData | null;
@@ -41,7 +41,7 @@ export function exportSVG(s: FigureState): void {
   if (!s.data) return;
   const { cfg, scene } = sceneFrom(s);
   const eligible = geneLabelEligible(s.style.geneLabelScope, s.customGroups, scene.genes);
-  download(new Blob([sceneToSVG(scene, cfg, eligible)], { type: "image/svg+xml" }), "weft.svg");
+  void saveFile(new Blob([sceneToSVG(scene, cfg, eligible)], { type: "image/svg+xml" }), "weft.svg");
 }
 
 export function exportPNG(s: FigureState, scale = 2): void {
@@ -79,7 +79,7 @@ export function exportPNG(s: FigureState, scale = 2): void {
     cfg,
     eligible,
   );
-  canvas.toBlob((blob) => { if (blob) download(blob, "weft.png"); });
+  canvas.toBlob((blob) => { if (blob) void saveFile(blob, "weft.png"); });
 }
 
 export function exportAlignmentTableCSV(s: FigureState): void {
@@ -99,7 +99,7 @@ export function exportAlignmentTableCSV(s: FigureState): void {
       ].join(",")
     ),
   ];
-  download(new Blob([rows.join("\n")], { type: "text/csv" }), "weft-alignment-table.csv");
+  void saveFile(new Blob([rows.join("\n")], { type: "text/csv" }), "weft-alignment-table.csv");
 }
 
 export function exportSimilarityMatrixCSV(s: FigureState): void {
@@ -127,5 +127,5 @@ export function exportSimilarityMatrixCSV(s: FigureState): void {
   for (const row of names) {
     lines.push([row, ...names.map((col) => String(matrix.get(`${row}\t${col}`) ?? 0))].join(","));
   }
-  download(new Blob([lines.join("\n")], { type: "text/csv" }), "weft-similarity-matrix.csv");
+  void saveFile(new Blob([lines.join("\n")], { type: "text/csv" }), "weft-similarity-matrix.csv");
 }

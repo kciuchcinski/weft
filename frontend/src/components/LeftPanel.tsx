@@ -15,7 +15,7 @@ import {
   metricLowerIsBetter,
   type GeneShapeKind,
 } from "../render/layout";
-import { download } from "../download";
+import { saveFile } from "../download";
 import type { FigureData, MetricKey } from "../types";
 
 const GENE_SHAPES: { value: GeneShapeKind; label: string }[] = [
@@ -552,7 +552,7 @@ export default function LeftPanel() {
 
   const exportColourCSV = () => {
     const csv = ["label,colour", ...items.map((i) => `${i.label},${i.colour}`)].join("\n");
-    download(new Blob([csv], { type: "text/csv" }), "weft-colours.csv");
+    void saveFile(new Blob([csv], { type: "text/csv" }), "weft-colours.csv");
   };
 
   const importColourCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
